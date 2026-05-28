@@ -15,7 +15,7 @@ const CONFIG = {
   IMAGE_SAMPLER: 'dpm_single',
 
   // Style leads the prompt — SDXL weights early tokens most heavily
-  IMAGE_STYLE_SUFFIX: 'epic high fantasy digital painting, lush verdant landscape, dramatic volumetric lighting, towering ancient trees and mossy stone, rich jewel tones, painterly brushwork, bold ink outlines, cinematic composition, highly detailed, award-winning fantasy art',
+  IMAGE_STYLE_SUFFIX: 'fantasy landscape painting, rolling countryside, naturalistic lighting, painterly brushwork, bold ink outlines, muted earthy tones with occasional colour, cinematic composition, grounded medieval fantasy, detailed environment art',
   IMAGE_NEGATIVE_PROMPT: 'western, desert, arid, cactus, cowboys, modern, sci-fi, photorealistic, 3D render, monochrome, flat, cartoon, anime, top-down, map, watermark, signature, text, people, person, ugly, blurry, low quality',
 
   ENABLE_IMAGES: true,
