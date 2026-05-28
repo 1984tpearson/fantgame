@@ -8,8 +8,8 @@ const CONFIG = {
   TEXT_MODEL: 'anthropic/claude-sonnet-4-5',
 
   IMAGE_MODEL: 'sdxl_1024px',
-  IMAGE_WIDTH: 768,
-  IMAGE_HEIGHT: 512,
+  IMAGE_WIDTH: 1024,
+  IMAGE_HEIGHT: 1024,
   IMAGE_STEPS: 33,
   IMAGE_GUIDANCE: 7.5,
   IMAGE_SAMPLER: 'dpm_single',
