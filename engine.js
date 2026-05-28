@@ -118,7 +118,7 @@ async function generateSceneImage(description, cellKeyStr) {
     form.append('steps', String(CONFIG.IMAGE_STEPS));
     form.append('guidance', String(CONFIG.IMAGE_GUIDANCE));
     form.append('sampler', CONFIG.IMAGE_SAMPLER);
-    form.append('format', 'png');
+    form.append('refiner', 'true');
 
     // Request goes to our Edge Function — Dezgo key never touches the browser
     const res = await fetch(CONFIG.IMAGE_PROXY_URL, {
