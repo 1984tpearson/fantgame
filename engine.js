@@ -196,14 +196,13 @@ async function refreshSceneImage() {
   if (btn) { btn.textContent = '...'; btn.disabled = true; }
   const key = cellKey(state.pos.x, state.pos.y);
   const cell = state.cells[key];
-  // Build a fresh subject from current cell + north neighbour
   const meta = getCellMeta(state.pos.x, state.pos.y);
   const northMeta = getCellMeta(state.pos.x, state.pos.y - 1);
-  const northHint = (northMeta.type !== meta.type && northMeta.name) ? `, ${northMeta.name} to the north` : '';
-  const subject = `${cell?.locationName || terrainLabel(meta.type)}${northHint}`;
-  // Force a new filename so it doesn't serve the cached one
+  const northHint = (northMeta.name && northMeta.name !== meta.name) ? ` To the north: ${northMeta.name}.` : '';
+  // Use stored description if available, otherwise location name
+  const desc = (cell?.description || cell?.locationName || terrainLabel(meta.type)) + northHint;
   const newKey = key + '_' + Date.now();
-  const url = await generateSceneImage(subject, newKey);
+  const url = await generateSceneImage(desc, newKey);
   if (url) {
     applySceneBackground(url);
     state.cells[key].imageUrl = url;
@@ -1068,6 +1067,7 @@ async function enterCell(x, y) {
     ...existing,
     locationName: meta.locationName || existing.locationName || terrainLabel(getCellMeta(x,y).type),
     exits: meta.exits || existing.exits || {n:true,s:true,e:true,w:true},
+    description: location || existing.description || '',
     lastVisited: state.player.day
   };
 
@@ -1077,15 +1077,19 @@ async function enterCell(x, y) {
 
   // Apply scene image — use cached URL if available, otherwise generate
   const cachedImageUrl = existing.imageUrl || null;
+  // Build image description from actual scene text — far more accurate than a 6-word summary
+  const northMeta = getCellMeta(x, y - 1);
+  const northHint = (northMeta.name && northMeta.name !== getCellMeta(x,y).name) ? ` To the north: ${northMeta.name}.` : '';
+  const imageDesc = location ? `${location}${northHint}` : imageSubject;
+
   if (cachedImageUrl) {
     applySceneBackground(cachedImageUrl);
-  } else if (imageSubject && CONFIG.ENABLE_IMAGES) {
+  } else if (imageDesc && CONFIG.ENABLE_IMAGES) {
     // Generate in background — don't block text display
-    generateSceneImage(imageSubject, key).then(url => {
+    generateSceneImage(imageDesc, key).then(url => {
       if (url) {
         applySceneBackground(url);
         state.cells[key].imageUrl = url;
-        // Persist URL to Supabase
         if (CONFIG.ENABLE_SUPABASE) {
           DB.upsertCell({
             layer: state.layer,
@@ -1100,8 +1104,7 @@ async function enterCell(x, y) {
         }
       }
     });
-  } else if (!imageSubject) {
-    // No subject returned — clear old background on new cells
+  } else if (!imageDesc) {
     if (!cachedImageUrl) applySceneBackground(null);
   }
 
