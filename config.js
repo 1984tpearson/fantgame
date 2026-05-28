@@ -11,11 +11,12 @@ const CONFIG = {
   IMAGE_WIDTH: 768,
   IMAGE_HEIGHT: 512,
   IMAGE_STEPS: 33,
-  IMAGE_GUIDANCE: 7.0,
+  IMAGE_GUIDANCE: 7.5,
   IMAGE_SAMPLER: 'dpm_single',
 
-  IMAGE_STYLE_SUFFIX: 'fantasy concept illustration, painterly warm earthy tones, bold ink outlines, comic book cross-hatching shading, aged parchment color palette, lush detailed environment, cinematic fantasy art, semi-realistic',
-  IMAGE_NEGATIVE_PROMPT: 'top-down, flat map, cartography, photorealistic, 3D render, monochrome, modern, people, person, text, watermark, signature',
+  // Style leads the prompt — SDXL weights early tokens most heavily
+  IMAGE_STYLE_SUFFIX: 'epic high fantasy digital painting, lush verdant landscape, dramatic volumetric lighting, towering ancient trees and mossy stone, rich jewel tones, painterly brushwork, bold ink outlines, cinematic composition, highly detailed, award-winning fantasy art',
+  IMAGE_NEGATIVE_PROMPT: 'western, desert, arid, cactus, cowboys, modern, sci-fi, photorealistic, 3D render, monochrome, flat, cartoon, anime, top-down, map, watermark, signature, text, people, person, ugly, blurry, low quality',
 
   ENABLE_IMAGES: true,
   ENABLE_SUPABASE: true,
