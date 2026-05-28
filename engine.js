@@ -996,6 +996,9 @@ async function callAI(messages, actionOnly=false) {
     location = stripMeta(location);
     situation = stripMeta(situation);
     notice = stripMeta(notice);
+    // Don't display literal "null" strings
+    if (notice.toLowerCase() === 'null' || notice.toLowerCase() === 'none') notice = '';
+    if (situation.toLowerCase() === 'null' || situation.toLowerCase() === 'none') situation = '';
     return { location, situation, notice, imageSubject, meta };
   } catch(e) {
     removeTypingIndicator();
