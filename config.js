@@ -31,7 +31,7 @@ const CONFIG = {
 
   // ── SUPABASE ─────────────────────────────────────
   // Get these: Supabase dashboard → Project Settings → API
-  SUPABASE_URL: 'https://1984tpearson.github.io/fantgame',      // e.g. https://xxxx.supabase.co
+  SUPABASE_URL: 'https://1984tpearson.github.io',      // e.g. https://xxxx.supabase.co
   SUPABASE_ANON_KEY: 'sb_publishable_w0h8f1AIXQGty5X5nKrJtg_ThI1-a-j',
 
   // ── FEATURE FLAGS ────────────────────────────────
