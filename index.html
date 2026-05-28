@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valdenmere</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink: #0e0b08; --parchment: #f2e8d5; --parchment-dark: #e0d0b0;
+    --gold: #c9943a; --gold-light: #e8b84b; --rust: #8b3a2a;
+    --stone: #5a5248; --stone-light: #8a7e72;
+  }
+  html, body { height: 100%; background: var(--ink); color: var(--parchment); font-family: 'Crimson Pro', Georgia, serif; overflow: hidden; }
+  #game { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+  #header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-bottom: 1px solid rgba(201,148,58,0.3); background: rgba(10,8,6,0.95); gap: 8px; }
+  #title { font-family: 'Cinzel Decorative', serif; font-size: 1rem; color: var(--gold); letter-spacing: 0.06em; text-shadow: 0 0 20px rgba(201,148,58,0.4); white-space: nowrap; }
+  #location-tag { font-size: 0.78rem; color: var(--stone-light); font-style: italic; text-align: center; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #layer-badge { font-size: 0.6rem; font-family: 'Cinzel Decorative', serif; letter-spacing: 0.08em; padding: 2px 6px; border-radius: 2px; white-space: nowrap; flex-shrink: 0; }
+  #layer-badge.overworld { color: var(--stone-light); border: 1px solid rgba(90,82,72,0.4); display: none; }
+  #layer-badge.settlement { color: #a0c878; border: 1px solid rgba(120,160,80,0.4); background: rgba(60,100,40,0.15); }
+  #layer-badge.interior { color: #c8a870; border: 1px solid rgba(180,140,80,0.4); background: rgba(100,70,20,0.15); }
+  #coords { font-size: 0.65rem; color: var(--stone); font-family: monospace; white-space: nowrap; }
+
+  /* ── SCENE BOX — image background lives here ── */
+  #scene-box { flex: 1; overflow-y: auto; padding: 14px 16px 8px; scrollbar-width: thin; scrollbar-color: var(--stone) transparent; -webkit-overflow-scrolling: touch; position: relative; transition: background-image 0.6s ease; }
+  #scene-box::-webkit-scrollbar { width: 3px; }
+  #scene-box::-webkit-scrollbar-thumb { background: var(--stone); border-radius: 2px; }
+  /* Dark gradient overlay so text stays readable over background image */
+  #scene-box::before { content: ''; position: sticky; top: 0; left: 0; right: 0; bottom: 0; display: block; pointer-events: none; background: linear-gradient(to bottom, rgba(10,8,6,0.55) 0%, rgba(10,8,6,0.25) 40%, rgba(10,8,6,0.55) 100%); z-index: 0; margin: -14px -16px 0; height: 100%; width: calc(100% + 32px); position: absolute; }
+  #scene-box > * { position: relative; z-index: 1; }
+
+  .message { margin-bottom: 14px; animation: fadeIn 0.35s ease; line-height: 1.65; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  .message.scene { font-size: 0.97rem; color: var(--parchment); font-weight: 300; }
+  .message.scene .scene-header { font-family: 'Cinzel Decorative', serif; font-size: 0.6rem; color: var(--gold); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 6px; opacity: 0.8; }
+  .message.player { font-size: 0.78rem; color: var(--stone-light); font-style: italic; padding-left: 12px; border-left: 2px solid var(--stone); }
+  .message.player::before { content: '❯ '; color: var(--gold); font-style: normal; }
+  .message.combat { color: #d4805a; font-size: 0.82rem; }
+  .message.system { font-size: 0.75rem; color: var(--stone); font-style: italic; text-align: center; }
+  .message.transition { font-size: 0.8rem; color: var(--gold); font-style: italic; text-align: center; opacity: 0.9; padding: 4px 0; }
+  .message.npc-speech { font-size: 0.92rem; color: #c8d8a8; font-style: italic; padding-left: 12px; border-left: 2px solid rgba(160,200,120,0.4); }
+  .message.npc-speech .npc-name { font-family: 'Cinzel Decorative', serif; font-size: 0.58rem; color: #a0c878; letter-spacing: 0.1em; display: block; margin-bottom: 3px; font-style: normal; }
+  .message.location { font-size: 0.82rem; color: var(--parchment); font-weight: 300; }
+  .message.situation { font-size: 0.8rem; color: #c8b89a; font-style: italic; padding-left: 10px; border-left: 2px solid rgba(201,148,58,0.3); }
+  .message.notice { font-size: 0.78rem; color: var(--gold); opacity: 0.85; }
+  .message.notice::before { content: '✦ '; opacity: 0.6; }
+
+  #combat-panel { display: none; flex-shrink: 0; padding: 8px 12px; border-top: 1px solid rgba(139,58,42,0.4); background: rgba(107,30,30,0.12); }
+  #combat-panel.visible { display: block; }
+  #combat-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .combat-btn { background: rgba(139,58,42,0.2); border: 1px solid rgba(139,58,42,0.5); color: #d4805a; padding: 8px 12px; font-family: 'Crimson Pro', serif; font-size: 0.85rem; cursor: pointer; border-radius: 3px; transition: background 0.15s; flex: 1; min-width: 70px; text-align: center; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .combat-btn:active { background: rgba(139,58,42,0.45); }
+  .combat-btn.flee-btn { color: #a0a060; border-color: rgba(120,120,60,0.5); background: rgba(80,80,30,0.15); }
+  .combat-btn.item-btn { color: #7aaa88; border-color: rgba(60,120,80,0.5); background: rgba(30,80,50,0.15); }
+  #item-use-drawer { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: rgba(12,9,6,0.97); border-top: 1px solid rgba(60,120,80,0.4); padding: 12px 16px 20px; z-index: 60; animation: slideUp 0.2s ease; max-height: 50vh; overflow-y: auto; }
+  #item-use-drawer.open { display: block; }
+  #item-use-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  #item-use-title { font-family: 'Cinzel Decorative', serif; font-size: 0.62rem; color: #7aaa88; letter-spacing: 0.12em; opacity: 0.85; }
+  #item-use-close { background: none; border: none; color: var(--stone-light); font-size: 1.1rem; cursor: pointer; padding: 0 4px; }
+  #item-use-list { display: flex; flex-direction: column; gap: 6px; }
+  .item-use-btn { background: rgba(60,120,80,0.12); border: 1px solid rgba(60,120,80,0.3); color: var(--parchment); padding: 10px 14px; font-family: 'Crimson Pro', serif; font-size: 0.9rem; cursor: pointer; border-radius: 3px; text-align: left; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: background 0.12s; }
+  .item-use-btn:active { background: rgba(60,120,80,0.28); }
+  #item-use-empty { font-style: italic; color: var(--stone); font-size: 0.85rem; text-align: center; padding: 10px 0; }
+  #controls { flex-shrink: 0; background: rgba(10,8,6,0.95); border-top: 1px solid rgba(201,148,58,0.15); }
+  #dpad-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px 6px; gap: 8px; }
+  #dpad { display: grid; grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(3, 52px); gap: 4px; }
+  .dir-btn { border: 1px solid rgba(201,148,58,0.22); color: #fff; cursor: pointer; border-radius: 4px; transition: opacity 0.12s, border-color 0.12s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; overflow: hidden; position: relative; padding: 0; background: #2a2a22; }
+  .dir-btn .dir-arrow { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 1rem; z-index: 3; text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(0,0,0,0.7); pointer-events: none; line-height: 1; }
+  .dir-btn svg.tile-svg { width: 100%; height: 100%; display: block; position: absolute; inset: 0; }
+  .dir-btn.diag { border-color: rgba(201,148,58,0.12); }
+  .dir-btn.diag .dir-arrow { font-size: 0.8rem; opacity: 0.8; }
+  .dir-btn:active:not(:disabled) { background: rgba(242,232,213,0.18); border-color: rgba(201,148,58,0.55); color: var(--gold-light); }
+  .dir-btn:disabled { opacity: 0.15; cursor: not-allowed; }
+  .dir-btn.center { border-color: rgba(201,148,58,0.35); cursor: default; overflow: hidden; position: relative; }
+  .dir-btn.center.exit-btn { border-color: rgba(201,148,58,0.6); cursor: pointer; }
+  .dir-btn.center.exit-btn:active { background: rgba(201,148,58,0.2); }
+  #btn-center-dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 8px; background: var(--gold-light); border-radius: 50%; box-shadow: 0 0 6px var(--gold-light); z-index: 3; animation: pulse 1.5s ease infinite; }
+  #btn-center-exit { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.6rem; color: var(--gold); z-index: 3; text-align: center; line-height: 1.2; pointer-events: none; }
+  #stats-strip { flex: 1; display: flex; flex-direction: column; gap: 6px; padding: 4px 0; }
+  .srow { display: flex; align-items: center; gap: 6px; }
+  .slabel { font-size: 0.68rem; color: var(--stone-light); width: 44px; flex-shrink: 0; }
+  .sbar { flex: 1; height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+  .sfill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+  .sfill.hp { background: linear-gradient(90deg, #7a2020, #c04040); }
+  .sfill.sp { background: linear-gradient(90deg, #1e4a6b, #3a8abf); }
+  .sval { font-size: 0.72rem; color: var(--parchment-dark); width: 26px; text-align: right; flex-shrink: 0; }
+  #gold-day { display: flex; gap: 12px; font-size: 0.72rem; color: var(--stone-light); padding-left: 2px; }
+  #gold-day span { color: var(--parchment-dark); }
+  #input-row { display: flex; padding: 6px 12px 10px; gap: 8px; }
+  #cmd { flex: 1; background: rgba(242,232,213,0.07); border: 1px solid rgba(201,148,58,0.25); border-radius: 4px; padding: 9px 12px; color: var(--parchment); font-family: 'Crimson Pro', serif; font-size: 1rem; outline: none; -webkit-appearance: none; }
+  #cmd:focus { border-color: rgba(201,148,58,0.5); }
+  #cmd::placeholder { color: var(--stone); font-style: italic; }
+  #send-btn { background: rgba(201,148,58,0.15); border: 1px solid rgba(201,148,58,0.4); color: var(--gold); padding: 9px 16px; font-family: 'Crimson Pro', serif; font-size: 0.9rem; cursor: pointer; border-radius: 4px; white-space: nowrap; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  #send-btn:active { background: rgba(201,148,58,0.28); }
+  #send-btn:disabled { opacity: 0.35; }
+  #map-drawer { display: none; position: fixed; inset: 0; background: rgba(12,9,6,0.97); z-index: 50; flex-direction: column; animation: fadeIn 0.15s ease; }
+  #map-drawer.open { display: flex; }
+  #map-drawer-header { flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; padding: 10px 16px 8px; border-bottom: 1px solid rgba(201,148,58,0.2); }
+  #map-drawer-title { font-family: 'Cinzel Decorative', serif; font-size: 0.65rem; color: var(--gold); letter-spacing: 0.14em; opacity: 0.8; }
+  #map-close { background: none; border: none; color: var(--stone-light); font-size: 1.2rem; cursor: pointer; padding: 0 8px; }
+  #map-hint { font-size: 0.68rem; color: var(--stone); font-style: italic; }
+  #map-canvas-wrap { flex: 1; overflow: hidden; position: relative; touch-action: none; }
+  #map-canvas { position: absolute; top: 0; left: 0; cursor: grab; image-rendering: pixelated; }
+  #map-canvas:active { cursor: grabbing; }
+  #map-travel-confirm { display: none; position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); background: rgba(12,9,6,0.95); border: 1px solid rgba(201,148,58,0.4); border-radius: 4px; padding: 10px 16px; text-align: center; min-width: 200px; }
+  #map-travel-confirm.visible { display: block; }
+  #map-travel-dest { font-family: 'Cinzel Decorative', serif; font-size: 0.6rem; color: var(--gold); letter-spacing: 0.1em; margin-bottom: 6px; }
+  #map-travel-info { font-size: 0.75rem; color: var(--stone-light); font-style: italic; margin-bottom: 8px; }
+  #map-travel-btns { display: flex; gap: 8px; justify-content: center; }
+  .map-travel-btn { background: rgba(201,148,58,0.15); border: 1px solid rgba(201,148,58,0.4); color: var(--gold); padding: 6px 14px; font-family: 'Crimson Pro', serif; font-size: 0.85rem; cursor: pointer; border-radius: 3px; -webkit-tap-highlight-color: transparent; }
+  .map-travel-btn.cancel { background: none; border-color: var(--stone); color: var(--stone-light); }
+  #map-legend { flex-shrink: 0; display: flex; flex-wrap: wrap; gap: 3px 10px; padding: 6px 16px 10px; border-top: 1px solid rgba(201,148,58,0.1); }
+  .mmc { width: 14px; height: 14px; border-radius: 1px; position: relative; }
+  .mmc.current { box-shadow: 0 0 5px var(--gold-light); z-index: 2; }
+  .mmc.current::after { content: ''; position: absolute; inset: 3px; background: var(--gold-light); border-radius: 50%; animation: pulse 1.5s ease infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.75); } }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .t-ocean{background:#1a2d3a}.t-plains{background:#3a4a2a}.t-forest{background:#1e3a1e}.t-mountain{background:#4a4040}.t-city{background:#6a5030}.t-town{background:#5a4525}.t-village{background:#4a3a20}.t-road{background:#3a4a2a}.t-farmland{background:#4a4a20}.t-river{background:#3a4a2a}.t-unknown{background:#181410;border:1px solid rgba(255,255,255,0.04)}.t-street{background:#4a3e30}.t-building{background:#5a3a20}.t-interior{background:#3a2a18}.t-door{background:#7a5030}.t-wall{background:#3a3030}.t-courtyard{background:#3a4228}.t-market{background:#5a4a28}.t-docks{background:#2a3a4a}.t-gate{background:#6a5540}
+  .mmc svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  #legend { display: flex; flex-wrap: wrap; gap: 3px 10px; }
+  .leg-item { display: flex; align-items: center; gap: 4px; font-size: 0.65rem; color: var(--stone-light); }
+  .leg-swatch { width: 7px; height: 7px; border-radius: 1px; flex-shrink: 0; }
+  #map-toggle, #inv-toggle { background: rgba(201,148,58,0.1); border: 1px solid rgba(201,148,58,0.25); color: var(--gold); font-size: 0.7rem; font-family: 'Cinzel Decorative', serif; letter-spacing: 0.06em; padding: 5px 8px; border-radius: 3px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #loading-overlay { display: none; position: fixed; inset: 0; background: rgba(10,8,6,0.82); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+  #loading-overlay.visible { display: flex; }
+  .loading-inner { text-align: center; }
+  .rune-spinner { font-size: 1.8rem; color: var(--gold); display: block; margin-bottom: 10px; animation: spin 2s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-style: italic; color: var(--stone-light); font-size: 0.88rem; }
+  .typing-dots { display: inline-flex; gap: 3px; align-items: center; }
+  .typing-dots span { width: 5px; height: 5px; background: var(--stone-light); border-radius: 50%; animation: blink 1.2s ease infinite; }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100% { opacity: 0.2; } 40% { opacity: 1; } }
+  #inv-drawer { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: rgba(12,9,6,0.97); border-top: 1px solid rgba(201,148,58,0.3); padding: 14px 16px 20px; z-index: 50; animation: slideUp 0.2s ease; max-height: 55vh; overflow-y: auto; }
+  #inv-drawer.open { display: block; }
+  #inv-drawer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  #inv-drawer-title { font-family: 'Cinzel Decorative', serif; font-size: 0.65rem; color: var(--gold); letter-spacing: 0.14em; opacity: 0.8; }
+  #inv-close { background: none; border: none; color: var(--stone-light); font-size: 1.2rem; cursor: pointer; padding: 0 4px; }
+  #inv-list { display: flex; flex-direction: column; gap: 6px; }
+  .inv-item { display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; background: rgba(242,232,213,0.04); border: 1px solid rgba(201,148,58,0.15); border-radius: 3px; font-size: 0.88rem; color: var(--parchment); }
+  .inv-item-name { flex: 1; }
+  .inv-drop-btn { background: none; border: 1px solid rgba(139,58,42,0.4); color: rgba(212,128,90,0.7); font-size: 0.72rem; padding: 3px 8px; border-radius: 2px; cursor: pointer; font-family: 'Crimson Pro', serif; -webkit-tap-highlight-color: transparent; }
+  .inv-drop-btn:active { background: rgba(139,58,42,0.25); }
+  #inv-empty { font-style: italic; color: var(--stone); font-size: 0.85rem; text-align: center; padding: 12px 0; }
+  #inv-overload { display: none; font-size: 0.75rem; color: #d4805a; font-style: italic; text-align: center; padding: 6px 0 2px; }
+  #inv-overload.visible { display: block; }
+
+  /* ── NPC DIALOGUE DRAWER ── */
+  #npc-drawer { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: rgba(8,6,4,0.98); border-top: 2px solid rgba(160,200,120,0.3); z-index: 70; flex-direction: column; max-height: 65vh; animation: slideUp 0.22s ease; }
+  #npc-drawer.open { display: flex; }
+  #npc-drawer-header { flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 10px 14px 8px; border-bottom: 1px solid rgba(160,200,120,0.15); }
+  #npc-avatar { width: 32px; height: 32px; border-radius: 50%; background: rgba(160,200,120,0.15); border: 1px solid rgba(160,200,120,0.3); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
+  #npc-drawer-name { font-family: 'Cinzel Decorative', serif; font-size: 0.65rem; color: #a0c878; letter-spacing: 0.12em; flex: 1; }
+  #npc-drawer-role { font-size: 0.68rem; color: var(--stone-light); font-style: italic; }
+  #npc-rep-badge { font-size: 0.6rem; padding: 2px 7px; border-radius: 10px; border: 1px solid; white-space: nowrap; flex-shrink: 0; }
+  #npc-close { background: none; border: none; color: var(--stone-light); font-size: 1.1rem; cursor: pointer; padding: 0 4px; }
+  #npc-convo-box { flex: 1; overflow-y: auto; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; scrollbar-width: thin; scrollbar-color: var(--stone) transparent; }
+  .npc-line { font-size: 0.88rem; line-height: 1.55; animation: fadeIn 0.25s ease; }
+  .npc-line.npc { color: #c8d8a8; font-style: italic; }
+  .npc-line.npc::before { content: '"'; }
+  .npc-line.npc::after { content: '"'; }
+  .npc-line.player-said { color: var(--stone-light); font-size: 0.8rem; padding-left: 10px; border-left: 1px solid rgba(201,148,58,0.3); }
+  #npc-shop-panel { flex-shrink: 0; border-top: 1px solid rgba(160,200,120,0.15); padding: 8px 14px; display: none; }
+  #npc-shop-panel.visible { display: block; }
+  #npc-shop-items { display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto; }
+  .shop-item { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border: 1px solid rgba(201,148,58,0.15); border-radius: 3px; font-size: 0.82rem; }
+  .shop-item-name { flex: 1; color: var(--parchment); }
+  .shop-item-price { color: var(--gold); font-size: 0.78rem; margin-right: 6px; }
+  .shop-buy-btn { background: rgba(201,148,58,0.15); border: 1px solid rgba(201,148,58,0.35); color: var(--gold); font-size: 0.72rem; padding: 3px 8px; border-radius: 2px; cursor: pointer; font-family: 'Crimson Pro', serif; white-space: nowrap; }
+  .shop-buy-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .shop-sell-btn { background: rgba(90,82,72,0.2); border: 1px solid rgba(90,82,72,0.4); color: var(--stone-light); font-size: 0.72rem; padding: 3px 8px; border-radius: 2px; cursor: pointer; font-family: 'Crimson Pro', serif; }
+  #npc-shop-title { font-family: 'Cinzel Decorative', serif; font-size: 0.55rem; color: var(--gold); letter-spacing: 0.12em; opacity: 0.7; margin-bottom: 6px; }
+  #npc-input-row { flex-shrink: 0; display: flex; padding: 6px 10px 12px; gap: 8px; }
+  #npc-cmd { flex: 1; background: rgba(160,200,120,0.05); border: 1px solid rgba(160,200,120,0.2); border-radius: 4px; padding: 8px 12px; color: var(--parchment); font-family: 'Crimson Pro', serif; font-size: 0.95rem; outline: none; }
+  #npc-cmd:focus { border-color: rgba(160,200,120,0.4); }
+  #npc-cmd::placeholder { color: var(--stone); font-style: italic; }
+  #npc-send { background: rgba(160,200,120,0.1); border: 1px solid rgba(160,200,120,0.3); color: #a0c878; padding: 8px 14px; font-family: 'Crimson Pro', serif; font-size: 0.88rem; cursor: pointer; border-radius: 4px; }
+  #npc-send:active { background: rgba(160,200,120,0.22); }
+  #npc-shop-toggle { background: rgba(201,148,58,0.1); border: 1px solid rgba(201,148,58,0.25); color: var(--gold); font-size: 0.62rem; font-family: 'Cinzel Decorative', serif; padding: 3px 8px; border-radius: 3px; cursor: pointer; margin-left: auto; }
+  .npc-dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #a0c878; box-shadow: 0 0 4px #a0c878; }
+
+  @media (min-width: 700px) {
+    #game { display: grid; grid-template-columns: 1fr 300px; grid-template-rows: auto 1fr; max-width: 1100px; margin: 0 auto; }
+    #header { grid-column: 1 / -1; padding: 10px 20px; }
+    #title { font-size: 1.3rem; }
+    #scene-box { padding: 22px 28px 12px; }
+    #scene-box .message.scene { font-size: 1rem; }
+    #controls { border-top: none; border-right: 1px solid rgba(201,148,58,0.15); }
+    #dpad-row { padding: 10px 16px 8px; }
+    #dpad { grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 48px); }
+    #sidebar-desktop { display: flex !important; grid-column: 2; grid-row: 2; flex-direction: column; padding: 16px 14px; gap: 12px; overflow-y: auto; background: rgba(10,8,6,0.5); border-left: 1px solid rgba(201,148,58,0.12); }
+    .dpanel { border: 1px solid rgba(201,148,58,0.18); border-radius: 3px; overflow: hidden; }
+    .dpanel-title { font-family: 'Cinzel Decorative', serif; font-size: 0.55rem; letter-spacing: 0.15em; color: var(--gold); opacity: 0.7; padding: 6px 10px 5px; background: rgba(201,148,58,0.06); border-bottom: 1px solid rgba(201,148,58,0.12); }
+    #minimap-desktop { display: grid; gap: 2px; padding: 10px; justify-content: center; }
+    #minimap-desktop .mmc { width: 13px; height: 13px; }
+    #legend-desktop { display: flex; flex-wrap: wrap; gap: 2px 8px; padding: 5px 10px 8px; }
+    #map-toggle { display: none !important; }
+    #inv-toggle { display: none !important; }
+    #map-drawer { display: none !important; }
+    #inv-drawer { display: none !important; }
+    #dstats .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; font-size: 0.82rem; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    #dstats .stat-row:last-child { border-bottom: none; }
+    #dstats .slabel { font-size: 0.74rem; color: var(--stone-light); }
+    #dstats .sbar { width: 70px; height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+    #dstats .sfill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+    #dstats .sval { font-size: 0.78rem; color: var(--parchment-dark); }
+    #npc-drawer { max-width: 700px; left: 50%; transform: translateX(-50%); border-left: 1px solid rgba(160,200,120,0.2); border-right: 1px solid rgba(160,200,120,0.2); border-radius: 4px 4px 0 0; }
+    #dnpc-panel { padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; }
+    .dnpc-row { display: flex; align-items: center; gap: 6px; padding: 4px 2px; border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer; border-radius: 2px; }
+    .dnpc-row:hover { background: rgba(160,200,120,0.05); }
+    .dnpc-row:last-child { border-bottom: none; }
+    .dnpc-avatar { width: 22px; height: 22px; border-radius: 50%; background: rgba(160,200,120,0.12); border: 1px solid rgba(160,200,120,0.25); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; flex-shrink: 0; }
+    .dnpc-name { font-size: 0.78rem; color: var(--parchment); flex: 1; }
+    .dnpc-loc { font-size: 0.65rem; color: var(--stone-light); font-style: italic; }
+    .dnpc-rep { font-size: 0.6rem; padding: 1px 5px; border-radius: 8px; border: 1px solid; }
+  }
+</style>
+</head>
+<body>
+<div id="loading-overlay">
+  <div class="loading-inner">
+    <span class="rune-spinner">✦</span>
+    <div class="loading-text" id="loading-text">The world stirs...</div>
+  </div>
+</div>
+
+<div id="game">
+  <div id="header">
+    <div id="title">Valdenmere</div>
+    <div id="location-tag">The Gates of Ironhaven</div>
+    <div id="layer-badge" class="overworld"></div>
+    <div id="coords">0, 0</div>
+  </div>
+
+  <div id="scene-box"></div>
+
+  <div id="combat-panel"><div id="combat-actions"></div></div>
+
+  <div id="item-use-drawer">
+    <div id="item-use-header">
+      <div id="item-use-title">— Use which item? —</div>
+      <button id="item-use-close" onclick="closeItemUse()">✕</button>
+    </div>
+    <div id="item-use-list"></div>
+    <div id="item-use-empty">Your pack is empty.</div>
+  </div>
+
+  <div id="controls">
+    <div id="dpad-row">
+      <div id="dpad">
+        <button class="dir-btn diag" id="btn-nw" onclick="move(-1,-1)"><span class="dir-arrow">↖</span></button>
+        <button class="dir-btn" id="btn-n" onclick="move(0,-1)"><span class="dir-arrow">↑</span></button>
+        <button class="dir-btn diag" id="btn-ne" onclick="move(1,-1)"><span class="dir-arrow">↗</span></button>
+        <button class="dir-btn" id="btn-w" onclick="move(-1,0)"><span class="dir-arrow">←</span></button>
+        <div class="dir-btn center" id="btn-center" onclick="handleCentreBtn()">
+          <div id="btn-center-dot"></div>
+          <div id="btn-center-exit">↩<br><span style="font-size:0.5rem">EXIT</span></div>
+        </div>
+        <button class="dir-btn" id="btn-e" onclick="move(1,0)"><span class="dir-arrow">→</span></button>
+        <button class="dir-btn diag" id="btn-sw" onclick="move(-1,1)"><span class="dir-arrow">↙</span></button>
+        <button class="dir-btn" id="btn-s" onclick="move(0,1)"><span class="dir-arrow">↓</span></button>
+        <button class="dir-btn diag" id="btn-se" onclick="move(1,1)"><span class="dir-arrow">↘</span></button>
+      </div>
+      <div id="stats-strip">
+        <div class="srow">
+          <span class="slabel">Health</span>
+          <div class="sbar"><div class="sfill hp" id="hp-bar" style="width:100%"></div></div>
+          <span class="sval" id="hp-val">100</span>
+        </div>
+        <div class="srow">
+          <span class="slabel">Stamina</span>
+          <div class="sbar"><div class="sfill sp" id="sp-bar" style="width:100%"></div></div>
+          <span class="sval" id="sp-val">100</span>
+        </div>
+        <div id="gold-day">
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px;">
+            <button onclick="togglePurse()" style="background:rgba(201,148,58,0.12);border:1px solid rgba(201,148,58,0.28);color:var(--gold);font-family:'Cinzel Decorative',serif;font-size:0.55rem;letter-spacing:0.06em;padding:3px 7px;border-radius:3px;cursor:pointer;">Coinpurse</button>
+            <span id="gold-val" style="font-size:0.62rem;color:var(--stone-light);padding-left:2px;">≈12g</span>
+          </div>
+          &nbsp; Day <span id="day-val">1</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px;align-self:flex-end;margin-bottom:4px;">
+        <button id="map-toggle" onclick="toggleMap()">Map</button>
+        <button id="inv-toggle" onclick="toggleInv()">Pack</button>
+      </div>
+    </div>
+    <div id="input-row">
+      <input id="cmd" type="text" placeholder="What do you do?" autocomplete="off" />
+      <button id="send-btn" onclick="handleInput()">Send</button>
+      <button onclick="clearSave()" style="background:rgba(139,58,42,0.2);border:1px solid rgba(139,58,42,0.4);color:#d4805a;padding:9px 10px;font-family:'Crimson Pro',serif;font-size:0.8rem;cursor:pointer;border-radius:4px;" title="Clear saved game">✕ Save</button>
+    </div>
+  </div>
+
+  <div id="sidebar-desktop" style="display:none">
+    <div class="dpanel">
+      <div class="dpanel-title" id="map-panel-title">— Known World —</div>
+      <div id="minimap-desktop"></div>
+      <div id="legend-desktop"></div>
+    </div>
+    <div class="dpanel" id="dstats">
+      <div class="dpanel-title">— Adventurer —</div>
+      <div class="stat-row"><span class="slabel">Health</span><div class="sbar"><div class="sfill hp" id="dhp-bar" style="width:100%"></div></div><span class="sval" id="dhp-val">100</span></div>
+      <div class="stat-row"><span class="slabel">Stamina</span><div class="sbar"><div class="sfill sp" id="dsp-bar" style="width:100%"></div></div><span class="sval" id="dsp-val">100</span></div>
+      <div class="stat-row"><span class="slabel">Gold</span><span class="sval" id="dgold-val">12g</span></div>
+      <div class="stat-row"><span class="slabel">Day</span><span class="sval" id="dday-val">1</span></div>
+    </div>
+    <div class="dpanel">
+      <div class="dpanel-title" style="display:flex;gap:0;">
+        <span id="dtab-pack" onclick="switchDesktopTab('pack')" style="cursor:pointer;flex:1;text-align:center;padding:6px 4px 5px;opacity:1;border-bottom:1px solid rgba(201,148,58,0.4);">— Pack —</span>
+        <span id="dtab-equip" onclick="switchDesktopTab('equip')" style="cursor:pointer;flex:1;text-align:center;padding:6px 4px 5px;opacity:0.45;border-bottom:1px solid rgba(201,148,58,0.1);">— Equipped —</span>
+      </div>
+      <div id="dpanel-pack">
+        <div id="inv-overload-desktop" style="display:none;font-size:0.72rem;color:#d4805a;font-style:italic;padding:4px 10px;">⚠ Overloaded</div>
+        <div id="inv-list-desktop" style="padding:6px 8px;display:flex;flex-direction:column;gap:4px;"></div>
+        <div id="inv-empty-desktop" style="font-style:italic;color:var(--stone);font-size:0.8rem;text-align:center;padding:8px;">Empty</div>
+      </div>
+      <div id="dpanel-equip" style="display:none;padding:6px 8px;">
+        <div id="equipped-list-desktop" style="display:flex;flex-direction:column;gap:3px;"></div>
+      </div>
+    </div>
+    <div class="dpanel" id="dnpc-panel-wrap" style="display:none;">
+      <div class="dpanel-title">— Folk Nearby —</div>
+      <div id="dnpc-panel"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Map drawer -->
+<div id="map-drawer">
+  <div id="map-drawer-header">
+    <div id="map-drawer-title">— Known World —</div>
+    <div id="map-hint">Tap revealed cell to travel · Pinch/drag to navigate</div>
+    <button id="map-close" onclick="toggleMap()">✕</button>
+  </div>
+  <div id="map-canvas-wrap">
+    <canvas id="map-canvas"></canvas>
+    <div id="map-travel-confirm">
+      <div id="map-travel-dest"></div>
+      <div id="map-travel-info"></div>
+      <div id="map-travel-btns">
+        <button class="map-travel-btn" id="map-travel-go">Travel</button>
+        <button class="map-travel-btn cancel" onclick="cancelTravel()">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <div id="map-legend"></div>
+</div>
+
+<!-- Purse drawer -->
+<div id="purse-drawer" style="display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(12,9,6,0.97);border-top:1px solid rgba(201,148,58,0.3);padding:14px 16px 24px;z-index:50;animation:slideUp 0.2s ease;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div style="font-family:'Cinzel Decorative',serif;font-size:0.65rem;color:var(--gold);letter-spacing:0.14em;opacity:0.8;">— Coinpurse —</div>
+    <button onclick="togglePurse()" style="background:none;border:none;color:var(--stone-light);font-size:1.2rem;cursor:pointer;padding:0 4px;">✕</button>
+  </div>
+  <div id="purse-contents" style="display:flex;flex-direction:column;gap:8px;"></div>
+</div>
+
+<!-- Inventory drawer -->
+<div id="inv-drawer">
+  <div id="inv-drawer-header">
+    <div style="display:flex;gap:0;flex:1;">
+      <button id="mtab-pack" onclick="switchMobileTab('pack')" style="flex:1;background:none;border:none;border-bottom:1px solid rgba(201,148,58,0.4);color:var(--gold);font-family:'Cinzel Decorative',serif;font-size:0.58rem;letter-spacing:0.12em;padding:0 0 6px;cursor:pointer;opacity:1;">Pack</button>
+      <button id="mtab-equip" onclick="switchMobileTab('equip')" style="flex:1;background:none;border:none;border-bottom:1px solid rgba(201,148,58,0.1);color:var(--gold);font-family:'Cinzel Decorative',serif;font-size:0.58rem;letter-spacing:0.12em;padding:0 0 6px;cursor:pointer;opacity:0.4;">Equipped</button>
+    </div>
+    <button id="inv-close" onclick="toggleInv()" style="margin-left:10px;">✕</button>
+  </div>
+  <div id="mpanel-pack">
+    <div id="inv-overload">⚠ You are overloaded — drop something before picking up more.</div>
+    <div id="inv-list"></div>
+    <div id="inv-empty">Your pack is empty.</div>
+  </div>
+  <div id="mpanel-equip" style="display:none;">
+    <div id="equipped-list-mobile" style="display:flex;flex-direction:column;gap:6px;padding:4px 0;"></div>
+  </div>
+</div>
+
+<!-- NPC Dialogue Drawer -->
+<div id="npc-drawer">
+  <div id="npc-drawer-header">
+    <div id="npc-avatar">⚔</div>
+    <div style="flex:1;min-width:0;">
+      <div id="npc-drawer-name">—</div>
+      <div id="npc-drawer-role"></div>
+    </div>
+    <div id="npc-rep-badge"></div>
+    <button id="npc-shop-toggle" onclick="toggleShopPanel()" style="display:none;">🛒 Trade</button>
+    <button id="npc-close" onclick="closeNpcDrawer()">✕</button>
+  </div>
+  <div id="npc-convo-box"></div>
+  <div id="npc-shop-panel">
+    <div id="npc-shop-title">— Wares —</div>
+    <div id="npc-shop-items"></div>
+  </div>
+  <div id="npc-input-row">
+    <input id="npc-cmd" type="text" placeholder="Say something..." autocomplete="off" />
+    <button id="npc-send" onclick="sendNpcMessage()">Speak</button>
+  </div>
+</div>
+
+<!-- Scripts: config → world data → engine -->
+<script src="config.js"></script>
+<script src="worlds/verdania.js"></script>
+<script src="engine.js"></script>
+</body>
+</html>
