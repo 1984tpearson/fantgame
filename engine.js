@@ -535,7 +535,9 @@ async function generateNpcGreeting(npcId) {
     const data = await res.json();
     removeNpcTyping();
     const raw = data.choices?.[0]?.message?.content || '...';
-    const speech = raw.split('\n').filter(l => !l.trimStart().startsWith('JSON:')).join('\n').trim();
+    const speech = raw.split('\n')
+      .filter(l => !l.trim().startsWith('JSON:') && !l.trim().startsWith('{'))
+      .join('\n').replace(/\{[^}]*"dispositionDelta"[^}]*\}/g,'').replace(/`/g,'').trim();
     addNpcConvoLine(speech, 'npc');
     npcSession.history = [
       { role:'user', content: firstMeet ? 'First meeting greeting' : `Player returns. Memory: ${memSummary}` },
@@ -611,10 +613,13 @@ async function sendNpcMessage() {
     let jsonLine = '';
     const speechLines = [];
     for (const line of lines) {
-      if (line.startsWith('JSON:')) jsonLine = line.replace('JSON:','').trim();
+      const t = line.trim();
+      if (t.startsWith('JSON:')) jsonLine = t.replace('JSON:','').trim();
+      else if (t.startsWith('{') && t.includes('dispositionDelta')) jsonLine = t; // inline JSON
       else speechLines.push(line);
     }
-    const speech = speechLines.join('\n').trim();
+    // Strip any remaining JSON blobs or backticks from speech
+    const speech = speechLines.join('\n').replace(/\{[^}]*"dispositionDelta"[^}]*\}/g,'').replace(/`/g,'').trim();
     addNpcConvoLine(speech, 'npc');
     npcSession.history.push({ role:'assistant', content: raw });
     if (npcSession.history.length > 20) npcSession.history = npcSession.history.slice(-20);
