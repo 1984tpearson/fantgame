@@ -106,7 +106,7 @@ const DB = {
 // IMAGE GENERATION (DEZGO)
 // ═══════════════════════════════════════════════════
 async function generateSceneImage(description, cellKeyStr) {
-  if (!CONFIG.ENABLE_IMAGES || !CONFIG.DEZGO_API_KEY || CONFIG.DEZGO_API_KEY === 'YOUR_DEZGO_KEY_HERE') return null;
+  if (!CONFIG.ENABLE_IMAGES) return null;
   try {
     const prompt = `${description}, ${CONFIG.IMAGE_STYLE_SUFFIX}`;
     const form = new FormData();
@@ -120,9 +120,13 @@ async function generateSceneImage(description, cellKeyStr) {
     form.append('sampler', CONFIG.IMAGE_SAMPLER);
     form.append('format', 'png');
 
-    const res = await fetch(`${CONFIG.DEZGO_BASE_URL}/text2image_sdxl`, {
+    // Request goes to our Edge Function — Dezgo key never touches the browser
+    const res = await fetch(CONFIG.IMAGE_PROXY_URL, {
       method: 'POST',
-      headers: { 'X-Dezgo-Key': CONFIG.DEZGO_API_KEY },
+      headers: {
+        'apikey': CONFIG.SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+      },
       body: form
     });
 
@@ -463,12 +467,12 @@ async function generateNpcGreeting(npcId) {
   const memSummary = ns.memory.length ? ns.memory.slice(-3).join('; ') : 'no prior history';
   addNpcTyping();
   try {
-    const res = await fetch(`${CONFIG.OPENROUTER_BASE_URL}/chat/completions`, {
+    const res = await fetch(CONFIG.AI_PROXY_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${CONFIG.OPENROUTER_API_KEY}`,
-        'HTTP-Referer': window.location.origin,
+        'apikey': CONFIG.SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
         model: CONFIG.TEXT_MODEL,
@@ -538,12 +542,12 @@ async function sendNpcMessage() {
   npcSession.history.push({ role:'user', content: text });
   addNpcTyping();
   try {
-    const res = await fetch(`${CONFIG.OPENROUTER_BASE_URL}/chat/completions`, {
+    const res = await fetch(CONFIG.AI_PROXY_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${CONFIG.OPENROUTER_API_KEY}`,
-        'HTTP-Referer': window.location.origin,
+        'apikey': CONFIG.SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
         model: CONFIG.TEXT_MODEL,
@@ -896,12 +900,12 @@ NPC SPAWN: npcSpawn: {"name":"...","role":"...","faction":"...","emoji":"...","p
 async function callAI(messages, actionOnly=false) {
   addTypingIndicator();
   try {
-    const res = await fetch(`${CONFIG.OPENROUTER_BASE_URL}/chat/completions`, {
+    const res = await fetch(CONFIG.AI_PROXY_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${CONFIG.OPENROUTER_API_KEY}`,
-        'HTTP-Referer': window.location.origin,
+        'apikey': CONFIG.SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({
         model: CONFIG.TEXT_MODEL,
