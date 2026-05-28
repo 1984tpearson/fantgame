@@ -696,7 +696,7 @@ async function saveState() {
       player: state.player, wallet: state.wallet, inventory: state.inventory,
       equipped: state.equipped, skills: state.skills, world_state: state.worldState,
       layer_history: state.layerHistory, blocked_by: state.blockedBy,
-      npcs: state.npcs  // stored in meta for now
+      meta: { npcs: state.npcs }
     }).catch(() => {});
   }
 }
@@ -920,14 +920,17 @@ async function callAI(messages, actionOnly=false) {
     removeTypingIndicator();
     const raw = data.choices?.[0]?.message?.content || '';
     let location='', situation='', notice='', imageSubject='', meta={};
-    const lines = raw.split('\n');
+    // Normalise markdown bold labels e.g. **LOCATION:** → LOCATION:
+    const normalised = raw.replace(/\*\*([A-Z_]+):\*\*/g, '$1:').replace(/\*\*([A-Z_]+)\*\*:/g, '$1:');
+    const lines = normalised.split('\n');
     let jsonStr = '';
     for (const line of lines) {
-      if (line.startsWith('LOCATION:')) location = line.replace('LOCATION:','').trim();
-      else if (line.startsWith('SITUATION:')) situation = line.replace('SITUATION:','').trim();
-      else if (line.startsWith('NOTICE:')) notice = line.replace('NOTICE:','').trim();
-      else if (line.startsWith('IMAGE_SUBJECT:')) imageSubject = line.replace('IMAGE_SUBJECT:','').trim();
-      else if (line.startsWith('JSON:')) jsonStr = line.replace('JSON:','').trim();
+      const t = line.trim();
+      if (t.startsWith('LOCATION:')) location = t.replace('LOCATION:','').trim();
+      else if (t.startsWith('SITUATION:')) situation = t.replace('SITUATION:','').trim();
+      else if (t.startsWith('NOTICE:')) notice = t.replace('NOTICE:','').trim();
+      else if (t.startsWith('IMAGE_SUBJECT:')) imageSubject = t.replace('IMAGE_SUBJECT:','').trim();
+      else if (t.startsWith('JSON:')) jsonStr = t.replace('JSON:','').trim();
     }
     if (!jsonStr) jsonStr = lines[lines.length-1].trim();
     try {
@@ -938,6 +941,11 @@ async function callAI(messages, actionOnly=false) {
       if (m) try { meta = JSON.parse(m[0]); } catch(e2) {}
       if (!location && !situation) location = raw.replace(/\{[\s\S]*\}/,'').replace(/JSON:.*/g,'').replace(/IMAGE_SUBJECT:.*/g,'').trim();
     }
+    // Strip any leaked JSON or backticks from display fields
+    const stripMeta = (s) => s.replace(/```[\s\S]*?```/g,'').replace(/\{[\s\S]*\}/g,'').replace(/`/g,'').trim();
+    location = stripMeta(location);
+    situation = stripMeta(situation);
+    notice = stripMeta(notice);
     return { location, situation, notice, imageSubject, meta };
   } catch(e) {
     removeTypingIndicator();
