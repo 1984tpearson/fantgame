@@ -108,7 +108,7 @@ const DB = {
 async function generateSceneImage(description, cellKeyStr) {
   if (!CONFIG.ENABLE_IMAGES) return null;
   try {
-    const prompt = `${description}, ${CONFIG.IMAGE_STYLE_SUFFIX}`;
+    const prompt = `${CONFIG.IMAGE_STYLE_SUFFIX}, ${description}`;
     const form = new FormData();
     form.append('prompt', prompt);
     form.append('negative_prompt', CONFIG.IMAGE_NEGATIVE_PROMPT);
@@ -153,17 +153,63 @@ function applySceneBackground(imageUrl) {
     sceneBox.style.backgroundImage = '';
     sceneBox.style.backgroundSize = '';
     sceneBox.style.backgroundPosition = '';
-    sceneBox.style.backgroundAttachment = '';
+    document.getElementById('scene-img-btns')?.remove();
     return;
   }
   sceneBox.style.backgroundImage = `url('${imageUrl}')`;
   sceneBox.style.backgroundSize = 'cover';
   sceneBox.style.backgroundPosition = 'center';
-  sceneBox.style.backgroundAttachment = 'local';
-  // Darken text backgrounds for readability
+
+  // Add text backdrop to all existing messages
   document.querySelectorAll('.message').forEach(el => {
-    el.style.textShadow = '0 1px 4px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.7)';
+    el.style.background = 'rgba(10,8,6,0.55)';
+    el.style.borderRadius = '3px';
+    el.style.padding = '6px 10px';
   });
+
+  // Add/update scene image control buttons
+  let btns = document.getElementById('scene-img-btns');
+  if (!btns) {
+    btns = document.createElement('div');
+    btns.id = 'scene-img-btns';
+    btns.style.cssText = 'position:sticky;top:8px;right:0;display:flex;gap:6px;justify-content:flex-end;z-index:10;margin-bottom:6px;';
+    btns.innerHTML = `
+      <button onclick="toggleSceneText()" id="btn-toggle-text" style="background:rgba(10,8,6,0.7);border:1px solid rgba(201,148,58,0.4);color:var(--gold);font-size:0.65rem;font-family:'Cinzel Decorative',serif;padding:3px 8px;border-radius:3px;cursor:pointer;letter-spacing:0.06em;">Hide Text</button>
+      <button onclick="refreshSceneImage()" id="btn-refresh-img" style="background:rgba(10,8,6,0.7);border:1px solid rgba(201,148,58,0.4);color:var(--gold);font-size:0.65rem;font-family:'Cinzel Decorative',serif;padding:3px 8px;border-radius:3px;cursor:pointer;letter-spacing:0.06em;">⟳ Image</button>
+    `;
+    sceneBox.insertBefore(btns, sceneBox.firstChild);
+  }
+}
+
+let _textHidden = false;
+function toggleSceneText() {
+  _textHidden = !_textHidden;
+  const btn = document.getElementById('btn-toggle-text');
+  document.querySelectorAll('.message').forEach(el => {
+    el.style.display = _textHidden ? 'none' : '';
+  });
+  if (btn) btn.textContent = _textHidden ? 'Show Text' : 'Hide Text';
+}
+
+async function refreshSceneImage() {
+  const btn = document.getElementById('btn-refresh-img');
+  if (btn) { btn.textContent = '...'; btn.disabled = true; }
+  const key = cellKey(state.pos.x, state.pos.y);
+  const cell = state.cells[key];
+  // Build a fresh subject from current cell + north neighbour
+  const meta = getCellMeta(state.pos.x, state.pos.y);
+  const northMeta = getCellMeta(state.pos.x, state.pos.y - 1);
+  const northHint = (northMeta.type !== meta.type && northMeta.name) ? `, ${northMeta.name} to the north` : '';
+  const subject = `${cell?.locationName || terrainLabel(meta.type)}${northHint}`;
+  // Force a new filename so it doesn't serve the cached one
+  const newKey = key + '_' + Date.now();
+  const url = await generateSceneImage(subject, newKey);
+  if (url) {
+    applySceneBackground(url);
+    state.cells[key].imageUrl = url;
+    saveState();
+  }
+  if (btn) { btn.textContent = '⟳ Image'; btn.disabled = false; }
 }
 
 // ═══════════════════════════════════════════════════
@@ -829,9 +875,8 @@ const dirs={n:[0,-1],s:[0,1],e:[1,0],w:[-1,0],ne:[1,-1],nw:[-1,-1],se:[1,1],sw:[
 // ═══════════════════════════════════════════════════
 // UI HELPERS
 // ═══════════════════════════════════════════════════
-function addMessage(text,cls='scene',header=''){const box=document.getElementById('scene-box');const div=document.createElement('div');div.className=`message ${cls}`;if(header)div.innerHTML=`<div class="scene-header">${header}</div>`;div.innerHTML+=(text||'').replace(/\n/g,'<br>');// apply text shadow if background image is active
-if(box.style.backgroundImage)div.style.textShadow='0 1px 4px rgba(0,0,0,0.9),0 0 12px rgba(0,0,0,0.7)';box.appendChild(div);box.scrollTop=box.scrollHeight;}
-function addZones(locationName,location,situation,notice){const box=document.getElementById('scene-box');if(location){const d=document.createElement('div');d.className='message location';d.innerHTML=`<div class="scene-header">${locationName}</div>${location}`;if(box.style.backgroundImage)d.style.textShadow='0 1px 4px rgba(0,0,0,0.9),0 0 12px rgba(0,0,0,0.7)';d.style.animation='fadeIn 0.35s ease';box.appendChild(d);}if(situation){const d=document.createElement('div');d.className='message situation';d.textContent=situation;if(box.style.backgroundImage)d.style.textShadow='0 1px 4px rgba(0,0,0,0.9),0 0 12px rgba(0,0,0,0.7)';d.style.animation='fadeIn 0.35s ease 0.1s both';box.appendChild(d);}if(notice){const d=document.createElement('div');d.className='message notice';d.textContent=notice;if(box.style.backgroundImage)d.style.textShadow='0 1px 4px rgba(0,0,0,0.9),0 0 12px rgba(0,0,0,0.7)';d.style.animation='fadeIn 0.35s ease 0.2s both';box.appendChild(d);}box.scrollTop=box.scrollHeight;}
+function addMessage(text,cls='scene',header=''){const box=document.getElementById('scene-box');const div=document.createElement('div');div.className=`message ${cls}`;if(header)div.innerHTML=`<div class="scene-header">${header}</div>`;div.innerHTML+=(text||'').replace(/\n/g,'<br>');if(box.style.backgroundImage){div.style.background='rgba(10,8,6,0.55)';div.style.borderRadius='3px';div.style.padding='6px 10px';}if(_textHidden)div.style.display='none';box.appendChild(div);box.scrollTop=box.scrollHeight;}
+function addZones(locationName,location,situation,notice){const box=document.getElementById('scene-box');const hasBg=!!box.style.backgroundImage;const mkStyle=()=>hasBg?'background:rgba(10,8,6,0.55);border-radius:3px;padding:6px 10px;':'';if(location){const d=document.createElement('div');d.className='message location';d.innerHTML=`<div class="scene-header">${locationName}</div>${location}`;d.style.cssText=mkStyle();d.style.animation='fadeIn 0.35s ease';if(_textHidden)d.style.display='none';box.appendChild(d);}if(situation){const d=document.createElement('div');d.className='message situation';d.textContent=situation;d.style.cssText=mkStyle();d.style.animation='fadeIn 0.35s ease 0.1s both';if(_textHidden)d.style.display='none';box.appendChild(d);}if(notice){const d=document.createElement('div');d.className='message notice';d.textContent=notice;d.style.cssText=mkStyle();d.style.animation='fadeIn 0.35s ease 0.2s both';if(_textHidden)d.style.display='none';box.appendChild(d);}box.scrollTop=box.scrollHeight;}
 function addTypingIndicator(){const box=document.getElementById('scene-box');const d=document.createElement('div');d.className='message scene';d.id='typing';d.innerHTML='<div class="typing-dots"><span></span><span></span><span></span></div>';box.appendChild(d);box.scrollTop=box.scrollHeight;}
 function removeTypingIndicator(){const t=document.getElementById('typing');if(t)t.remove();}
 function setLoading(show,text='The world stirs...'){document.getElementById('loading-text').textContent=text;document.getElementById('loading-overlay').classList.toggle('visible',show);}
@@ -878,14 +923,14 @@ ${actionOnly?`ACTION MODE: Player acts. No location re-description. Omit LOCATIO
 RESPONSE FORMAT:
 SITUATION: <result, 1-2 sentences>
 NOTICE: <newly revealed, 1 sentence, omit if nothing>
-IMAGE_SUBJECT: <3-6 word visual subject for image generation, e.g. "dimly lit stone dungeon corridor", omit if no significant visual change>
+IMAGE_SUBJECT: <3-6 word visual subject for image generation. Include what lies to the north if notable, e.g. "lush forest path, distant city walls north", "mossy stone crossroads, mountain peaks beyond", omit if no significant visual change>
 JSON: {"locationName":null,"exits":null,"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null}`:
 `ENTRY MODE: Player just arrived.
 RESPONSE FORMAT:
 LOCATION: <place description, 1-2 sentences>
 SITUATION: <current activity, 1-2 sentences, omit if nothing>
 NOTICE: <interactable detail, 1 sentence, omit if nothing>
-IMAGE_SUBJECT: <3-6 word visual subject for image generation, e.g. "cobblestone market street with stalls">
+IMAGE_SUBJECT: <3-6 word visual subject. Include what lies to the north if notable, e.g. "cobblestone market street, castle towers north">
 JSON: {"locationName":"...","exits":{"n":true,"s":true,"e":true,"w":true},"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null}`}
 
 CURRENCY RULES: coinsAwarded/coinsLost: {"currency":"copper"|"silver"|"gold","amount":N}. Null if none. NEVER put coins in inventoryAdd.
