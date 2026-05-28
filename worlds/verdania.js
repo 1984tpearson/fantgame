@@ -5,6 +5,7 @@
 // change WORLD_ID, and swap the <script> tag in index.html.
 // ═══════════════════════════════════════════════════
 
+(function() {
 const WORLD_ID = 'verdania';
 const WORLD_NAME = 'Valdenmere';
 
@@ -418,3 +419,4 @@ window.WORLD_DATA = {
   npcTemplates: NPC_TEMPLATES,
   factions: FACTIONS,
 };
+})();
