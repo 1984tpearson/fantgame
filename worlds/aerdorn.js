@@ -1,3 +1,4 @@
+﻿(function(){
 // ═══════════════════════════════════════════════════
 // AERDORN — WORLD DATA  
 // Grid: 4000 x 7100 squares @ ~35m per square
@@ -511,3 +512,5 @@ window.WORLD_DATA = {
   npcTemplates:          NPC_TEMPLATES,
   factions:              FACTIONS,
 };
+
+})();
