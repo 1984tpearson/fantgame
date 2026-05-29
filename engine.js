@@ -9,7 +9,9 @@ const T = window.T = {
   OCEAN:'ocean', PLAINS:'plains', FOREST:'forest', MOUNTAIN:'mountain',
   CITY:'city', TOWN:'town', VILLAGE:'village', ROAD:'road', FARMLAND:'farmland', RIVER:'river',
   STREET:'street', BUILDING:'building', DOOR:'door', WALL:'wall',
-  COURTYARD:'courtyard', MARKET:'market', DOCKS:'docks', GATE:'gate', INTERIOR:'interior'
+  COURTYARD:'courtyard', MARKET:'market', DOCKS:'docks', GATE:'gate', INTERIOR:'interior',
+  SWAMP:'swamp', BOG:'bog', WILDS:'wilds', FENS:'fens', SHORE:'shore', PEAKS:'peaks',
+  CASTLE:'castle', KEEP:'keep', RUINS:'ruins'
 };
 
 // ── WORLD DATA REFERENCES ──────────────────────────
@@ -598,7 +600,7 @@ PERSONALITY: ${tmpl.personality}
 FACTION: ${FACTIONS[tmpl.faction]?.name || tmpl.faction}. Faction rep with player: ${factionRep > 0 ? '+'+factionRep : factionRep} (${dl.label}).
 DISPOSITION toward player: ${disp.toFixed(0)} / 100 (${dl.label}).
 YOUR MEMORY of this player: ${memStr}
-WORLD: Valdenmere kingdom. Day ${Math.floor(state.player.day)}.
+WORLD: The Kingdom of Aerdorn. Day ${Math.floor(state.player.day)}.
 PLAYER WALLET: ${formatWallet()}. Inventory: ${state.inventory.map(i=>i.name).join(', ')||'nothing notable'}.
 ${hasTrader ? `You are a trader. Mention wares exist — UI shows them separately. Don't list prices in dialogue.` : ''}
 RULES:
@@ -867,7 +869,7 @@ async function saveState() {
     skills:state.skills, worldState:state.worldState, npcs:state.npcs,
     pos:state.pos, lastOverworldPos:state.lastOverworldPos, blockedBy:state.blockedBy
   });
-  try { localStorage.setItem('valdenmere-state', localData); } catch(e) {}
+  try { localStorage.setItem('aerdorn-state', localData); } catch(e) {}
 
   // Also save to Supabase (non-blocking)
   if (CONFIG.ENABLE_SUPABASE) {
@@ -903,7 +905,7 @@ async function loadState() {
       state.blockedBy = row.blocked_by || null;
       if (row.npcs) state.npcs = row.npcs;
       // Cells still from localStorage (large data)
-      const raw = localStorage.getItem('valdenmere-state');
+      const raw = localStorage.getItem('aerdorn-state');
       if (raw) {
         const s = JSON.parse(raw);
         state.cells = s.cells || {};
@@ -915,7 +917,7 @@ async function loadState() {
   }
   // localStorage fallback
   try {
-    const raw = localStorage.getItem('valdenmere-state');
+    const raw = localStorage.getItem('aerdorn-state');
     if (raw) {
       const s = JSON.parse(raw);
       state.layer = s.layer || 'overworld';
@@ -946,8 +948,8 @@ async function loadState() {
 // ═══════════════════════════════════════════════════
 // TERRAIN / MAP HELPERS
 // ═══════════════════════════════════════════════════
-function getCellMeta(x,y){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];return s?.map[`${x},${y}`]||{type:T.COURTYARD,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${x},${y}`]||{type:T.PLAINS,name:''};}
-function terrainLabel(type){return{ocean:'Ocean',plains:'Plains',forest:'Forest',mountain:'Mountains',city:'City',town:'Town',village:'Village',road:'Road',farmland:'Farmland',river:'River',street:'Street',building:'Building',door:'Doorway',wall:'Wall',courtyard:'Courtyard',market:'Market',docks:'Docks',gate:'Gate',interior:'Interior'}[type]||'Wilderness';}
+function getCellMeta(x,y){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];return s?.map[`${x},${y}`]||{type:T.COURTYARD,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${x},${y}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(x,y):null)||{type:T.PLAINS,name:''};}
+function terrainLabel(type){return{ocean:'Ocean',plains:'Plains',forest:'Forest',mountain:'Mountains',city:'City',town:'Town',village:'Village',road:'Road',farmland:'Farmland',river:'River',street:'Street',building:'Building',door:'Doorway',wall:'Wall',courtyard:'Courtyard',market:'Market',docks:'Docks',gate:'Gate',interior:'Interior',swamp:'Swamp',bog:'Bog',wilds:'Wilds',fens:'Fens',shore:'Shore',peaks:'Peaks',castle:'Castle',keep:'Keep',ruins:'Ruins'}[type]||'Wilderness';}
 function getNeighbourMeta(x,y){return{n:getCellMeta(x,y-1),s:getCellMeta(x,y+1),e:getCellMeta(x+1,y),w:getCellMeta(x-1,y)};}
 function isTraversable(type){return type!==T.OCEAN&&type!==T.WALL&&type!==T.BUILDING;}
 
@@ -987,12 +989,26 @@ function updateLayerBadge(){
 // CANVAS MAP
 // ═══════════════════════════════════════════════════
 const CELL_PX=16;
-const TERRAIN_HEX={ocean:'#1a2d3a',plains:'#3a4a2a',forest:'#1e3a1e',mountain:'#4a4040',city:'#6a5030',town:'#5a4525',village:'#4a3a20',road:'#3a4a2a',farmland:'#4a4a20',river:'#3a4a2a',unknown:'#181410',street:'#4a3e30',building:'#5a3a20',door:'#7a5030',wall:'#3a3030',courtyard:'#3a4228',market:'#5a4a28',docks:'#2a3a4a',gate:'#6a5540',interior:'#3a2a18'};
+const TERRAIN_HEX={ocean:'#1a2d3a',plains:'#3a4a2a',forest:'#1e3a1e',mountain:'#4a4040',city:'#6a5030',town:'#5a4525',village:'#4a3a20',road:'#3a4a2a',farmland:'#4a4a20',river:'#3a4a2a',unknown:'#181410',street:'#4a3e30',building:'#5a3a20',door:'#7a5030',wall:'#3a3030',courtyard:'#3a4228',market:'#5a4a28',docks:'#2a3a4a',gate:'#6a5540',interior:'#3a2a18',swamp:'#2a3a28',bog:'#2a3828',wilds:'#162a16',fens:'#263428',shore:'#3a4a40',peaks:'#4a4448',castle:'#5a4838',keep:'#604830',ruins:'#3a3228'};
 let mapView={x:0,y:0,scale:1,travelTarget:null};
-function getVisibleCellMeta(cx,cy){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];return s?.map[`${cx},${cy}`]||{type:T.COURTYARD,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${cx},${cy}`]||{type:T.PLAINS,name:''};}
+function getVisibleCellMeta(cx,cy){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];return s?.map[`${cx},${cy}`]||{type:T.COURTYARD,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${cx},${cy}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(cx,cy):null)||{type:T.PLAINS,name:''};}
 function drawMapCanvas(){const canvas=document.getElementById('map-canvas');if(!canvas)return;const hEl=document.getElementById('map-drawer-header'),lEl=document.getElementById('map-legend');const hH=hEl?hEl.offsetHeight:44,lH=lEl?lEl.offsetHeight:32;const W=window.innerWidth,H=window.innerHeight-hH-lH;if(W<10||H<10)return;if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H;canvas.style.width=W+'px';canvas.style.height=H+'px';}
 const ctx=canvas.getContext('2d');ctx.clearRect(0,0,W,H);const cs=CELL_PX*mapView.scale;const{x:px,y:py}=state.pos;const ox=W/2-(px*cs)+mapView.x,oy=H/2-(py*cs)+mapView.y;const x0=Math.floor(-ox/cs)-2,y0=Math.floor(-oy/cs)-2,x1=Math.floor((W-ox)/cs)+2,y1=Math.floor((H-oy)/cs)+2;const lt=new Set();const ss=seenSet();
-for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){try{const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],seen=ss.has(`${cx},${cy}`),isCurrent=cx===px&&cy===py;const sx=ox+cx*cs,sy=oy+cy*cs;const isLinear=meta.type==='road'||meta.type==='river';const bgType=isLinear?'plains':meta.type;ctx.globalAlpha=1;ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs-1,cs-1);ctx.globalAlpha=1;
+// ── WORLD MAP IMAGE BACKGROUND ──────────────────────
+if(state.layer==='overworld'&&window.WORLD_MAP_IMAGE){
+  if(!window._worldMapImg){window._worldMapImg=new Image();window._worldMapImg.src=window.WORLD_MAP_IMAGE;window._worldMapImg.onload=()=>drawMapCanvas();}
+  if(window._worldMapImg.complete&&window._worldMapImg.naturalWidth>0){
+    const iX0=window.WORLD_MAP_IMG_X0||8,iY0=window.WORLD_MAP_IMG_Y0||38,iCW=window.WORLD_MAP_IMG_W||553,iCH=window.WORLD_MAP_IMG_H||974,gW=window.WORLD_MAP_GRID_W||4000,gH=window.WORLD_MAP_GRID_H||7100;
+    const ppsX=iCW/gW,ppsY=iCH/gH,cpiX=cs/ppsX,cpiY=cs/ppsY;
+    const iox=ox+(-iX0/ppsX)*cs,ioy=oy+(-iY0/ppsY)*cs;
+    const dW=window._worldMapImg.naturalWidth*cpiX,dH=window._worldMapImg.naturalHeight*cpiY;
+    ctx.globalAlpha=window.WORLD_MAP_IMG_ALPHA||0.55;
+    ctx.drawImage(window._worldMapImg,iox,ioy,dW,dH);
+    ctx.globalAlpha=1;
+  }
+}
+// ────────────────────────────────────────────────────
+for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){try{const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],seen=ss.has(`${cx},${cy}`),isCurrent=cx===px&&cy===py;const sx=ox+cx*cs,sy=oy+cy*cs;const isLinear=meta.type==='road'||meta.type==='river';const bgType=isLinear?'plains':meta.type;const tAlpha=(state.layer==='overworld'&&window.WORLD_MAP_IMAGE)?0.28:1;ctx.globalAlpha=tAlpha;ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs-1,cs-1);ctx.globalAlpha=1;
 if(isLinear){ctx.globalAlpha=0.9;const fn=meta.type==='river'?isRiverType:isRoadType;const conn=getConnectionsAt(cx,cy,fn);const cc=cs/2;ctx.strokeStyle=meta.type==='river'?'#5aaad4':'#c8a878';ctx.lineWidth=meta.type==='river'?cs*0.22:cs*0.16;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();const{n,s,e,w}=conn;const cnt=[n,s,e,w].filter(Boolean).length;if(cnt>0){if(n&&s&&!e&&!w){ctx.moveTo(sx+cc,sy);ctx.lineTo(sx+cc,sy+cs);}else if(e&&w&&!n&&!s){ctx.moveTo(sx,sy+cc);ctx.lineTo(sx+cs,sy+cc);}else if(n&&e&&!s&&!w){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(n&&w&&!s&&!e){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else if(s&&e&&!n&&!w){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(s&&w&&!n&&!e){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else{if(n||s){ctx.moveTo(sx+cc,n?sy:sy+cc);ctx.lineTo(sx+cc,s?sy+cs:sy+cc);}if(e||w){ctx.moveTo(w?sx:sx+cc,sy+cc);ctx.lineTo(e?sx+cs:sx+cc,sy+cc);}}ctx.stroke();}ctx.globalAlpha=1;}
 if(meta.type===T.DOOR||meta.type===T.GATE){ctx.globalAlpha=0.8;ctx.fillStyle='#e8b84b';ctx.fillRect(sx+cs*0.35,sy+cs*0.35,cs*0.3,cs*0.3);ctx.globalAlpha=1;}
 if(mapView.travelTarget&&mapView.travelTarget.x===cx&&mapView.travelTarget.y===cy){ctx.strokeStyle='#e8b84b';ctx.lineWidth=2;ctx.strokeRect(sx+1,sy+1,cs-3,cs-3);}
@@ -1046,7 +1062,7 @@ function closeItemUse(){document.getElementById('item-use-drawer').classList.rem
 // ═══════════════════════════════════════════════════
 // AI — MAIN GAME (via OpenRouter)
 // ═══════════════════════════════════════════════════
-function layerContext(){if(state.layer==='interior')return'INTERIOR SCALE: 1m per cell. Inside a building. Describe room details: furniture, light, smells, sounds, occupants.';if(state.layer==='settlement'){const name=SETTLEMENTS[state.settlementId]?.name||state.settlementId;return`SETTLEMENT SCALE: 5m per cell. Inside ${name}. Describe street-scale details: stalls, doorways, crowds, signage, cobblestones.`;}return'OVERWORLD SCALE: 50m per cell. Describe landscape: terrain, weather, distant landmarks.';}
+function layerContext(){if(state.layer==='interior')return'INTERIOR SCALE: 1m per cell. Inside a building. Describe room details: furniture, light, smells, sounds, occupants.';if(state.layer==='settlement'){const name=SETTLEMENTS[state.settlementId]?.name||state.settlementId;return`SETTLEMENT SCALE: 5m per cell. Inside ${name}. Describe street-scale details: stalls, doorways, crowds, signage, cobblestones.`;}return'OVERWORLD SCALE: ~35m per cell across a large island kingdom. Describe landscape, weather, distant landmarks, feel of the region.';}
 
 function buildNpcContextForSystemPrompt(){const present=getNpcsAtCurrentLocation();if(present.length===0)return'';const lines=present.map(id=>{const tmpl=NPC_TEMPLATES[id];const disp=getNpcDisposition(id);const dl=dispositionLabel(disp);const ns=getNpcState(id);const mem=ns.memory.length?ns.memory.slice(-2).join('; '):'not yet met';return`  - ${tmpl.name} (${tmpl.role}): disposition=${dl.label}, memory="${mem}"`;});return`\nNPCS PRESENT HERE:\n${lines.join('\n')}\nIf the player tries to talk to one, mention they can use the Talk button or type "talk to [name]".`;}
 
@@ -1064,8 +1080,8 @@ function buildSystemPrompt(actionOnly=false){
 
 PLAYER NAME: ${playerName}
 
-WORLD: Valdenmere kingdom. Ironhaven (capital), Thornwick (large town, SW), Saltmere (port, SE), Greyveil (village, NE foothills), Dunrock (village, W farmlands). Terrain: plains, Ashwood Forest (W), Greymount Range (NE), River Veld. Tone: gritty, vivid, grounded. Think early Tolkien with real danger.
-COORDINATE SYSTEM: Lower Y = further north. Higher Y = further south. Ironhaven is NORTH of the starting position. When describing directions to named places, use this: if a place has lower Y coords it is north, higher Y is south.
+WORLD: The Kingdom of Aerdorn, a large island. Aethel-Keep (capital NW ~1114,2092), Weaver's Deep (port N ~2076,1181), High-Crown Castle (royal seat centre ~2025,3171), Gladehome (E ~2488,1677), Sylvanis-Root (deep wilds ~2705,3309), Briar-Town (far E ~3212,3528), Frilar-Town (S fens ~2778,4447), Harvestfell (S coast ~1519,5154). Terrain: Verdant Heart (NW forest), Eldritch Wilds (dark E forest), Great Bog (central), Shadow Fens (SE), Azure Shore (S coast), Sunset Peaks (W spine), Wyvern's Spine (central ridge). Tone: gritty, vivid, grounded. Think early Tolkien with real danger.
+COORDINATE SYSTEM: Lower Y = north. Higher Y = south. Higher X = east. Lower X = west.
 
 ${layerContext()}
 
@@ -1457,7 +1473,7 @@ document.addEventListener('keydown', e => {
 // INIT
 // ═══════════════════════════════════════════════════
 async function clearSave() {
-  try { localStorage.removeItem('valdenmere-state'); } catch(e) {}
+  try { localStorage.removeItem('aerdorn-state'); } catch(e) {}
   if (CONFIG.ENABLE_SUPABASE) {
     await DB.query(`player_state?world_id=eq.${WORLD_DATA.id}&player_id=eq.default`, 'DELETE').catch(()=>{});
   }
@@ -1502,11 +1518,15 @@ async function init() {
     const hadSave = await loadState();
     updateStats(); updateLayerBadge(); renderMinimap();
     if (hadSave) {
-      addMessage(`You find yourself once again in Valdenmere.`, 'system');
+      addMessage(`You find yourself once again in the Kingdom of Aerdorn.`, 'system');
       // Restore cached background image if available, or use placeholder
       const key = cellKey(state.pos.x, state.pos.y);
       if (state.cells[key]?.imageUrl) applySceneBackground(state.cells[key].imageUrl);
       else if (!CONFIG.ENABLE_IMAGES) applySceneBackground('background.png');
+      // If saved inside a settlement, reset to entryPos to avoid north/south confusion
+      if (state.layer === 'settlement' && state.settlementId && SETTLEMENTS[state.settlementId]) {
+        state.pos = { ...SETTLEMENTS[state.settlementId].entryPos };
+      }
       _suppressTransitions = true;
       await enterCell(state.pos.x, state.pos.y);
       _suppressTransitions = false;
@@ -1521,8 +1541,8 @@ async function init() {
         {name:'Dried Sprig of Wolfsbane'}
       ];
       state.inventory = [{ name:'Heel of Bread' }, ri[Math.floor(Math.random() * ri.length)]];
-      addMessage(`Welcome to Valdenmere.`, 'system');
-      await enterCell(0, 0);
+      addMessage(`Welcome to the Kingdom of Aerdorn.`, 'system');
+      await enterCell(1114, 2094);
     }
   } catch(e) {
     console.error('Init error:', e);

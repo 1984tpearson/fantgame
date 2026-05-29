@@ -117,7 +117,7 @@
   .mmc.current::after { content: ''; position: absolute; inset: 3px; background: var(--gold-light); border-radius: 50%; animation: pulse 1.5s ease infinite; }
   @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.75); } }
   @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  .t-ocean{background:#1a2d3a}.t-plains{background:#3a4a2a}.t-forest{background:#1e3a1e}.t-mountain{background:#4a4040}.t-city{background:#6a5030}.t-town{background:#5a4525}.t-village{background:#4a3a20}.t-road{background:#3a4a2a}.t-farmland{background:#4a4a20}.t-river{background:#3a4a2a}.t-unknown{background:#181410;border:1px solid rgba(255,255,255,0.04)}.t-street{background:#4a3e30}.t-building{background:#5a3a20}.t-interior{background:#3a2a18}.t-door{background:#7a5030}.t-wall{background:#3a3030}.t-courtyard{background:#3a4228}.t-market{background:#5a4a28}.t-docks{background:#2a3a4a}.t-gate{background:#6a5540}
+  .t-ocean{background:#1a2d3a}.t-plains{background:#3a4a2a}.t-forest{background:#1e3a1e}.t-mountain{background:#4a4040}.t-city{background:#6a5030}.t-town{background:#5a4525}.t-village{background:#4a3a20}.t-road{background:#3a4a2a}.t-farmland{background:#4a4a20}.t-river{background:#3a4a2a}.t-unknown{background:#181410;border:1px solid rgba(255,255,255,0.04)}.t-street{background:#4a3e30}.t-building{background:#5a3a20}.t-interior{background:#3a2a18}.t-door{background:#7a5030}.t-wall{background:#3a3030}.t-courtyard{background:#3a4228}.t-market{background:#5a4a28}.t-docks{background:#2a3a4a}.t-gate{background:#6a5540}.t-swamp{background:#2a3a28}.t-bog{background:#2a3828}.t-wilds{background:#162a16}.t-fens{background:#263428}.t-shore{background:#3a4a40}.t-peaks{background:#4a4448}.t-castle{background:#5a4838}.t-keep{background:#604830}.t-ruins{background:#3a3228}
   .mmc svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
   #legend { display: flex; flex-wrap: wrap; gap: 3px 10px; }
   .leg-item { display: flex; align-items: center; gap: 4px; font-size: 0.65rem; color: var(--stone-light); }
@@ -297,8 +297,9 @@
   <div id="sidebar-desktop" style="display:none">
     <div class="dpanel">
       <div class="dpanel-title" style="display:flex;align-items:center;" id="map-panel-title"><span style="flex:1">— Known World —</span><button onclick="toggleMap()" style="background:none;border:1px solid rgba(201,148,58,0.25);color:var(--gold);font-size:0.6rem;font-family:'Cinzel Decorative',serif;padding:2px 7px;border-radius:3px;cursor:pointer;letter-spacing:0.05em;">Expand</button></div>
-      <div style="font-size:0.55rem;color:var(--stone);text-align:center;padding:3px 0 0;letter-spacing:0.08em;">N↑</div>
+      <div style="font-size:0.55rem;color:var(--stone);display:flex;justify-content:space-between;padding:2px 10px 0;letter-spacing:0.08em;"><span>W</span><span style="color:rgba(201,148,58,0.6)">N↑</span><span>E</span></div>
       <div id="minimap-desktop"></div>
+      <div style="font-size:0.55rem;color:var(--stone);text-align:center;padding:0 0 2px;letter-spacing:0.08em;">S↓</div>
       <div id="legend-desktop"></div>
     </div>
     <div class="dpanel" id="dstats">
@@ -424,7 +425,7 @@
 
 <!-- Scripts: config → world data → engine -->
 <script src="config.js"></script>
-<script src="worlds/verdania.js"></script>
+<script src="worlds/aerdorn.js"></script>
 <script src="engine.js"></script>
 </body>
 </html>
