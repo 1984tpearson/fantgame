@@ -400,6 +400,10 @@
     <input id="npc-cmd" type="text" placeholder="Say something..." autocomplete="off" />
     <button id="npc-send" onclick="sendNpcMessage()">Speak</button>
   </div>
+  <div id="npc-forced-actions" style="display:none;flex-shrink:0;display:none;gap:8px;padding:0 10px 10px;">
+    <button onclick="npcForcedFight()" style="flex:1;background:rgba(180,50,40,0.15);border:1px solid rgba(212,80,60,0.5);color:#e07060;font-family:'Crimson Pro',serif;font-size:0.95rem;padding:8px;border-radius:4px;cursor:pointer;-webkit-tap-highlight-color:transparent;">⚔ Fight</button>
+    <button onclick="npcForcedFlee()" style="flex:1;background:rgba(120,120,40,0.12);border:1px solid rgba(180,180,60,0.4);color:#c8c860;font-family:'Crimson Pro',serif;font-size:0.95rem;padding:8px;border-radius:4px;cursor:pointer;-webkit-tap-highlight-color:transparent;">💨 Flee</button>
+  </div>
 </div>
 
 <!-- Scripts: config → world data → engine -->

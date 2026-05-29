@@ -485,6 +485,10 @@ function openNpcDrawer(npcId, forced = false) {
 
   document.getElementById('npc-cmd').focus();
   generateNpcGreeting(npcId, forced);
+
+  // Show fight/flee buttons in forced mode
+  const actionBar = document.getElementById('npc-forced-actions');
+  if (actionBar) actionBar.style.display = forced ? 'flex' : 'none';
 }
 
 function closeNpcDrawer() {
@@ -501,6 +505,8 @@ function releaseNpcDrawer() {
   npcSession.forced = false;
   const closeBtn = document.getElementById('npc-close');
   if (closeBtn) closeBtn.style.display = '';
+  const actionBar = document.getElementById('npc-forced-actions');
+  if (actionBar) actionBar.style.display = 'none';
   if (state.blockedBy === npcSession.npcId) {
     state.blockedBy = null;
     document.getElementById('blocked-notice')?.remove();
@@ -809,6 +815,22 @@ function declineEscort(npcId) {
   document.querySelectorAll('.npc-choice-btn').forEach(b => b.remove());
   releaseNpcDrawer();
   addNpcConvoLine('Very well.', 'npc');
+}
+
+function npcForcedFight() {
+  const npcId = npcSession.npcId;
+  if (!npcId) return;
+  const tmpl = NPC_TEMPLATES[npcId];
+  addNpcConvoLine(`*You go for ${tmpl?.name || 'them'}*`, 'player-said');
+  executeNpcAction({ type: 'combat', reason: 'Player initiated attack.' }, npcId);
+}
+
+function npcForcedFlee() {
+  const npcId = npcSession.npcId;
+  if (!npcId) return;
+  // Send as a message so the NPC can react — guard will escalate to combat
+  document.getElementById('npc-cmd').value = '*I try to push past and flee*';
+  sendNpcMessage();
 }
 
 async function doLayerMove(dest) {
