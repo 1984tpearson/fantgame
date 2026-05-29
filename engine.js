@@ -498,9 +498,8 @@ function closeNpcDrawer() {
 }
 
 function releaseNpcDrawer() {
-  // Called when forced conversation ends (unblock, combat, flee)
   npcSession.forced = false;
-  const closeBtn = document.getElementById('npc-close-btn');
+  const closeBtn = document.getElementById('npc-close');
   if (closeBtn) closeBtn.style.display = '';
   if (state.blockedBy === npcSession.npcId) {
     state.blockedBy = null;
@@ -604,14 +603,14 @@ npcAction options (null in most cases):
 - {"type":"combat","reason":"..."} — Attack. Use when: player attacks you, threatens with weapon at disposition < -30, commits crime you witness, deeply provocative act at very low disposition. NOT for mere rudeness.
 - {"type":"block","reason":"..."} — Bar path. For guards checking papers, toll collectors, suspicious sentries. Always explain why.
 - {"type":"unblock"} — Step aside. Player has satisfied your requirements (paid, showed papers, persuaded you).
-- {"type":"flee","reason":"..."} — Player breaks away (says 'leave me alone', 'step aside', 'I'm going', tries to push past). Only if your disposition/situation would allow it — a hostile guard would NOT let them go easily.
+- {"type":"flee","reason":"..."} — Player breaks away (says 'leave me alone', 'step aside', 'I'm going', tries to push past). GUARDS and soldiers NEVER allow this — respond with combat instead. Other NPCs may allow it if disposition and situation permit.
 - {"type":"force_move","hostile":true|false,"playerRestrained":false,"dest":{"layer":"...","settlementId":"...","interiorId":"...","x":0,"y":0},"reason":"...","narrativeNote":"1 sentence"}
   hostile=false: FRIENDLY escort — player asked to be taken somewhere. Player gets Go/Resist/Decline buttons.
   hostile=true: forced — arrest, ejection, dragged away. No choice given.
   playerRestrained=true: player unconscious or bound — no choice.
   Known interiorIds: ironhaven_inn_south, ironhaven_forge, ironhaven_alchemist, ironhaven_barracks.
 
-GUARD BEHAVIOUR: block on approach → unblock if convinced → combat if attacked → force_move (hostile=true) if arresting.
+GUARD BEHAVIOUR: block on approach → unblock if convinced → combat if attacked OR if player tries to flee/push past → force_move (hostile=true) if arresting.
 ESCORT: player asks to be guided → force_move (hostile=false) with natural narrativeNote.`;
 }
 
