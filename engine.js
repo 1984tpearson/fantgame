@@ -962,7 +962,25 @@ async function enterSettlement(id){const s=SETTLEMENTS[id];if(!s)return;state.la
 async function enterInterior(id,ep){state.layerHistory.push({layer:state.layer,settlementId:state.settlementId,interiorId:state.interiorId,pos:{...state.pos}});state.layer='interior';state.interiorId=id;state.pos={...ep}||{x:1,y:1};const dc=state.cells[`${state.layerHistory[state.layerHistory.length-1]?.settlementId}:${state.layerHistory[state.layerHistory.length-1]?.pos?.x},${state.layerHistory[state.layerHistory.length-1]?.pos?.y}`];addMessage(`You step inside ${dc?.locationName||'the building'}.`,'transition');updateLayerBadge();_suppressTransitions=true;_inTransition=true;await enterCell(state.pos.x,state.pos.y);_inTransition=false;_suppressTransitions=false;await saveState();}
 async function exitLayer(){if(state.layerHistory.length===0)return;if(npcSession.isOpen)closeNpcDrawer();state.blockedBy=null;document.getElementById('blocked-notice')?.remove();const prev=state.layerHistory.pop();if(state.layer==='interior')addMessage(`You step back outside.`,'transition');else if(state.layer==='settlement')addMessage(`You pass back through the gates of ${SETTLEMENTS[state.settlementId]?.name||'the settlement'}.`,'transition');state.layer=prev.layer;state.settlementId=prev.settlementId;state.interiorId=prev.interiorId;state.pos={...prev.pos};updateLayerBadge();_suppressTransitions=true;_inTransition=true;await enterCell(state.pos.x,state.pos.y);_inTransition=false;_suppressTransitions=false;await saveState();}
 function handleCentreBtn(){if(state.layer!=='overworld')exitLayer();}
-function updateLayerBadge(){const badge=document.getElementById('layer-badge'),mt=document.getElementById('map-panel-title'),dt=document.getElementById('map-drawer-title');if(state.layer==='overworld'){badge.className='layer-badge overworld';badge.textContent='';badge.style.display='none';if(mt)mt.textContent='— Known World —';if(dt)dt.textContent='— Known World —';}else if(state.layer==='settlement'){const name=SETTLEMENTS[state.settlementId]?.name||state.settlementId;badge.className='layer-badge settlement';badge.textContent=name;badge.style.display='';if(mt)mt.textContent=`— ${name} —`;if(dt)dt.textContent=`— ${name} —`;}else{badge.className='layer-badge interior';badge.textContent='Interior';badge.style.display='';if(mt)mt.textContent='— Interior —';if(dt)dt.textContent='— Interior —';}const dot=document.getElementById('btn-center-dot'),ex=document.getElementById('btn-center-exit'),cb=document.getElementById('btn-center');if(state.layer!=='overworld'){dot.style.display='none';ex.style.display='block';cb.classList.add('exit-btn');}else{dot.style.display='block';ex.style.display='none';cb.classList.remove('exit-btn');}}
+function updateLayerBadge(){
+  const badge=document.getElementById('layer-badge');
+  const mt=document.getElementById('map-panel-title');
+  const titleSpan=mt?.querySelector('span');
+  const dt=document.getElementById('map-drawer-title');
+  if(state.layer==='overworld'){
+    badge.className='layer-badge overworld';badge.textContent='';badge.style.display='none';
+    if(titleSpan)titleSpan.textContent='— Known World —';else if(mt)mt.textContent='— Known World —';
+    if(dt)dt.textContent='— Known World —';
+  }else if(state.layer==='settlement'){
+    const name=SETTLEMENTS[state.settlementId]?.name||state.settlementId;
+    badge.className='layer-badge settlement';badge.textContent=name;badge.style.display='';
+    if(titleSpan)titleSpan.textContent=`— ${name} —`;else if(mt)mt.textContent=`— ${name} —`;
+    if(dt)dt.textContent=`— ${name} —`;
+  }else{
+    badge.className='layer-badge interior';badge.textContent='Interior';badge.style.display='';
+    if(titleSpan)titleSpan.textContent='— Interior —';else if(mt)mt.textContent='— Interior —';
+    if(dt)dt.textContent='— Interior —';
+  }const dot=document.getElementById('btn-center-dot'),ex=document.getElementById('btn-center-exit'),cb=document.getElementById('btn-center');if(state.layer!=='overworld'){dot.style.display='none';ex.style.display='block';cb.classList.add('exit-btn');}else{dot.style.display='block';ex.style.display='none';cb.classList.remove('exit-btn');}}
 
 
 // ═══════════════════════════════════════════════════
