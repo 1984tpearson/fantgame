@@ -937,7 +937,9 @@ async function loadState() {
       state.skills = s.skills || {};
       state.worldState = { ...state.worldState, ...s.worldState };
       state.npcs = s.npcs || {};
-      state.pos = s.pos || { x:0, y:0 };
+      const rawPos = s.pos || {x:0,y:0};
+      const rawTerrain = WORLD_DATA.inferTerrain ? WORLD_DATA.inferTerrain(rawPos.x, rawPos.y) : null;
+      state.pos = (rawTerrain && rawTerrain.type === 'ocean') ? {x:139,y:264} : rawPos;
       state.lastOverworldPos = s.lastOverworldPos || { ...state.pos };
       state.blockedBy = s.blockedBy || null;
       return true;
