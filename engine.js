@@ -1088,6 +1088,8 @@ async function enterCell(x, y) {
 
   if (cachedImageUrl) {
     applySceneBackground(cachedImageUrl);
+  } else if (!CONFIG.ENABLE_IMAGES) {
+    applySceneBackground('background.png');
   } else if (imageDesc && CONFIG.ENABLE_IMAGES) {
     // Generate in background — don't block text display
     generateSceneImage(imageDesc, key).then(url => {
