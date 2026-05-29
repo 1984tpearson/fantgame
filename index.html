@@ -234,6 +234,7 @@
     <div id="location-tag">The Gates of Ironhaven</div>
     <div id="layer-badge" class="overworld"></div>
     <div id="coords">0, 0</div>
+    <button onclick="openSettings()" style="background:none;border:1px solid rgba(201,148,58,0.25);color:var(--stone-light);font-size:0.8rem;padding:3px 8px;border-radius:3px;cursor:pointer;" title="Settings">⚙</button>
   </div>
 
   <div id="scene-box"></div>
@@ -292,13 +293,12 @@
     <div id="input-row">
       <input id="cmd" type="text" placeholder="What do you do?" autocomplete="off" />
       <button id="send-btn" onclick="handleInput()">Send</button>
-      <button onclick="clearSave()" style="background:rgba(139,58,42,0.2);border:1px solid rgba(139,58,42,0.4);color:#d4805a;padding:9px 10px;font-family:'Crimson Pro',serif;font-size:0.8rem;cursor:pointer;border-radius:4px;" title="Clear saved game">✕ Save</button>
     </div>
   </div>
 
   <div id="sidebar-desktop" style="display:none">
     <div class="dpanel">
-      <div class="dpanel-title" id="map-panel-title">— Known World —</div>
+      <div class="dpanel-title" style="display:flex;align-items:center;" id="map-panel-title"><span style="flex:1">— Known World —</span><button onclick="toggleMap()" style="background:none;border:1px solid rgba(201,148,58,0.25);color:var(--gold);font-size:0.6rem;font-family:'Cinzel Decorative',serif;padding:2px 7px;border-radius:3px;cursor:pointer;letter-spacing:0.05em;">Expand</button></div>
       <div id="minimap-desktop"></div>
       <div id="legend-desktop"></div>
     </div>
@@ -308,6 +308,7 @@
       <div class="stat-row"><span class="slabel">Stamina</span><div class="sbar"><div class="sfill sp" id="dsp-bar" style="width:100%"></div></div><span class="sval" id="dsp-val">100</span></div>
       <div class="stat-row"><span class="slabel">Gold</span><span class="sval" id="dgold-val">12g</span></div>
       <div class="stat-row"><span class="slabel">Day</span><span class="sval" id="dday-val">1</span></div>
+      <div style="margin-top:6px;"><button onclick="togglePurse()" style="width:100%;background:rgba(201,148,58,0.12);border:1px solid rgba(201,148,58,0.28);color:var(--gold);font-family:'Cinzel Decorative',serif;font-size:0.55rem;letter-spacing:0.06em;padding:4px 7px;border-radius:3px;cursor:pointer;">Coinpurse</button></div>
     </div>
     <div class="dpanel">
       <div class="dpanel-title" style="display:flex;gap:0;">
@@ -334,7 +335,7 @@
 <div id="map-drawer">
   <div id="map-drawer-header">
     <div id="map-drawer-title">— Known World —</div>
-    <div id="map-hint">Tap revealed cell to travel · Pinch/drag to navigate</div>
+    <div id="map-hint">Click any cell to travel · Pinch/drag to navigate</div>
     <button id="map-close" onclick="toggleMap()">✕</button>
   </div>
   <div id="map-canvas-wrap">
@@ -403,6 +404,22 @@
   <div id="npc-forced-actions" style="display:none;flex-shrink:0;display:none;gap:8px;padding:0 10px 10px;">
     <button onclick="npcForcedFight()" style="flex:1;background:rgba(180,50,40,0.15);border:1px solid rgba(212,80,60,0.5);color:#e07060;font-family:'Crimson Pro',serif;font-size:0.95rem;padding:8px;border-radius:4px;cursor:pointer;-webkit-tap-highlight-color:transparent;">⚔ Fight</button>
     <button onclick="npcForcedFlee()" style="flex:1;background:rgba(120,120,40,0.12);border:1px solid rgba(180,180,60,0.4);color:#c8c860;font-family:'Crimson Pro',serif;font-size:0.95rem;padding:8px;border-radius:4px;cursor:pointer;-webkit-tap-highlight-color:transparent;">💨 Flee</button>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div id="settings-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:none;align-items:center;justify-content:center;">
+  <div style="background:rgba(12,9,6,0.98);border:1px solid rgba(201,148,58,0.35);border-radius:6px;padding:24px 20px;min-width:280px;max-width:360px;width:90%;">
+    <div style="font-family:'Cinzel Decorative',serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.14em;margin-bottom:18px;">— Settings —</div>
+    <div style="margin-bottom:14px;">
+      <label style="font-size:0.72rem;color:var(--stone-light);display:block;margin-bottom:5px;">Player Name</label>
+      <input id="settings-name" type="text" placeholder="Enter your name..." style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(201,148,58,0.3);border-radius:3px;padding:7px 10px;color:var(--parchment);font-family:'Crimson Pro',serif;font-size:0.95rem;outline:none;box-sizing:border-box;" />
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:18px;">
+      <button onclick="saveSettings()" style="background:rgba(201,148,58,0.15);border:1px solid rgba(201,148,58,0.4);color:var(--gold);font-family:'Crimson Pro',serif;font-size:0.9rem;padding:9px;border-radius:4px;cursor:pointer;">Save</button>
+      <button onclick="resetGame()" style="background:rgba(139,58,42,0.2);border:1px solid rgba(139,58,42,0.4);color:#d4805a;font-family:'Crimson Pro',serif;font-size:0.9rem;padding:9px;border-radius:4px;cursor:pointer;">Reset Game</button>
+      <button onclick="closeSettings()" style="background:none;border:1px solid rgba(255,255,255,0.1);color:var(--stone-light);font-family:'Crimson Pro',serif;font-size:0.9rem;padding:9px;border-radius:4px;cursor:pointer;">Close</button>
+    </div>
   </div>
 </div>
 
