@@ -980,18 +980,28 @@ function getCellTransition(x,y){if(_suppressTransitions)return null;if(state.lay
 
 async function enterSettlement(id){const s=SETTLEMENTS[id];if(!s)return;
   // Determine entry direction from overworld approach
-  const ow=state.pos, fp=s.overworldCell;
+  // Use lastOverworldPos (where player was before entering) vs footprint center
+  const ow=state.pos;
+  const prev=state.lastOverworldPos;
   let entryPos={...s.entryPos};
   if(s.map){
-    // Find map bounds
     const keys=Object.keys(s.map).filter(k=>s.map[k].type!=='wall');
     const xs=keys.map(k=>parseInt(k.split(',')[0])),ys=keys.map(k=>parseInt(k.split(',')[1]));
-    const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys),midX=Math.round((minX+maxX)/2),midY=Math.round((minY+maxY)/2);
-    const dy=ow.y-fp.y,dx=ow.x-fp.x;
+    const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+    const midX=Math.round((minX+maxX)/2),midY=Math.round((minY+maxY)/2);
+    // Find footprint center by averaging nearby matching cells
+    let fpSumX=0,fpSumY=0,fpCount=0;
+    for(let sx=ow.x-6;sx<=ow.x+6;sx++)for(let sy=ow.y-6;sy<=ow.y+6;sy++){
+      if(WORLD_META[`${sx},${sy}`]?.name===id){fpSumX+=sx;fpSumY+=sy;fpCount++;}
+    }
+    const fpCX=fpCount?Math.round(fpSumX/fpCount):ow.x;
+    const fpCY=fpCount?Math.round(fpSumY/fpCount):ow.y;
+    const refY=prev?prev.y:ow.y, refX=prev?prev.x:ow.x;
+    const dy=refY-fpCY, dx=refX-fpCX;
     if(Math.abs(dy)>=Math.abs(dx)){
-      entryPos=dy>0?{x:midX,y:minY+2}:{x:midX,y:maxY-2}; // from south -> enter at bottom (low y); from north -> enter at top (high y)
+      entryPos=dy>=0?{x:midX,y:minY+2}:{x:midX,y:maxY-2};
     } else {
-      entryPos=dx>0?{x:minX+2,y:midY}:{x:maxX-2,y:midY}; // from east -> left side; from west -> right side
+      entryPos=dx>=0?{x:maxX-2,y:midY}:{x:minX+2,y:midY};
     }
   }
   state.layerHistory.push({layer:state.layer,settlementId:state.settlementId,interiorId:state.interiorId,pos:{...state.lastOverworldPos}});state.layer='settlement';state.settlementId=id;state.interiorId=null;state.pos=entryPos;addMessage(`You pass through the gates of ${s.name}.`,'transition');updateLayerBadge();_suppressTransitions=true;_inTransition=true;await enterCell(state.pos.x,state.pos.y);_inTransition=false;_suppressTransitions=false;await saveState();}
