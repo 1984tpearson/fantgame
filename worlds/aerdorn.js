@@ -92,6 +92,27 @@ defCell(139,462,'village','Saltwell');
 defCell(275,254,'ruins','The Forgotten Archives');
 defCell(305,234,'village','The Weeping Falls');
 
+// ── SETTLEMENT FOOTPRINTS (multi-square overworld presence) ──
+// Each settlement takes up a rect of squares on the overworld map.
+// The type is set to match the settlement tier so the map colours correctly.
+const _fp=[
+  ['aethel_keep',  136,258,142,266,'city'],
+  ['weavers_deep', 258,145,262,151,'town'],
+  ['high_crown',   251,393,255,399,'castle'],
+  ['gladehome',    310,208,312,212,'town'],
+  ['sylvanis_root',337,412,339,416,'town'],
+  ['briar_town',   400,439,404,443,'town'],
+  ['frilar_town',  346,554,348,558,'town'],
+  ['harvestfell',  188,642,192,646,'town'],
+  ['theatfields',  249,543,251,545,'village'],
+  ['dunesedge',    165,415,167,417,'village'],
+  ['saltwell',     138,461,140,463,'village'],
+  ['wheatstone',   168,288,170,290,'village'],
+];
+for(const[sid,x1,y1,x2,y2,t]of _fp)
+  for(let _x=x1;_x<=x2;_x++)for(let _y=y1;_y<=y2;_y++)
+    WORLD_META[`${_x},${_y}`]={type:t,name:sid};
+
 (function(){const pts=[];for(let y=162;y<=375;y++){const bend=(y>300)?((y-300)*0.08):0;pts.push([Math.round(226+bend+Math.sin(y*0.14)*2),y]);}defLine(pts,'river','Serpent River');})();
 (function(){const pts=[];for(let y=138;y<=588;y++)pts.push([Math.round(256+Math.sin(y*0.024)*8-(y>312?(y-312)*0.015:0)),y]);defLine(pts,'road',"The Sun King's Highway");})();
 (function(){const s=[226,216],e=[139,262];const pts=[];for(let i=0;i<=40;i++){const t=i/40;pts.push([Math.round(s[0]+(e[0]-s[0])*t+Math.sin(t*Math.PI*2)*4),Math.round(s[1]+(e[1]-s[1])*t)]);}defLine(pts,'road',"The Serpent's Path");})();
@@ -195,8 +216,24 @@ makeSimpleTown('wheatstone','Wheatstone',169,289,12,[[-3,2,'The Wheat Sheaf','wh
 
 const OVERWORLD_TO_SETTLEMENT={};
 (function(){
-  const e={'aethel_keep':[139,262],'weavers_deep':[260,148],'wheatstone':[169,289],'high_crown':[253,396],'gladehome':[311,210],'sylvanis_root':[338,414],'briar_town':[402,441],'frilar_town':[347,556],'theatfields':[250,544],'harvestfell':[190,644],'dunesedge':[166,416],'saltwell':[139,462]};
-  for(const[id,[x,y]]of Object.entries(e))OVERWORLD_TO_SETTLEMENT[`${x},${y}`]=id;
+  // Map every footprint cell to its settlement id
+  const fp=[
+    ['aethel_keep',  136,258,142,266],
+    ['weavers_deep', 258,145,262,151],
+    ['high_crown',   251,393,255,399],
+    ['gladehome',    310,208,312,212],
+    ['sylvanis_root',337,412,339,416],
+    ['briar_town',   400,439,404,443],
+    ['frilar_town',  346,554,348,558],
+    ['harvestfell',  188,642,192,646],
+    ['theatfields',  249,543,251,545],
+    ['dunesedge',    165,415,167,417],
+    ['saltwell',     138,461,140,463],
+    ['wheatstone',   168,288,170,290],
+  ];
+  for(const[id,x1,y1,x2,y2]of fp)
+    for(let x=x1;x<=x2;x++)for(let y=y1;y<=y2;y++)
+      OVERWORLD_TO_SETTLEMENT[`${x},${y}`]=id;
 })();
 
 const NPC_TEMPLATES={

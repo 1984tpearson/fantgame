@@ -34,7 +34,7 @@ const DB = {
           'apikey': CONFIG.SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json',
-          'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
+          'Prefer': 'return=minimal'
         }
       };
       if (body) opts.body = JSON.stringify(body);
@@ -307,7 +307,14 @@ function getNpcsAtCurrentLocation() {
           if (nx === state.pos.x && ny === state.pos.y) { present.push(id); break; }
         }
       } else if (state.layer === 'overworld') {
-        present.push(id); break;
+        if (slot.posKey) {
+          const parts = slot.posKey.split(',');
+          if (parts.length === 2) {
+            const nx=parseInt(parts[0]),ny=parseInt(parts[1]);
+            const dist=Math.abs(nx-state.pos.x)+Math.abs(ny-state.pos.y);
+            if (dist <= 1) { present.push(id); break; }
+          }
+        } else { present.push(id); break; }
       }
     }
   }
@@ -963,7 +970,23 @@ let _suppressTransitions=false, _inTransition=false;
 
 function getCellTransition(x,y){if(_suppressTransitions)return null;if(state.layer==='overworld'){const sid=OVERWORLD_TO_SETTLEMENT[`${x},${y}`];if(sid&&SETTLEMENTS[sid])return{type:'enter_settlement',id:sid};return null;}if(state.layer==='settlement'){const cell=SETTLEMENTS[state.settlementId]?.map[`${x},${y}`];if(cell?.enter)return{type:'enter_interior',...cell.enter};return null;}return null;}
 
-async function enterSettlement(id){const s=SETTLEMENTS[id];if(!s)return;state.layerHistory.push({layer:state.layer,settlementId:state.settlementId,interiorId:state.interiorId,pos:{...state.lastOverworldPos}});state.layer='settlement';state.settlementId=id;state.interiorId=null;state.pos={...s.entryPos};addMessage(`You pass through the gates of ${s.name}.`,'transition');updateLayerBadge();_suppressTransitions=true;_inTransition=true;await enterCell(state.pos.x,state.pos.y);_inTransition=false;_suppressTransitions=false;await saveState();}
+async function enterSettlement(id){const s=SETTLEMENTS[id];if(!s)return;
+  // Determine entry direction from overworld approach
+  const ow=state.pos, fp=s.overworldCell;
+  let entryPos={...s.entryPos};
+  if(s.map){
+    // Find map bounds
+    const keys=Object.keys(s.map).filter(k=>s.map[k].type!=='wall');
+    const xs=keys.map(k=>parseInt(k.split(',')[0])),ys=keys.map(k=>parseInt(k.split(',')[1]));
+    const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys),midX=Math.round((minX+maxX)/2),midY=Math.round((minY+maxY)/2);
+    const dy=ow.y-fp.y,dx=ow.x-fp.x;
+    if(Math.abs(dy)>=Math.abs(dx)){
+      entryPos=dy>0?{x:midX,y:minY+2}:{x:midX,y:maxY-2}; // from south -> enter at bottom (low y); from north -> enter at top (high y)
+    } else {
+      entryPos=dx>0?{x:minX+2,y:midY}:{x:maxX-2,y:midY}; // from east -> left side; from west -> right side
+    }
+  }
+  state.layerHistory.push({layer:state.layer,settlementId:state.settlementId,interiorId:state.interiorId,pos:{...state.lastOverworldPos}});state.layer='settlement';state.settlementId=id;state.interiorId=null;state.pos=entryPos;addMessage(`You pass through the gates of ${s.name}.`,'transition');updateLayerBadge();_suppressTransitions=true;_inTransition=true;await enterCell(state.pos.x,state.pos.y);_inTransition=false;_suppressTransitions=false;await saveState();}
 async function enterInterior(id,ep){state.layerHistory.push({layer:state.layer,settlementId:state.settlementId,interiorId:state.interiorId,pos:{...state.pos}});state.layer='interior';state.interiorId=id;state.pos={...ep}||{x:1,y:1};const dc=state.cells[`${state.layerHistory[state.layerHistory.length-1]?.settlementId}:${state.layerHistory[state.layerHistory.length-1]?.pos?.x},${state.layerHistory[state.layerHistory.length-1]?.pos?.y}`];addMessage(`You step inside ${dc?.locationName||'the building'}.`,'transition');updateLayerBadge();_suppressTransitions=true;_inTransition=true;await enterCell(state.pos.x,state.pos.y);_inTransition=false;_suppressTransitions=false;await saveState();}
 async function exitLayer(){if(state.layerHistory.length===0)return;if(npcSession.isOpen)closeNpcDrawer();state.blockedBy=null;document.getElementById('blocked-notice')?.remove();const prev=state.layerHistory.pop();if(state.layer==='interior')addMessage(`You step back outside.`,'transition');else if(state.layer==='settlement')addMessage(`You pass back through the gates of ${SETTLEMENTS[state.settlementId]?.name||'the settlement'}.`,'transition');state.layer=prev.layer;state.settlementId=prev.settlementId;state.interiorId=prev.interiorId;state.pos={...prev.pos};updateLayerBadge();_suppressTransitions=true;_inTransition=true;await enterCell(state.pos.x,state.pos.y);_inTransition=false;_suppressTransitions=false;await saveState();}
 function handleCentreBtn(){if(state.layer!=='overworld')exitLayer();}
@@ -1206,7 +1229,7 @@ function applyInventoryChanges(meta){if(meta.inventoryAdd&&Array.isArray(meta.in
 function applyCellNotes(meta){if(!meta.cellNotes)return;const key=cellKey(state.pos.x,state.pos.y);if(!state.cells[key])return;const ex=state.cells[key].notes;if(ex&&!meta.cellNotes.includes(ex))state.cells[key].notes=ex+'; '+meta.cellNotes;else state.cells[key].notes=meta.cellNotes;}
 function applySkillChanges(meta){if(!meta.skillUpdates||typeof meta.skillUpdates!=='object')return;for(const[skill,delta]of Object.entries(meta.skillUpdates)){if(typeof delta!=='number')continue;const cur=state.skills[skill]||0;const next=cur+delta;if(next<=0)delete state.skills[skill];else state.skills[skill]=next;}}
 function applyFactionRepChanges(meta){if(!meta.factionRepChanges||typeof meta.factionRepChanges!=='object')return;for(const[faction,delta]of Object.entries(meta.factionRepChanges)){if(typeof delta!=='number')continue;state.worldState.reputation[faction]=Math.max(-100,Math.min(100,(state.worldState.reputation[faction]||0)+delta));}}
-function buildCellPrompt(x,y){const meta=getCellMeta(x,y);const nb=getNeighbourMeta(x,y);const key=cellKey(x,y);const cell=state.cells[key];const visited=!!cell;const notesLine=cell?.notes?`\nPersistent notes: "${cell.notes}"`:'';function dirDesc(m){const named=['city','town','village','castle','keep','ruins','gate'].includes(m.type)&&m.name;return named?`${m.type} (${m.name})`:m.type;}const dirContext=`Layout: N=${dirDesc(nb.n)}, S=${dirDesc(nb.s)}, E=${dirDesc(nb.e)}, W=${dirDesc(nb.w)}.`;const presentNpcs=getNpcsAtCurrentLocation();const npcHint=presentNpcs.length>0?`\nNPCs present: ${presentNpcs.map(id=>NPC_TEMPLATES[id]?.name).join(', ')}.`:'';if(visited)return`Player returns to (${x},${y}). Terrain: ${meta.type}${meta.name?`, ${meta.name}`:''}.Previously: "${cell.locationName}". ${dirContext}${notesLine}${npcHint}\nBriefly acknowledge return.`;return`First visit to (${x},${y}). Terrain: ${meta.type}${meta.name?`, part of ${meta.name}`:''}.${dirContext} Day ${Math.floor(state.player.day)}.${notesLine}${npcHint}\nDescribe what the player sees, smells, hears.`;}
+function buildCellPrompt(x,y){const meta=getCellMeta(x,y);const nb=getNeighbourMeta(x,y);const key=cellKey(x,y);const cell=state.cells[key];const visited=!!cell;const notesLine=cell?.notes?`\nPersistent notes: "${cell.notes}"`:'';function dirDesc(m){const named=['city','town','village','castle','keep','ruins','gate'].includes(m.type)&&m.name;return named?`${m.type} (${m.name})`:m.type;}const dirContext=`Layout: N=${dirDesc(nb.n)}, S=${dirDesc(nb.s)}, E=${dirDesc(nb.e)}, W=${dirDesc(nb.w)}.`;const presentNpcs=getNpcsAtCurrentLocation();const npcHint=presentNpcs.length>0?`\nNPCs present: ${presentNpcs.map(id=>NPC_TEMPLATES[id]?.name).join(', ')}.`:'';if(visited)return`Player returns to (${x},${y}). Terrain: ${meta.type}${meta.name?`, ${meta.name}`:''}.Previously: "${cell.locationName}". ${dirContext}${notesLine}${npcHint}\nBriefly acknowledge return. Do not invent new signposts or waymarkers.`;return`First visit to (${x},${y}). Terrain: ${meta.type}${meta.name?`, part of ${meta.name}`:''}.${dirContext} Day ${Math.floor(state.player.day)}.${notesLine}${npcHint}\nDescribe what the player sees, smells, hears. Do NOT mention signposts, waymarkers, or written directions unless a road or gate cell is explicitly adjacent.`;}
 
 
 // ═══════════════════════════════════════════════════
