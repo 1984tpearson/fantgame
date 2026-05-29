@@ -970,7 +970,7 @@ async function loadState() {
 // ═══════════════════════════════════════════════════
 // TERRAIN / MAP HELPERS
 // ═══════════════════════════════════════════════════
-function getCellMeta(x,y){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];return s?.map[`${x},${y}`]||{type:T.COURTYARD,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${x},${y}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(x,y):null)||{type:T.PLAINS,name:''};}
+function getCellMeta(x,y){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];return s?.map[`${x},${y}`]||{type:T.WALL,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${x},${y}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(x,y):null)||{type:T.PLAINS,name:''};}
 function terrainLabel(type){return{ocean:'Ocean',plains:'Plains',forest:'Forest',mountain:'Mountains',city:'City',town:'Town',village:'Village',road:'Road',farmland:'Farmland',river:'River',street:'Street',building:'Building',door:'Doorway',wall:'Wall',courtyard:'Courtyard',market:'Market',docks:'Docks',gate:'Gate',interior:'Interior',swamp:'Swamp',bog:'Bog',wilds:'Wilds',fens:'Fens',shore:'Shore',peaks:'Peaks',castle:'Castle',keep:'Keep',ruins:'Ruins'}[type]||'Wilderness';}
 function getNeighbourMeta(x,y){return{n:getCellMeta(x,y-1),s:getCellMeta(x,y+1),e:getCellMeta(x+1,y),w:getCellMeta(x-1,y)};}
 function isTraversable(type){return type!==T.OCEAN&&type!==T.WALL&&type!==T.BUILDING;}
@@ -1039,7 +1039,7 @@ function updateLayerBadge(){
 const CELL_PX=32;
 const TERRAIN_HEX={ocean:'#1a2d3a',plains:'#3a4a2a',forest:'#1e3a1e',mountain:'#4a4040',city:'#6a5030',town:'#5a4525',village:'#4a3a20',road:'#3a4a2a',farmland:'#4a4a20',river:'#3a4a2a',unknown:'#181410',street:'#4a3e30',building:'#5a3a20',door:'#7a5030',wall:'#3a3030',courtyard:'#3a4228',market:'#5a4a28',docks:'#2a3a4a',gate:'#6a5540',interior:'#3a2a18',swamp:'#2a3a28',bog:'#2a3828',wilds:'#162a16',fens:'#263428',shore:'#3a4a40',peaks:'#4a4448',castle:'#5a4838',keep:'#604830',ruins:'#3a3228'};
 let mapView={x:0,y:0,scale:1,travelTarget:null};
-function getVisibleCellMeta(cx,cy){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];return s?.map[`${cx},${cy}`]||{type:T.COURTYARD,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${cx},${cy}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(cx,cy):null)||{type:T.PLAINS,name:''};}
+function getVisibleCellMeta(cx,cy){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];return s?.map[`${cx},${cy}`]||{type:T.WALL,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${cx},${cy}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(cx,cy):null)||{type:T.PLAINS,name:''};}
 function drawMapCanvas(){const canvas=document.getElementById('map-canvas');if(!canvas)return;const hEl=document.getElementById('map-drawer-header'),lEl=document.getElementById('map-legend');const hH=hEl?hEl.offsetHeight:44,lH=lEl?lEl.offsetHeight:32;const W=window.innerWidth,H=window.innerHeight-hH-lH;if(W<10||H<10)return;if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H;canvas.style.width=W+'px';canvas.style.height=H+'px';}
 const ctx=canvas.getContext('2d');ctx.clearRect(0,0,W,H);const cs=CELL_PX*mapView.scale;const{x:px,y:py}=state.pos;const ox=W/2-(px*cs)+mapView.x,oy=H/2-(py*cs)+mapView.y;const x0=Math.floor(-ox/cs)-2,y0=Math.floor(-oy/cs)-2,x1=Math.floor((W-ox)/cs)+2,y1=Math.floor((H-oy)/cs)+2;const lt=new Set();const ss=seenSet();
 // ── WORLD MAP IMAGE BACKGROUND ──────────────────────
@@ -1389,6 +1389,16 @@ async function move(dx, dy) {
   const nx = state.pos.x + dx, ny = state.pos.y + dy;
   const meta = getCellMeta(nx, ny);
   if (!isTraversable(meta.type)) return;
+  // Gate cells in settlements trigger exit to overworld
+  if ((state.layer === 'settlement' || state.layer === 'interior') && meta.type === T.GATE) {
+    if (meta.exit) {
+      // Specific exit destination defined on gate cell
+      await doLayerMove(meta.exit);
+    } else {
+      await exitLayer();
+    }
+    return;
+  }
   state.player.day += (state.layer === 'overworld') ? 0.1 : 0.01;
   state.player.day = Math.round(state.player.day * 10) / 10;
   state.player.stamina = Math.min(state.player.maxStamina, state.player.stamina + 2);
