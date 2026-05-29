@@ -879,6 +879,8 @@ async function saveState() {
 
   // Also save to Supabase (non-blocking)
   if (CONFIG.ENABLE_SUPABASE) {
+    const seenForDB = {};
+    for (const [k,v] of Object.entries(state.seen)) seenForDB[k] = [...v];
     DB.savePlayer({
       layer: state.layer, settlement_id: state.settlementId, interior_id: state.interiorId,
       pos_x: state.pos.x, pos_y: state.pos.y,
@@ -886,7 +888,7 @@ async function saveState() {
       player: state.player, wallet: state.wallet, inventory: state.inventory,
       equipped: state.equipped, skills: state.skills, world_state: state.worldState,
       layer_history: state.layerHistory, blocked_by: state.blockedBy,
-      meta: { npcs: state.npcs }
+      meta: { npcs: state.npcs, cells: state.cells, seen: seenForDB }
     }).catch(() => {});
   }
 }
@@ -912,13 +914,19 @@ async function loadState() {
       state.worldState = { ...state.worldState, ...(row.world_state || {}) };
       state.blockedBy = row.blocked_by || null;
       if (row.npcs) state.npcs = row.npcs;
-      // Cells still from localStorage (large data)
-      const raw = localStorage.getItem('aerdorn-state');
-      if (raw) {
-        const s = JSON.parse(raw);
-        state.cells = s.cells || {};
+      // Load cells+seen: prefer Supabase meta, fall back to localStorage
+      if (row.meta && row.meta.cells) {
+        state.cells = row.meta.cells || {};
         state.seen = {};
-        if (s.seen) for (const [k,v] of Object.entries(s.seen)) state.seen[k] = new Set(v);
+        if (row.meta.seen) for (const [k,v] of Object.entries(row.meta.seen)) state.seen[k] = new Set(v);
+      } else {
+        const raw = localStorage.getItem('aerdorn-state');
+        if (raw) {
+          const s = JSON.parse(raw);
+          state.cells = s.cells || {};
+          state.seen = {};
+          if (s.seen) for (const [k,v] of Object.entries(s.seen)) state.seen[k] = new Set(v);
+        }
       }
       return true;
     }
