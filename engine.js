@@ -38,6 +38,7 @@ const DB = {
         }
       };
       if (body) opts.body = JSON.stringify(body);
+      if (method === 'POST') opts.headers['Prefer'] = 'resolution=merge-duplicates,return=minimal';
       const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/${path}`, opts);
       if (!res.ok) return null;
       const text = await res.text();
@@ -892,7 +893,9 @@ async function loadState() {
       state.settlementId = row.settlement_id || null;
       state.interiorId = row.interior_id || null;
       state.layerHistory = row.layer_history || [];
-      state.pos = { x: row.pos_x || 0, y: row.pos_y || 0 };
+      const lx = row.pos_x || 0, ly = row.pos_y || 0;
+      const loadedTerrain = WORLD_DATA.inferTerrain ? WORLD_DATA.inferTerrain(lx, ly) : null;
+      state.pos = (loadedTerrain && loadedTerrain.type === 'ocean') ? {x:139,y:264} : {x:lx,y:ly};
       state.lastOverworldPos = { x: row.last_overworld_x || 0, y: row.last_overworld_y || 0 };
       state.player = { ...state.player, ...(row.player || {}) };
       state.wallet = { other: [], ...state.wallet, ...(row.wallet || {}) };
@@ -1474,6 +1477,8 @@ async function clearSave() {
   try { localStorage.removeItem('aerdorn-state'); } catch(e) {}
   if (CONFIG.ENABLE_SUPABASE) {
     await DB.query(`player_state?world_id=eq.${WORLD_DATA.id}&player_id=eq.default`, 'DELETE').catch(()=>{});
+    await DB.query(`cells?world_id=eq.${WORLD_DATA.id}&player_id=eq.default`, 'DELETE').catch(()=>{});
+    await DB.query(`npc_state?world_id=eq.${WORLD_DATA.id}&player_id=eq.default`, 'DELETE').catch(()=>{});
   }
   addMessage('Save cleared. Reloading...', 'system');
   setTimeout(() => location.reload(), 800);
