@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════
-// VALDENMERE ENGINE
+// VALDENMERE ENGINE 
 // Reads world data from window.WORLD_DATA (set by worlds/*.js)
 // Reads config from window.CONFIG (set by config.js)
 // ═══════════════════════════════════════════════════
