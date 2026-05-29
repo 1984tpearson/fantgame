@@ -601,11 +601,15 @@ function buildNpcSystemPrompt(npcId) {
   const memStr = ns.memory.length ? ns.memory.slice(-5).join('; ') : 'none';
   const hasTrader = !!tmpl.trader;
 
+  // Only reveal player name to NPC if it appears in their memory
+  const npcKnowsName = state.player.name && memStr.toLowerCase().includes(state.player.name.toLowerCase());
+  const playerRef = npcKnowsName ? `PLAYER NAME: ${state.player.name}` : `PLAYER NAME: unknown — do not use their name unless they introduce themselves. If they do, include "learned name: [name]" in your memoryNote.`;
   return `You are ${tmpl.name}, ${tmpl.role}, in the world of Valdenmere.
 PERSONALITY: ${tmpl.personality}
 FACTION: ${FACTIONS[tmpl.faction]?.name || tmpl.faction}. Faction rep with player: ${factionRep > 0 ? '+'+factionRep : factionRep} (${dl.label}).
 DISPOSITION toward player: ${disp.toFixed(0)} / 100 (${dl.label}).
 YOUR MEMORY of this player: ${memStr}
+${playerRef}
 WORLD: The Kingdom of Aerdorn. Day ${Math.floor(state.player.day)}.
 PLAYER WALLET: ${formatWallet()}. Inventory: ${state.inventory.map(i=>i.name).join(', ')||'nothing notable'}.
 ${hasTrader ? `You are a trader. Mention wares exist — UI shows them separately. Don't list prices in dialogue.` : ''}
@@ -1122,7 +1126,7 @@ function buildSystemPrompt(actionOnly=false){
   const emptyActions='"combatActions":[]';
   return `You are the game master for Valdenmere, a gritty high fantasy world with realistic consequences.
 
-PLAYER NAME: ${playerName}
+PLAYER: A traveller whose name is unknown to the world unless they have shared it. Refer to them as 'you' — never use their name in narration.
 
 WORLD: The Kingdom of Aerdorn, a large island. Aethel-Keep (capital NW ~1114,2092), Weaver's Deep (port N ~2076,1181), High-Crown Castle (royal seat centre ~2025,3171), Gladehome (E ~2488,1677), Sylvanis-Root (deep wilds ~2705,3309), Briar-Town (far E ~3212,3528), Frilar-Town (S fens ~2778,4447), Harvestfell (S coast ~1519,5154). Terrain: Verdant Heart (NW forest), Eldritch Wilds (dark E forest), Great Bog (central), Shadow Fens (SE), Azure Shore (S coast), Sunset Peaks (W spine), Wyvern's Spine (central ridge). Tone: gritty, vivid, grounded. Think early Tolkien with real danger.
 COORDINATE SYSTEM: Lower Y = north. Higher Y = south. Higher X = east. Lower X = west.
