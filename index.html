@@ -315,12 +315,12 @@
         <span id="dtab-pack" onclick="switchDesktopTab('pack')" style="cursor:pointer;flex:1;text-align:center;padding:6px 4px 5px;opacity:1;border-bottom:1px solid rgba(201,148,58,0.4);">— Pack —</span>
         <span id="dtab-equip" onclick="switchDesktopTab('equip')" style="cursor:pointer;flex:1;text-align:center;padding:6px 4px 5px;opacity:0.45;border-bottom:1px solid rgba(201,148,58,0.1);">— Equipped —</span>
       </div>
-      <div id="dpanel-pack">
+      <div id="dpanel-pack" style="overflow-y:auto;max-height:220px;">
         <div id="inv-overload-desktop" style="display:none;font-size:0.72rem;color:#d4805a;font-style:italic;padding:4px 10px;">⚠ Overloaded</div>
         <div id="inv-list-desktop" style="padding:6px 8px;display:flex;flex-direction:column;gap:4px;"></div>
         <div id="inv-empty-desktop" style="font-style:italic;color:var(--stone);font-size:0.8rem;text-align:center;padding:8px;">Empty</div>
       </div>
-      <div id="dpanel-equip" style="display:none;padding:6px 8px;">
+      <div id="dpanel-equip" style="display:none;padding:6px 8px;overflow-y:auto;max-height:220px;">
         <div id="equipped-list-desktop" style="display:flex;flex-direction:column;gap:3px;"></div>
       </div>
     </div>
@@ -370,12 +370,12 @@
     </div>
     <button id="inv-close" onclick="toggleInv()" style="margin-left:10px;">✕</button>
   </div>
-  <div id="mpanel-pack">
+  <div id="mpanel-pack" style="overflow-y:auto;max-height:45vh;">
     <div id="inv-overload">⚠ You are overloaded — drop something before picking up more.</div>
     <div id="inv-list"></div>
     <div id="inv-empty">Your pack is empty.</div>
   </div>
-  <div id="mpanel-equip" style="display:none;">
+  <div id="mpanel-equip" style="display:none;overflow-y:auto;max-height:45vh;">
     <div id="equipped-list-mobile" style="display:flex;flex-direction:column;gap:6px;padding:4px 0;"></div>
   </div>
 </div>
