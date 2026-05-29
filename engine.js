@@ -837,10 +837,12 @@ function npcForcedFlee() {
 }
 
 async function doLayerMove(dest) {
-  if (dest.layer === 'interior' && dest.interiorId) {
-    await enterInterior(dest.interiorId, { x: dest.x ?? 1, y: dest.y ?? 1 });
-  } else if (dest.layer === 'settlement' && dest.settlementId) {
-    if (SETTLEMENTS[dest.settlementId]) await enterSettlement(dest.settlementId);
+  if (dest.layer === 'interior' && (dest.interiorId || dest.id)) {
+    const id = dest.interiorId || dest.id;
+    await enterInterior(id, { x: dest.x ?? 1, y: dest.y ?? 1 });
+  } else if (dest.layer === 'settlement' && (dest.settlementId || dest.id)) {
+    const sid = dest.settlementId || dest.id;
+    if (SETTLEMENTS[sid]) await enterSettlement(sid);
   } else if (dest.layer === 'overworld') {
     if (typeof dest.x === 'number' && typeof dest.y === 'number') {
       state.layer = 'overworld'; state.settlementId = null; state.interiorId = null;
@@ -991,7 +993,9 @@ function cancelTravel(){mapView.travelTarget=null;document.getElementById('map-t
 async function startQuickTravel(dx,dy){document.getElementById('map-travel-confirm').classList.remove('visible');toggleMap();const{x:sx,y:sy}=state.pos;mapView.travelTarget=null;const path=[];let cx=sx,cy=sy;while(cx!==dx||cy!==dy){if(cx!==dx)cx+=cx<dx?1:-1;else if(cy!==dy)cy+=cy<dy?1:-1;path.push({x:cx,y:cy});}addMessage(`You set off toward ${state.cells[cellKey(dx,dy)]?.locationName||terrainLabel(getVisibleCellMeta(dx,dy).type)}...`,'system');for(let i=0;i<path.length;i++){const step=path[i];const meta=getVisibleCellMeta(step.x,step.y);if(!isTraversable(meta.type)){addMessage('Your path is blocked. You stop here.','system');await enterCell(path[i-1]?.x??sx,path[i-1]?.y??sy);return;}state.player.day+=0.05;state.player.stamina=Math.min(state.player.maxStamina,state.player.stamina+1);state.pos={x:step.x,y:step.y};const ss2=seenSet();for(let dy2=-FOV_RADIUS;dy2<=FOV_RADIUS;dy2++)for(let dx2=-FOV_RADIUS;dx2<=FOV_RADIUS;dx2++)ss2.add(`${step.x+dx2},${step.y+dy2}`);if(Math.random()<0.005){addMessage(`Something catches your attention after ${i+1} step${i>0?'s':''}...`,'system');await enterCell(step.x,step.y);return;}}await enterCell(dx,dy);}
 
 const FOV_RADIUS=2,MAP_VIEW=9;
-function renderMinimapInto(mapEl,legEl,vr){if(!mapEl)return;const size=vr*2+1;mapEl.style.gridTemplateColumns=`repeat(${size}, 13px)`;mapEl.innerHTML='';const{x:px,y:py}=state.pos;const ss=seenSet();const shown=new Set();for(let dy=-vr;dy<=vr;dy++)for(let dx=-vr;dx<=vr;dx++){const cx=px+dx,cy=py+dy;const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],isCurrent=dx===0&&dy===0,seen=ss.has(`${cx},${cy}`),revealed=visited||isCurrent||seen;const isLinear=meta.type==='road'||meta.type==='river';const cell=document.createElement('div');cell.className=`mmc t-${isLinear?'plains':meta.type}`;if(isCurrent)cell.classList.add('current');if(revealed&&isLinear){const s=makeCellSVG(cx,cy,meta.type);if(s)cell.appendChild(s);}if(revealed&&(meta.type===T.DOOR||meta.type===T.GATE)){const dot=document.createElement('div');dot.style.cssText='position:absolute;inset:3px;background:rgba(232,184,75,0.7);border-radius:50%;';cell.appendChild(dot);}mapEl.appendChild(cell);if(revealed)shown.add(meta.type);}if(legEl){legEl.innerHTML='';shown.forEach(t=>legEl.innerHTML+=`<div class="leg-item"><div class="leg-swatch t-${t}"></div>${terrainLabel(t)}</div>`);}}
+function renderMinimapInto(mapEl,legEl,vr){if(!mapEl)return;const size=vr*2+1;mapEl.style.gridTemplateColumns=`repeat(${size}, 13px)`;mapEl.innerHTML='';const{x:px,y:py}=state.pos;const ss=seenSet();const shown=new Set();
+// Render north (lower y) at top: iterate dy from -vr (north) to +vr (south)
+for(let dy=-vr;dy<=vr;dy++)for(let dx=-vr;dx<=vr;dx++){const cx=px+dx,cy=py+dy;const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],isCurrent=dx===0&&dy===0,seen=ss.has(`${cx},${cy}`),revealed=visited||isCurrent||seen;const isLinear=meta.type==='road'||meta.type==='river';const cell=document.createElement('div');cell.className=`mmc t-${isLinear?'plains':meta.type}`;if(isCurrent)cell.classList.add('current');if(revealed&&isLinear){const s=makeCellSVG(cx,cy,meta.type);if(s)cell.appendChild(s);}if(revealed&&(meta.type===T.DOOR||meta.type===T.GATE)){const dot=document.createElement('div');dot.style.cssText='position:absolute;inset:3px;background:rgba(232,184,75,0.7);border-radius:50%;';cell.appendChild(dot);}mapEl.appendChild(cell);if(revealed)shown.add(meta.type);}if(legEl){legEl.innerHTML='';shown.forEach(t=>legEl.innerHTML+=`<div class="leg-item"><div class="leg-swatch t-${t}"></div>${terrainLabel(t)}</div>`);}}
 function renderMinimap(){renderMinimapInto(document.getElementById('minimap-desktop'),document.getElementById('legend-desktop'),7);if(document.getElementById('map-drawer').classList.contains('open'))drawMapCanvas();}
 function toggleMap(){const d=document.getElementById('map-drawer');const o=d.classList.toggle('open');if(o){mapView.x=0;mapView.y=0;cancelTravel();requestAnimationFrame(()=>requestAnimationFrame(()=>{initMapInteraction();drawMapCanvas();}));}}
 
