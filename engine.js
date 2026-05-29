@@ -1292,9 +1292,10 @@ async function init() {
     updateStats(); updateLayerBadge(); renderMinimap();
     if (hadSave) {
       addMessage(`You find yourself once again in Valdenmere.`, 'system');
-      // Restore cached background image if available
+      // Restore cached background image if available, or use placeholder
       const key = cellKey(state.pos.x, state.pos.y);
       if (state.cells[key]?.imageUrl) applySceneBackground(state.cells[key].imageUrl);
+      else if (!CONFIG.ENABLE_IMAGES) applySceneBackground('background.png');
       _suppressTransitions = true;
       await enterCell(state.pos.x, state.pos.y);
       _suppressTransitions = false;
