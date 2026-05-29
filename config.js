@@ -18,6 +18,6 @@ const CONFIG = {
   IMAGE_STYLE_SUFFIX: 'fantasy landscape painting, rolling countryside, naturalistic lighting, painterly brushwork, bold ink outlines, muted earthy tones with occasional colour, cinematic composition, grounded medieval fantasy, detailed environment art',
   IMAGE_NEGATIVE_PROMPT: 'western, desert, arid, cactus, cowboys, modern, sci-fi, photorealistic, 3D render, monochrome, flat, cartoon, anime, top-down, map, watermark, signature, text, people, person, ugly, blurry, low quality',
 
-  ENABLE_IMAGES: true,
+  ENABLE_IMAGES: false,
   ENABLE_SUPABASE: true,
 };
