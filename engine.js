@@ -199,10 +199,8 @@ async function refreshSceneImage() {
   const key = cellKey(state.pos.x, state.pos.y);
   const cell = state.cells[key];
   const meta = getCellMeta(state.pos.x, state.pos.y);
-  const northMeta = getCellMeta(state.pos.x, state.pos.y - 1);
-  const northHint = (northMeta.name && northMeta.name !== meta.name) ? ` To the north: ${northMeta.name}.` : '';
   // Use stored description if available, otherwise location name
-  const desc = (cell?.description || cell?.locationName || terrainLabel(meta.type)) + northHint;
+  const desc = (cell?.description || cell?.locationName || terrainLabel(meta.type)) ;
   const newKey = key + '_' + Date.now();
   const url = await generateSceneImage(desc, newKey);
   if (url) {
@@ -1203,7 +1201,7 @@ function applyInventoryChanges(meta){if(meta.inventoryAdd&&Array.isArray(meta.in
 function applyCellNotes(meta){if(!meta.cellNotes)return;const key=cellKey(state.pos.x,state.pos.y);if(!state.cells[key])return;const ex=state.cells[key].notes;if(ex&&!meta.cellNotes.includes(ex))state.cells[key].notes=ex+'; '+meta.cellNotes;else state.cells[key].notes=meta.cellNotes;}
 function applySkillChanges(meta){if(!meta.skillUpdates||typeof meta.skillUpdates!=='object')return;for(const[skill,delta]of Object.entries(meta.skillUpdates)){if(typeof delta!=='number')continue;const cur=state.skills[skill]||0;const next=cur+delta;if(next<=0)delete state.skills[skill];else state.skills[skill]=next;}}
 function applyFactionRepChanges(meta){if(!meta.factionRepChanges||typeof meta.factionRepChanges!=='object')return;for(const[faction,delta]of Object.entries(meta.factionRepChanges)){if(typeof delta!=='number')continue;state.worldState.reputation[faction]=Math.max(-100,Math.min(100,(state.worldState.reputation[faction]||0)+delta));}}
-function buildCellPrompt(x,y){const meta=getCellMeta(x,y);const nb=getNeighbourMeta(x,y);const key=cellKey(x,y);const cell=state.cells[key];const visited=!!cell;const notesLine=cell?.notes?`\nPersistent notes: "${cell.notes}"`:'';function dirDesc(m){return m.name?`${m.type} (${m.name})`:m.type;}const dirContext=`Layout: N=${dirDesc(nb.n)}, S=${dirDesc(nb.s)}, E=${dirDesc(nb.e)}, W=${dirDesc(nb.w)}.`;const presentNpcs=getNpcsAtCurrentLocation();const npcHint=presentNpcs.length>0?`\nNPCs present: ${presentNpcs.map(id=>NPC_TEMPLATES[id]?.name).join(', ')}.`:'';if(visited)return`Player returns to (${x},${y}). Terrain: ${meta.type}${meta.name?`, ${meta.name}`:''}.Previously: "${cell.locationName}". ${dirContext}${notesLine}${npcHint}\nBriefly acknowledge return.`;return`First visit to (${x},${y}). Terrain: ${meta.type}${meta.name?`, part of ${meta.name}`:''}.${dirContext} Day ${Math.floor(state.player.day)}.${notesLine}${npcHint}\nDescribe what the player sees, smells, hears.`;}
+function buildCellPrompt(x,y){const meta=getCellMeta(x,y);const nb=getNeighbourMeta(x,y);const key=cellKey(x,y);const cell=state.cells[key];const visited=!!cell;const notesLine=cell?.notes?`\nPersistent notes: "${cell.notes}"`:'';function dirDesc(m){const named=['city','town','village','castle','keep','ruins','gate'].includes(m.type)&&m.name;return named?`${m.type} (${m.name})`:m.type;}const dirContext=`Layout: N=${dirDesc(nb.n)}, S=${dirDesc(nb.s)}, E=${dirDesc(nb.e)}, W=${dirDesc(nb.w)}.`;const presentNpcs=getNpcsAtCurrentLocation();const npcHint=presentNpcs.length>0?`\nNPCs present: ${presentNpcs.map(id=>NPC_TEMPLATES[id]?.name).join(', ')}.`:'';if(visited)return`Player returns to (${x},${y}). Terrain: ${meta.type}${meta.name?`, ${meta.name}`:''}.Previously: "${cell.locationName}". ${dirContext}${notesLine}${npcHint}\nBriefly acknowledge return.`;return`First visit to (${x},${y}). Terrain: ${meta.type}${meta.name?`, part of ${meta.name}`:''}.${dirContext} Day ${Math.floor(state.player.day)}.${notesLine}${npcHint}\nDescribe what the player sees, smells, hears.`;}
 
 
 // ═══════════════════════════════════════════════════
