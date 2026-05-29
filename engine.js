@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════
 // VALDENMERE ENGINE
 // Reads world data from window.WORLD_DATA (set by worlds/*.js)
 // Reads config from window.CONFIG (set by config.js)
@@ -988,7 +988,7 @@ function updateLayerBadge(){
 // ═══════════════════════════════════════════════════
 // CANVAS MAP
 // ═══════════════════════════════════════════════════
-const CELL_PX=16;
+const CELL_PX=32;
 const TERRAIN_HEX={ocean:'#1a2d3a',plains:'#3a4a2a',forest:'#1e3a1e',mountain:'#4a4040',city:'#6a5030',town:'#5a4525',village:'#4a3a20',road:'#3a4a2a',farmland:'#4a4a20',river:'#3a4a2a',unknown:'#181410',street:'#4a3e30',building:'#5a3a20',door:'#7a5030',wall:'#3a3030',courtyard:'#3a4228',market:'#5a4a28',docks:'#2a3a4a',gate:'#6a5540',interior:'#3a2a18',swamp:'#2a3a28',bog:'#2a3828',wilds:'#162a16',fens:'#263428',shore:'#3a4a40',peaks:'#4a4448',castle:'#5a4838',keep:'#604830',ruins:'#3a3228'};
 let mapView={x:0,y:0,scale:1,travelTarget:null};
 function getVisibleCellMeta(cx,cy){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];return s?.map[`${cx},${cy}`]||{type:T.COURTYARD,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${cx},${cy}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(cx,cy):null)||{type:T.PLAINS,name:''};}
@@ -1062,7 +1062,7 @@ function closeItemUse(){document.getElementById('item-use-drawer').classList.rem
 // ═══════════════════════════════════════════════════
 // AI — MAIN GAME (via OpenRouter)
 // ═══════════════════════════════════════════════════
-function layerContext(){if(state.layer==='interior')return'INTERIOR SCALE: 1m per cell. Inside a building. Describe room details: furniture, light, smells, sounds, occupants.';if(state.layer==='settlement'){const name=SETTLEMENTS[state.settlementId]?.name||state.settlementId;return`SETTLEMENT SCALE: 5m per cell. Inside ${name}. Describe street-scale details: stalls, doorways, crowds, signage, cobblestones.`;}return'OVERWORLD SCALE: ~35m per cell across a large island kingdom. Describe landscape, weather, distant landmarks, feel of the region.';}
+function layerContext(){if(state.layer==='interior')return'INTERIOR SCALE: 1m per cell. Inside a building. Describe room details: furniture, light, smells, sounds, occupants.';if(state.layer==='settlement'){const name=SETTLEMENTS[state.settlementId]?.name||state.settlementId;return`SETTLEMENT SCALE: 5m per cell. Inside ${name}. Describe street-scale details: stalls, doorways, crowds, signage, cobblestones.`;}return'OVERWORLD SCALE: ~280m per cell across a large island kingdom. Describe landscape, weather, distant landmarks, feel of the region.';}
 
 function buildNpcContextForSystemPrompt(){const present=getNpcsAtCurrentLocation();if(present.length===0)return'';const lines=present.map(id=>{const tmpl=NPC_TEMPLATES[id];const disp=getNpcDisposition(id);const dl=dispositionLabel(disp);const ns=getNpcState(id);const mem=ns.memory.length?ns.memory.slice(-2).join('; '):'not yet met';return`  - ${tmpl.name} (${tmpl.role}): disposition=${dl.label}, memory="${mem}"`;});return`\nNPCS PRESENT HERE:\n${lines.join('\n')}\nIf the player tries to talk to one, mention they can use the Talk button or type "talk to [name]".`;}
 
@@ -1542,7 +1542,7 @@ async function init() {
       ];
       state.inventory = [{ name:'Heel of Bread' }, ri[Math.floor(Math.random() * ri.length)]];
       addMessage(`Welcome to the Kingdom of Aerdorn.`, 'system');
-      await enterCell(1114, 2094);
+      await enterCell(139, 264);
     }
   } catch(e) {
     console.error('Init error:', e);
@@ -1554,3 +1554,4 @@ async function init() {
 }
 
 init();
+
