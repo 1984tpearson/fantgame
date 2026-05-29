@@ -303,7 +303,7 @@ function getNpcsAtCurrentLocation() {
         const parts = slot.posKey.split(',');
         if (parts.length === 2) {
           const nx=parseInt(parts[0]), ny=parseInt(parts[1]);
-          if (Math.abs(nx-state.pos.x)<=3 && Math.abs(ny-state.pos.y)<=3) { present.push(id); break; }
+          if (nx === state.pos.x && ny === state.pos.y) { present.push(id); break; }
         }
       } else if (state.layer === 'overworld') {
         present.push(id); break;
@@ -443,12 +443,13 @@ function toggleShopPanel() {
 // ═══════════════════════════════════════════════════
 // NPC DIALOGUE
 // ═══════════════════════════════════════════════════
-function openNpcDrawer(npcId) {
+function openNpcDrawer(npcId, forced = false) {
   const tmpl = NPC_TEMPLATES[npcId];
   if (!tmpl) return;
   npcSession.npcId = npcId;
   npcSession.history = [];
   npcSession.isOpen = true;
+  npcSession.forced = forced;
 
   document.getElementById('inv-drawer').classList.remove('open');
   document.getElementById('map-drawer').classList.remove('open');
@@ -471,15 +472,41 @@ function openNpcDrawer(npcId) {
   document.getElementById('npc-convo-box').innerHTML = '';
   document.getElementById('npc-cmd').value = '';
   document.getElementById('npc-drawer').classList.add('open');
+
+  // Hide or show close button depending on forced mode
+  const closeBtn = document.getElementById('npc-close');
+  if (closeBtn) closeBtn.style.display = forced ? 'none' : '';
+
+  // Block movement while forced conversation is active
+  if (forced) {
+    state.blockedBy = npcId;
+    updateMoveButtons();
+  }
+
   document.getElementById('npc-cmd').focus();
-  generateNpcGreeting(npcId);
+  generateNpcGreeting(npcId, forced);
 }
 
 function closeNpcDrawer() {
+  // If this was a forced conversation, only allow close if the session is being released
+  if (npcSession.forced) return;
   npcSession.isOpen = false;
   npcSession.npcId = null;
+  npcSession.forced = false;
   document.getElementById('npc-drawer').classList.remove('open');
   document.getElementById('npc-shop-panel').classList.remove('visible');
+}
+
+function releaseNpcDrawer() {
+  // Called when forced conversation ends (unblock, combat, flee)
+  npcSession.forced = false;
+  const closeBtn = document.getElementById('npc-close-btn');
+  if (closeBtn) closeBtn.style.display = '';
+  if (state.blockedBy === npcSession.npcId) {
+    state.blockedBy = null;
+    document.getElementById('blocked-notice')?.remove();
+    updateMoveButtons();
+  }
 }
 
 function addNpcConvoLine(text, type='npc') {
@@ -506,7 +533,7 @@ function removeNpcTyping() {
   if (t) t.remove();
 }
 
-async function generateNpcGreeting(npcId) {
+async function generateNpcGreeting(npcId, forcedOpen = false) {
   const ns = getNpcState(npcId);
   const firstMeet = ns.memory.length === 0;
   const memSummary = ns.memory.length ? ns.memory.slice(-3).join('; ') : 'no prior history';
@@ -525,8 +552,8 @@ async function generateNpcGreeting(npcId) {
         messages: [
           { role:'system', content: buildNpcSystemPrompt(npcId) },
           { role:'user', content: firstMeet
-            ? `The player has just approached you for the first time. Greet them in character. 1-2 sentences max.`
-            : `The player approaches again. Your memory of them: ${memSummary}. Acknowledge appropriately. 1-2 sentences.`
+            ? `You are meeting this player for the FIRST TIME. You have NEVER seen them before. Do NOT act like you know them. Greet them as a complete stranger — cold, neutral, suspicious, or friendly depending on your role and disposition. 1-2 sentences.${forcedOpen ? ' You have stopped them and initiated this conversation.' : ''}`
+            : `The player approaches again. Your memory of them: ${memSummary}. Acknowledge based on that history. 1-2 sentences.${forcedOpen ? ' You have stopped them and initiated this conversation.' : ''}`
           }
         ]
       })
@@ -574,10 +601,18 @@ RULES:
 JSON:{"dispositionDelta":N,"memoryNote":"...","npcAction":null}
 
 npcAction options (null in most cases):
-- {"type":"combat","reason":"..."}  — NPC attacks
-- {"type":"block","reason":"..."}   — NPC bars path
-- {"type":"unblock"}                — NPC steps aside
-- {"type":"force_move","dest":{"layer":"...","settlementId":"...","interiorId":"...","x":0,"y":0},"reason":"...","narrativeNote":"..."}`;
+- {"type":"combat","reason":"..."} — Attack. Use when: player attacks you, threatens with weapon at disposition < -30, commits crime you witness, deeply provocative act at very low disposition. NOT for mere rudeness.
+- {"type":"block","reason":"..."} — Bar path. For guards checking papers, toll collectors, suspicious sentries. Always explain why.
+- {"type":"unblock"} — Step aside. Player has satisfied your requirements (paid, showed papers, persuaded you).
+- {"type":"flee","reason":"..."} — Player breaks away (says 'leave me alone', 'step aside', 'I'm going', tries to push past). Only if your disposition/situation would allow it — a hostile guard would NOT let them go easily.
+- {"type":"force_move","hostile":true|false,"playerRestrained":false,"dest":{"layer":"...","settlementId":"...","interiorId":"...","x":0,"y":0},"reason":"...","narrativeNote":"1 sentence"}
+  hostile=false: FRIENDLY escort — player asked to be taken somewhere. Player gets Go/Resist/Decline buttons.
+  hostile=true: forced — arrest, ejection, dragged away. No choice given.
+  playerRestrained=true: player unconscious or bound — no choice.
+  Known interiorIds: ironhaven_inn_south, ironhaven_forge, ironhaven_alchemist, ironhaven_barracks.
+
+GUARD BEHAVIOUR: block on approach → unblock if convinced → combat if attacked → force_move (hostile=true) if arresting.
+ESCORT: player asks to be guided → force_move (hostile=false) with natural narrativeNote.`;
 }
 
 async function sendNpcMessage() {
@@ -660,7 +695,10 @@ async function executeNpcAction(action, npcId) {
   const npcName = tmpl?.name || 'them';
   switch (action.type) {
     case 'combat': {
+      releaseNpcDrawer();
       closeNpcDrawer();
+      npcSession.isOpen = false;
+      npcSession.npcId = null;
       addMessage(`${npcName} is done talking.`, 'transition');
       const combatMsg = `${npcName} attacks! ${action.reason || ''}`;
       state.history.push({ role:'assistant', content:`SITUATION: ${combatMsg}\nJSON: {"hasCombat":true,"enemy":"${npcName}","hpDelta":-5,"combatActions":[{"label":"Strike back","action":"Strike back"},{"label":"Defend yourself","action":"Defend yourself"},{"label":"Try to flee","action":"Try to flee"}],"factionRepChanges":{},"npcSpawn":null}` });
@@ -672,6 +710,16 @@ async function executeNpcAction(action, npcId) {
       ]);
       state.player.hp = Math.max(0, state.player.hp - 5);
       updateStats();
+      break;
+    }
+    case 'flee': {
+      // Player successfully flees a forced conversation
+      releaseNpcDrawer();
+      npcSession.isOpen = false;
+      npcSession.npcId = null;
+      document.getElementById('npc-drawer').classList.remove('open');
+      document.getElementById('npc-shop-panel').classList.remove('visible');
+      addMessage(`You break away from ${npcName} and slip off.`, 'transition');
       break;
     }
     case 'block': {
@@ -688,6 +736,7 @@ async function executeNpcAction(action, npcId) {
       break;
     }
     case 'unblock': {
+      releaseNpcDrawer();
       if (state.blockedBy === npcId) {
         state.blockedBy = null;
         updateMoveButtons();
@@ -697,26 +746,83 @@ async function executeNpcAction(action, npcId) {
       break;
     }
     case 'force_move': {
-      closeNpcDrawer();
-      if (action.narrativeNote) addMessage(action.narrativeNote, 'transition');
-      else addMessage(`${npcName} forces you to move.`, 'transition');
-      await new Promise(r => setTimeout(r, 600));
-      const dest = action.dest || {};
-      state.blockedBy = null;
-      document.getElementById('blocked-notice')?.remove();
-      if (dest.layer === 'interior' && dest.interiorId) {
-        await enterInterior(dest.interiorId, { x: dest.x ?? 1, y: dest.y ?? 1 });
-      } else if (dest.layer === 'settlement' && dest.settlementId) {
-        if (SETTLEMENTS[dest.settlementId]) await enterSettlement(dest.settlementId);
-      } else if (dest.layer === 'overworld') {
-        if (typeof dest.x === 'number' && typeof dest.y === 'number') {
-          state.layer = 'overworld'; state.settlementId = null; state.interiorId = null;
-          state.layerHistory = []; updateLayerBadge(); await enterCell(dest.x, dest.y);
-        }
-      } else { await exitLayer(); }
+      const hostile = action.hostile !== false; // default hostile=true unless explicitly false
+      if (!hostile && !action.playerRestrained) {
+        // Friendly escort — offer player a choice
+        const dest = action.dest || {};
+        const reason = action.narrativeNote || `${npcName} offers to take you there.`;
+        addNpcConvoLine(reason, 'npc');
+        // Render choice buttons inside the NPC drawer
+        const box = document.getElementById('npc-convo-box');
+        const btnWrap = document.createElement('div');
+        btnWrap.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin:8px 0;';
+        btnWrap.innerHTML = `
+          <button class="npc-choice-btn" onclick="acceptEscort('${npcId}', ${JSON.stringify(dest).replace(/"/g,'&quot;')}, '${(action.narrativeNote||'').replace(/'/g,"&#39;")}')" style="background:rgba(160,200,120,0.12);border:1px solid rgba(160,200,120,0.4);color:#a0c878;font-family:'Crimson Pro',serif;font-size:0.9rem;padding:8px 12px;border-radius:3px;cursor:pointer;text-align:left;">✓ Go with ${npcName}</button>
+          <button class="npc-choice-btn" onclick="resistEscort('${npcId}')" style="background:rgba(212,128,90,0.1);border:1px solid rgba(212,128,90,0.4);color:#d4805a;font-family:'Crimson Pro',serif;font-size:0.9rem;padding:8px 12px;border-radius:3px;cursor:pointer;text-align:left;">⚔ Resist</button>
+          <button class="npc-choice-btn" onclick="declineEscort('${npcId}')" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:var(--stone-light);font-family:'Crimson Pro',serif;font-size:0.9rem;padding:8px 12px;border-radius:3px;cursor:pointer;text-align:left;">✗ Decline</button>
+        `;
+        box.appendChild(btnWrap);
+        box.scrollTop = box.scrollHeight;
+        // Store pending dest for acceptEscort
+        npcSession.pendingDest = dest;
+      } else {
+        // Hostile / player restrained — just move them
+        releaseNpcDrawer();
+        npcSession.isOpen = false;
+        npcSession.npcId = null;
+        document.getElementById('npc-drawer').classList.remove('open');
+        if (action.narrativeNote) addMessage(action.narrativeNote, 'transition');
+        else addMessage(`${npcName} forces you to move.`, 'transition');
+        await new Promise(r => setTimeout(r, 600));
+        const dest = action.dest || {};
+        state.blockedBy = null;
+        document.getElementById('blocked-notice')?.remove();
+        await doLayerMove(dest);
+      }
       break;
     }
   }
+}
+
+async function acceptEscort(npcId, dest, narrativeNote) {
+  document.querySelectorAll('.npc-choice-btn').forEach(b => b.remove());
+  releaseNpcDrawer();
+  npcSession.isOpen = false;
+  npcSession.npcId = null;
+  document.getElementById('npc-drawer').classList.remove('open');
+  if (narrativeNote) addMessage(narrativeNote, 'transition');
+  await new Promise(r => setTimeout(r, 600));
+  state.blockedBy = null;
+  document.getElementById('blocked-notice')?.remove();
+  await doLayerMove(dest);
+}
+
+function resistEscort(npcId) {
+  document.querySelectorAll('.npc-choice-btn').forEach(b => b.remove());
+  const tmpl = NPC_TEMPLATES[npcId];
+  const npcName = tmpl?.name || 'them';
+  addNpcConvoLine(`${npcName} doesn't take kindly to that.`, 'npc');
+  // Trigger combat via the normal NPC action path
+  executeNpcAction({ type:'combat', reason:'They resist your escort.' }, npcId);
+}
+
+function declineEscort(npcId) {
+  document.querySelectorAll('.npc-choice-btn').forEach(b => b.remove());
+  releaseNpcDrawer();
+  addNpcConvoLine('Very well.', 'npc');
+}
+
+async function doLayerMove(dest) {
+  if (dest.layer === 'interior' && dest.interiorId) {
+    await enterInterior(dest.interiorId, { x: dest.x ?? 1, y: dest.y ?? 1 });
+  } else if (dest.layer === 'settlement' && dest.settlementId) {
+    if (SETTLEMENTS[dest.settlementId]) await enterSettlement(dest.settlementId);
+  } else if (dest.layer === 'overworld') {
+    if (typeof dest.x === 'number' && typeof dest.y === 'number') {
+      state.layer = 'overworld'; state.settlementId = null; state.interiorId = null;
+      state.layerHistory = []; updateLayerBadge(); await enterCell(dest.x, dest.y);
+    }
+  } else { await exitLayer(); }
 }
 
 
@@ -842,9 +948,9 @@ let mapView={x:0,y:0,scale:1,travelTarget:null};
 function getVisibleCellMeta(cx,cy){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];return s?.map[`${cx},${cy}`]||{type:T.COURTYARD,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${cx},${cy}`]||{type:T.PLAINS,name:''};}
 function drawMapCanvas(){const canvas=document.getElementById('map-canvas');if(!canvas)return;const hEl=document.getElementById('map-drawer-header'),lEl=document.getElementById('map-legend');const hH=hEl?hEl.offsetHeight:44,lH=lEl?lEl.offsetHeight:32;const W=window.innerWidth,H=window.innerHeight-hH-lH;if(W<10||H<10)return;if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H;canvas.style.width=W+'px';canvas.style.height=H+'px';}
 const ctx=canvas.getContext('2d');ctx.clearRect(0,0,W,H);const cs=CELL_PX*mapView.scale;const{x:px,y:py}=state.pos;const ox=W/2-(px*cs)+mapView.x,oy=H/2-(py*cs)+mapView.y;const x0=Math.floor(-ox/cs)-2,y0=Math.floor(-oy/cs)-2,x1=Math.floor((W-ox)/cs)+2,y1=Math.floor((H-oy)/cs)+2;const lt=new Set();const ss=seenSet();
-for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){try{const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],seen=ss.has(`${cx},${cy}`),isCurrent=cx===px&&cy===py;const revealed=visited||seen||isCurrent;const sx=ox+cx*cs,sy=oy+cy*cs;const isLinear=meta.type==='road'||meta.type==='river';const bgType=isLinear?'plains':meta.type;ctx.globalAlpha=!revealed?0.12:(seen&&!visited&&!isCurrent?0.5:1);ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs-1,cs-1);ctx.globalAlpha=1;
-if(isLinear){ctx.globalAlpha=!revealed?0.1:(seen&&!visited&&!isCurrent?0.4:0.9);const fn=meta.type==='river'?isRiverType:isRoadType;const conn=getConnectionsAt(cx,cy,fn);const cc=cs/2;ctx.strokeStyle=meta.type==='river'?'#5aaad4':'#c8a878';ctx.lineWidth=meta.type==='river'?cs*0.22:cs*0.16;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();const{n,s,e,w}=conn;const cnt=[n,s,e,w].filter(Boolean).length;if(cnt>0){if(n&&s&&!e&&!w){ctx.moveTo(sx+cc,sy);ctx.lineTo(sx+cc,sy+cs);}else if(e&&w&&!n&&!s){ctx.moveTo(sx,sy+cc);ctx.lineTo(sx+cs,sy+cc);}else if(n&&e&&!s&&!w){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(n&&w&&!s&&!e){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else if(s&&e&&!n&&!w){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(s&&w&&!n&&!e){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else{if(n||s){ctx.moveTo(sx+cc,n?sy:sy+cc);ctx.lineTo(sx+cc,s?sy+cs:sy+cc);}if(e||w){ctx.moveTo(w?sx:sx+cc,sy+cc);ctx.lineTo(e?sx+cs:sx+cc,sy+cc);}}ctx.stroke();}ctx.globalAlpha=1;}
-if(revealed&&(meta.type===T.DOOR||meta.type===T.GATE)){ctx.globalAlpha=0.8;ctx.fillStyle='#e8b84b';ctx.fillRect(sx+cs*0.35,sy+cs*0.35,cs*0.3,cs*0.3);ctx.globalAlpha=1;}
+for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){try{const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],seen=ss.has(`${cx},${cy}`),isCurrent=cx===px&&cy===py;const sx=ox+cx*cs,sy=oy+cy*cs;const isLinear=meta.type==='road'||meta.type==='river';const bgType=isLinear?'plains':meta.type;ctx.globalAlpha=1;ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs-1,cs-1);ctx.globalAlpha=1;
+if(isLinear){ctx.globalAlpha=0.9;const fn=meta.type==='river'?isRiverType:isRoadType;const conn=getConnectionsAt(cx,cy,fn);const cc=cs/2;ctx.strokeStyle=meta.type==='river'?'#5aaad4':'#c8a878';ctx.lineWidth=meta.type==='river'?cs*0.22:cs*0.16;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();const{n,s,e,w}=conn;const cnt=[n,s,e,w].filter(Boolean).length;if(cnt>0){if(n&&s&&!e&&!w){ctx.moveTo(sx+cc,sy);ctx.lineTo(sx+cc,sy+cs);}else if(e&&w&&!n&&!s){ctx.moveTo(sx,sy+cc);ctx.lineTo(sx+cs,sy+cc);}else if(n&&e&&!s&&!w){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(n&&w&&!s&&!e){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else if(s&&e&&!n&&!w){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(s&&w&&!n&&!e){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else{if(n||s){ctx.moveTo(sx+cc,n?sy:sy+cc);ctx.lineTo(sx+cc,s?sy+cs:sy+cc);}if(e||w){ctx.moveTo(w?sx:sx+cc,sy+cc);ctx.lineTo(e?sx+cs:sx+cc,sy+cc);}}ctx.stroke();}ctx.globalAlpha=1;}
+if(meta.type===T.DOOR||meta.type===T.GATE){ctx.globalAlpha=0.8;ctx.fillStyle='#e8b84b';ctx.fillRect(sx+cs*0.35,sy+cs*0.35,cs*0.3,cs*0.3);ctx.globalAlpha=1;}
 if(mapView.travelTarget&&mapView.travelTarget.x===cx&&mapView.travelTarget.y===cy){ctx.strokeStyle='#e8b84b';ctx.lineWidth=2;ctx.strokeRect(sx+1,sy+1,cs-3,cs-3);}
 if(isCurrent){const cc=cs/2;ctx.beginPath();ctx.arc(sx+cc,sy+cc,cs*0.22,0,Math.PI*2);ctx.fillStyle='#e8b84b';ctx.shadowColor='#e8b84b';ctx.shadowBlur=cs*0.5;ctx.fill();ctx.shadowBlur=0;}
 lt.add(meta.type);}catch(e){}}
@@ -856,7 +962,7 @@ canvas.addEventListener('touchmove',e=>{e.preventDefault();if(mapPinch.active&&e
 canvas.addEventListener('touchend',e=>{if(mapDrag.active&&!mapDrag.moved&&e.changedTouches.length===1)handleMapTap(e.changedTouches[0].clientX,e.changedTouches[0].clientY);mapDrag.active=false;mapPinch.active=false;},{passive:false});
 canvas.addEventListener('mousedown',e=>{mapDrag.active=true;mapDrag.startX=e.clientX;mapDrag.startY=e.clientY;mapDrag.startMapX=mapView.x;mapDrag.startMapY=mapView.y;mapDrag.moved=false;});canvas.addEventListener('mousemove',e=>{if(!mapDrag.active)return;const dx=e.clientX-mapDrag.startX,dy=e.clientY-mapDrag.startY;if(Math.abs(dx)>3||Math.abs(dy)>3)mapDrag.moved=true;mapView.x=mapDrag.startMapX+dx;mapView.y=mapDrag.startMapY+dy;drawMapCanvas();});canvas.addEventListener('mouseup',e=>{if(mapDrag.active&&!mapDrag.moved)handleMapTap(e.clientX,e.clientY);mapDrag.active=false;});canvas.addEventListener('wheel',e=>{e.preventDefault();const d=e.deltaY>0?0.9:1.1;mapView.scale=Math.max(0.5,Math.min(4,mapView.scale*d));drawMapCanvas();},{passive:false});}
 
-function handleMapTap(cx,cy){const canvas=document.getElementById('map-canvas');const rect=canvas.getBoundingClientRect();const W=rect.width,H=rect.height;const cs=CELL_PX*mapView.scale;const{x:px,y:py}=state.pos;const ox=W/2-(px*cs)+mapView.x,oy=H/2-(py*cs)+mapView.y;const x=Math.floor((cx-rect.left-ox)/cs),y=Math.floor((cy-rect.top-oy)/cs);const key=cellKey(x,y);const ss=seenSet();if((x===px&&y===py)||(!ss.has(`${x},${y}`)&&!state.cells[key]))return;const meta=getVisibleCellMeta(x,y);if(!isTraversable(meta.type))return;if(state.layer!=='overworld')return;const steps=Math.abs(x-px)+Math.abs(y-py);const ec=Math.round((1-Math.pow(0.995,steps))*100);mapView.travelTarget={x,y};drawMapCanvas();document.getElementById('map-travel-dest').textContent=state.cells[key]?.locationName||meta.name||terrainLabel(meta.type);document.getElementById('map-travel-info').textContent=`~${steps} steps · ${ec}% chance of encounter`;document.getElementById('map-travel-go').onclick=()=>startQuickTravel(x,y);document.getElementById('map-travel-confirm').classList.add('visible');}
+function handleMapTap(cx,cy){const canvas=document.getElementById('map-canvas');const rect=canvas.getBoundingClientRect();const W=rect.width,H=rect.height;const cs=CELL_PX*mapView.scale;const{x:px,y:py}=state.pos;const ox=W/2-(px*cs)+mapView.x,oy=H/2-(py*cs)+mapView.y;const x=Math.floor((cx-rect.left-ox)/cs),y=Math.floor((cy-rect.top-oy)/cs);const key=cellKey(x,y);if(x===px&&y===py)return;const meta=getVisibleCellMeta(x,y);if(!isTraversable(meta.type))return;if(state.layer!=='overworld')return;const steps=Math.abs(x-px)+Math.abs(y-py);const ec=Math.round((1-Math.pow(0.995,steps))*100);mapView.travelTarget={x,y};drawMapCanvas();document.getElementById('map-travel-dest').textContent=state.cells[key]?.locationName||meta.name||terrainLabel(meta.type);document.getElementById('map-travel-info').textContent=`~${steps} steps · ${ec}% chance of encounter`;document.getElementById('map-travel-go').onclick=()=>startQuickTravel(x,y);document.getElementById('map-travel-confirm').classList.add('visible');}
 function cancelTravel(){mapView.travelTarget=null;document.getElementById('map-travel-confirm').classList.remove('visible');drawMapCanvas();}
 async function startQuickTravel(dx,dy){document.getElementById('map-travel-confirm').classList.remove('visible');toggleMap();const{x:sx,y:sy}=state.pos;mapView.travelTarget=null;const path=[];let cx=sx,cy=sy;while(cx!==dx||cy!==dy){if(cx!==dx)cx+=cx<dx?1:-1;else if(cy!==dy)cy+=cy<dy?1:-1;path.push({x:cx,y:cy});}addMessage(`You set off toward ${state.cells[cellKey(dx,dy)]?.locationName||terrainLabel(getVisibleCellMeta(dx,dy).type)}...`,'system');for(let i=0;i<path.length;i++){const step=path[i];const meta=getVisibleCellMeta(step.x,step.y);if(!isTraversable(meta.type)){addMessage('Your path is blocked. You stop here.','system');await enterCell(path[i-1]?.x??sx,path[i-1]?.y??sy);return;}state.player.day+=0.05;state.player.stamina=Math.min(state.player.maxStamina,state.player.stamina+1);state.pos={x:step.x,y:step.y};const ss2=seenSet();for(let dy2=-FOV_RADIUS;dy2<=FOV_RADIUS;dy2++)for(let dx2=-FOV_RADIUS;dx2<=FOV_RADIUS;dx2++)ss2.add(`${step.x+dx2},${step.y+dy2}`);if(Math.random()<0.005){addMessage(`Something catches your attention after ${i+1} step${i>0?'s':''}...`,'system');await enterCell(step.x,step.y);return;}}await enterCell(dx,dy);}
 
@@ -941,7 +1047,13 @@ JSON: {"locationName":"...","exits":{"n":true,"s":true,"e":true,"w":true},"hasCo
 CURRENCY RULES: coinsAwarded/coinsLost: {"currency":"copper"|"silver"|"gold","amount":N}. Null if none. NEVER put coins in inventoryAdd.
 ITEM VALUES: inventoryAdd items must include: [{"name":"Iron Dagger","valueCp":150}]
 FACTION REP: factionRepChanges = {"faction_id": delta} (-20 to +20). Use sparingly.
-COMBAT: hasCombat true → combatActions 3-4 options inc. one flee. false → [].
+COMBAT RULES:
+- hasCombat triggers ORGANICALLY from player actions: attacking an NPC or creature, provoking a hostile encounter, being ambushed (bandits, wild animals), doing something dangerous (kicking a beehive, startling a horse). Do NOT trigger combat for passive movement through areas.
+- When hasCombat=true: hpDelta reflects first-strike damage (negative = player took damage). combatActions should be 3-4 options including one flee option. Always include a free-text option reminding player they can also type anything.
+- Combat is turn-based via the SITUATION field each turn. Narrate blow-by-blow. Do NOT resolve entire fights in one response.
+- Track enemy condition narratively: describe when they're tiring, bleeding, near death. Player has no HP bar for enemies — keep them guessing.
+- Flee success depends on context: easy in open country, hard in tight spaces or against fast enemies.
+- Player can type anything in combat (throw item, use environment, call for help) — resolve creatively.
 NOTICE: ~1 in 5 squares. Omit if in doubt.
 SKILLS: skillUpdates = {skill:delta}. Never reveal to player.
 NPC SPAWN: npcSpawn: {"name":"...","role":"...","faction":"...","emoji":"...","personality":"...","initialDisposition":0,"trader":null} — only when player engages a specific individual not already an NPC. Null otherwise.`;
@@ -1116,10 +1228,28 @@ async function enterCell(x, y) {
 
   addZones(state.cells[key].locationName, location, situation, notice);
 
-  // Show NPC presence
+  // Show NPC presence and handle forced intercepts
   const presentNpcs = getNpcsAtCurrentLocation();
+  let forcedNpc = null;
+  if (presentNpcs.length > 0) {
+    // Check if any NPC should force-intercept the player
+    for (const id of presentNpcs) {
+      const tmpl = NPC_TEMPLATES[id];
+      const disp = getNpcDisposition(id);
+      const ns = getNpcState(id);
+      const isGuardType = tmpl.faction === 'ironhaven_guard' || (tmpl.role && /guard|sentry|soldier|watchman|toll|bouncer/i.test(tmpl.role));
+      const isHostileType = disp < -40;
+      // Intercept if: guard-type NPC (always check papers on first meeting), or hostile NPC
+      if ((isGuardType && ns.memory.length === 0) || isHostileType) {
+        forcedNpc = id;
+        break;
+      }
+    }
+  }
+
   if (presentNpcs.length > 0) {
     presentNpcs.forEach(id => {
+      if (id === forcedNpc) return; // forced ones handled separately
       const tmpl = NPC_TEMPLATES[id];
       const box = document.getElementById('scene-box');
       const div = document.createElement('div');
@@ -1134,6 +1264,11 @@ async function enterCell(x, y) {
   updateHeader(); updateStats(); updateMoveButtons(); renderMinimap(); renderNpcPresence();
   if (meta.hasCombat && meta.enemy) setCombatMode(true, meta.enemy, meta.combatActions);
   if (!_inTransition) await saveState();
+
+  // Trigger forced intercept after a short delay so scene text renders first
+  if (forcedNpc && !state.inCombat) {
+    setTimeout(() => openNpcDrawer(forcedNpc, true), 800);
+  }
 }
 
 async function move(dx, dy) {
