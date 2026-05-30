@@ -83,7 +83,7 @@ defCell(169,289,'village','Wheatstone');
 defCell(253,396,'castle','High-Crown Castle');
 defCell(311,210,'town','Gladehome');
 defCell(338,414,'town','Sylvanis-Root');
-defCell(402,441,'town','Briar-Town');
+defCell(400,439,'town','Briar-Town');
 defCell(347,556,'town','Frilar-Town');
 defCell(250,544,'village','Theatfields');
 defCell(190,644,'town','Harvestfell');
@@ -101,7 +101,7 @@ const _fp=[
   ['high_crown',   251,393,255,399,'castle'],
   ['gladehome',    310,208,312,212,'town'],
   ['sylvanis_root',337,412,339,416,'town'],
-  ['briar_town',   400,439,404,443,'town'],
+  ['briar_town',   400,439,401,440,'town'],
   ['frilar_town',  346,554,348,558,'town'],
   ['harvestfell',  188,642,192,646,'town'],
   ['theatfields',  249,543,251,545,'village'],
@@ -207,7 +207,20 @@ function makeSimpleTown(id,name,wx,wy,walls,doors){
 
 makeSimpleTown('gladehome','Gladehome',311,210,24,[[-8,2,'The Glad Cup (Inn)','gladehome_inn'],[8,2,'Herbalist','gladehome_herbalist']]);
 makeSimpleTown('sylvanis_root','Sylvanis-Root',338,414,28,[[-8,2,'Sylvan Lodge','sylvanis_inn'],[8,2,'Root Apothecary','sylvanis_apothecary'],[8,16,"Hunters' Hall",'sylvanis_hunters']]);
-makeSimpleTown('briar_town','Briar-Town',402,441,32,[[-8,2,'The Briar Thorn','briar_inn'],[8,2,'Market Hall','briar_market'],[8,18,'Trading Post','briar_trading']]);
+(function(){
+  // BRIAR-TOWN — 50×60 stub (placeholder for proper layout)
+  // Overworld anchor: 400,439. 10m per tile. ~500m×600m.
+  const m={};
+  const W=50,H=60,hw=25;
+  for(let x=-hw;x<=hw;x++){m[`${x},0`]={type:'wall',name:'South Wall'};m[`${x},${H}`]={type:'wall',name:'North Wall'};}
+  for(let y=0;y<=H;y++){m[`-${hw},${y}`]={type:'wall',name:'West Wall'};m[`${hw},${y}`]={type:'wall',name:'East Wall'};}
+  m[`0,0`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:400,y:440}}};
+  m[`0,${H}`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:400,y:438}}};
+  m[`-${hw},30`]={type:'gate',name:'West Gate',exit:{layer:'overworld',pos:{x:399,y:439}}};
+  m[`${hw},30`]={type:'gate',name:'East Gate',exit:{layer:'overworld',pos:{x:401,y:439}}};
+  for(let y=1;y<H;y++)m[`0,${y}`]={type:'street',name:'Morak Street'};
+  SETTLEMENTS['briar_town']={map:m,name:'Briar-Town',entryPos:{x:0,y:2},overworldCell:{x:400,y:439}};
+})();
 makeSimpleTown('frilar_town','Frilar-Town',347,556,24,[[-6,2,'The Shadow Flask','frilar_inn'],[6,2,"Fisherman's Store",'frilar_store']]);
 makeSimpleTown('harvestfell','Harvestfell',190,644,28,[[-6,2,'The Golden Sheaf','harvestfell_inn'],[6,2,'Harvest Market','harvestfell_market'],[-6,16,'Temple of the Sea','harvestfell_temple']]);
 makeSimpleTown('theatfields','Theatfields',250,544,12,[[3,2,'The Thatch & Barrel','theatfields_inn']]);
@@ -224,7 +237,7 @@ const OVERWORLD_TO_SETTLEMENT={};
     ['high_crown',   251,393,255,399],
     ['gladehome',    310,208,312,212],
     ['sylvanis_root',337,412,339,416],
-    ['briar_town',   400,439,404,443],
+    ['briar_town',   400,439,401,440],
     ['frilar_town',  346,554,348,558],
     ['harvestfell',  188,642,192,646],
     ['theatfields',  249,543,251,545],
