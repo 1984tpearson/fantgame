@@ -254,17 +254,17 @@ function rect(x1,y1,x2,y2,type,name,extra={}){
 
 // ── STREETS ──────────────────────────────────────
 // Harbour Street (E-W spine, y=15)
-for(let x=-13;x<=11;x++)t(x,15,'street','Harbour Street');
+for(let x=-12;x<=11;x++)t(x,15,'street','Harbour Street');
 // Fisher's Way (N-S spine, x=0)
 for(let y=0;y<=30;y++)t(0,y,'street',"Fisher's Way");
 // Tanner's Lane (N-S east, x=10)
 for(let y=0;y<=30;y++)t(10,y,'street',"Tanner's Lane");
 // Chapel Lane (N-S west, x=-10)
 for(let y=0;y<=30;y++)t(-10,y,'street',"Chapel Lane");
-// Quay Road (E-W south, y=12)
-for(let x=-13;x<=10;x++)t(x,12,'street','Quay Road');
+// Quay Road (E-W south, y=6)
+for(let x=-12;x<=10;x++)t(x,6,'street','Quay Road');
 // Chandler's Walk (E-W north, y=24)
-for(let x=-13;x<=10;x++)t(x,24,'street',"Chandler's Walk");
+for(let x=-12;x<=10;x++)t(x,24,'street',"Chandler's Walk");
 // Short connector lanes
 for(let y=6;y<=15;y++)t(5,y,'street','Rope Lane');
 for(let y=15;y<=24;y++)t(-5,y,'street','Salt Lane');
@@ -274,10 +274,10 @@ for(let y=15;y<=24;y++)t(10,y,'street','Pier Lane');
 // ── ROAD ENTRIES (open ends, no gates) ──────────
 t(0,0,'road',"Fisher's Way");   // south entry
 t(0,30,'road',"Fisher's Way");  // north entry
-t(-13,15,'road','Harbour Street'); // west entry
+t(-12,15,'road','Harbour Street'); // west entry
 
 // ── HARBOUR (east edge, natural inlet) ──────────
-rect(11,4,12,26,'docks','East-Port Harbour');
+rect(11,4,11,26,'docks','East-Port Harbour');
 t(11,15,'street','Harbour Street'); // street meets docks
 
 // ── MARKET DISTRICT (centre) ─────────────────────
