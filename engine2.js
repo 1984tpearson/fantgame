@@ -214,6 +214,103 @@ async function refreshSceneImage() {
 }
 
 // ═══════════════════════════════════════════════════
+// EPHEMERAL ENCOUNTER TEMPLATES
+// ═══════════════════════════════════════════════════
+const ENCOUNTER_TEMPLATES = {
+  forest:   [
+    { name:'Wolf',         emoji:'🐺', hp:22, minDmg:4, maxDmg:9,  loot:null,                              keywords:['wolf','wolves','dire wolf'] },
+    { name:'Wild Boar',    emoji:'🐗', hp:18, minDmg:5, maxDmg:10, loot:null,                              keywords:['boar','wild boar','pig'] },
+    { name:'Bear',         emoji:'🐻', hp:40, minDmg:8, maxDmg:16, loot:{name:'Bear Pelt',valueCp:120},    keywords:['bear','brown bear','black bear'] },
+    { name:'Bandit',       emoji:'🗡️', hp:20, minDmg:4, maxDmg:8,  loot:{name:'Coin Purse',valueCp:80},   keywords:['bandit','outlaw','brigand','thief','robber'] },
+  ],
+  wilds:    [
+    { name:'Wolf',         emoji:'🐺', hp:22, minDmg:4, maxDmg:9,  loot:null,                              keywords:['wolf','wolves'] },
+    { name:'Wild Cat',     emoji:'🐱', hp:14, minDmg:3, maxDmg:7,  loot:null,                              keywords:['cat','wildcat','lynx','panther'] },
+    { name:'Bandit',       emoji:'🗡️', hp:20, minDmg:4, maxDmg:8,  loot:{name:'Coin Purse',valueCp:80},   keywords:['bandit','outlaw','brigand'] },
+  ],
+  plains:   [
+    { name:'Bandit',       emoji:'🗡️', hp:20, minDmg:4, maxDmg:8,  loot:{name:'Coin Purse',valueCp:80},   keywords:['bandit','outlaw','brigand','highwayman'] },
+    { name:'Rabid Dog',    emoji:'🐕', hp:12, minDmg:3, maxDmg:6,  loot:null,                              keywords:['dog','hound','rabid dog'] },
+  ],
+  road:     [
+    { name:'Bandit',       emoji:'🗡️', hp:20, minDmg:4, maxDmg:8,  loot:{name:'Coin Purse',valueCp:80},   keywords:['bandit','highwayman','outlaw','brigand','robber'] },
+    { name:'Rabid Dog',    emoji:'🐕', hp:12, minDmg:3, maxDmg:6,  loot:null,                              keywords:['dog','hound'] },
+  ],
+  ruins:    [
+    { name:'Giant Rat',    emoji:'🐀', hp:8,  minDmg:2, maxDmg:5,  loot:null,                              keywords:['rat','rats','large rat','giant rat'] },
+    { name:'Skeleton',     emoji:'💀', hp:16, minDmg:4, maxDmg:8,  loot:{name:'Rusted Sword',valueCp:40}, keywords:['skeleton','undead','bones'] },
+    { name:'Feral Dog',    emoji:'🐕', hp:14, minDmg:4, maxDmg:7,  loot:null,                              keywords:['dog','hound','feral dog'] },
+  ],
+  swamp:    [
+    { name:'Giant Rat',    emoji:'🐀', hp:8,  minDmg:2, maxDmg:5,  loot:null,                              keywords:['rat','rats'] },
+    { name:'Bog Serpent',  emoji:'🐍', hp:20, minDmg:5, maxDmg:10, loot:{name:'Venom Sac',valueCp:150},   keywords:['snake','serpent','bog snake','viper'] },
+  ],
+  bog:      [
+    { name:'Giant Rat',    emoji:'🐀', hp:8,  minDmg:2, maxDmg:5,  loot:null,                              keywords:['rat','rats'] },
+    { name:'Bog Serpent',  emoji:'🐍', hp:20, minDmg:5, maxDmg:10, loot:{name:'Venom Sac',valueCp:150},   keywords:['snake','serpent'] },
+  ],
+  fens:     [
+    { name:'Giant Rat',    emoji:'🐀', hp:8,  minDmg:2, maxDmg:5,  loot:null,                              keywords:['rat','rats'] },
+    { name:'Bog Serpent',  emoji:'🐍', hp:20, minDmg:5, maxDmg:10, loot:{name:'Venom Sac',valueCp:150},   keywords:['snake','serpent'] },
+  ],
+  mountain: [
+    { name:'Mountain Lion',emoji:'🦁', hp:28, minDmg:6, maxDmg:12, loot:{name:'Lion Pelt',valueCp:100},   keywords:['lion','mountain lion','puma','cougar','cat'] },
+    { name:'Bandit',       emoji:'🗡️', hp:20, minDmg:4, maxDmg:8,  loot:{name:'Coin Purse',valueCp:80},   keywords:['bandit','outlaw','brigand'] },
+  ],
+  peaks:    [
+    { name:'Mountain Lion',emoji:'🦁', hp:28, minDmg:6, maxDmg:12, loot:{name:'Lion Pelt',valueCp:100},   keywords:['lion','mountain lion','cat'] },
+    { name:'Giant Eagle',  emoji:'🦅', hp:20, minDmg:5, maxDmg:10, loot:null,                              keywords:['eagle','bird','raptor'] },
+  ],
+  interior: [
+    { name:'Giant Rat',    emoji:'🐀', hp:8,  minDmg:2, maxDmg:5,  loot:null,                              keywords:['rat','rats','large rat','giant rat'] },
+    { name:'Thug',         emoji:'🗡️', hp:18, minDmg:4, maxDmg:8,  loot:{name:'Coin Purse',valueCp:60},   keywords:['thug','ruffian','attacker','assailant'] },
+  ],
+  _default: [
+    { name:'Bandit',       emoji:'🗡️', hp:20, minDmg:4, maxDmg:8,  loot:{name:'Coin Purse',valueCp:80},   keywords:['bandit','outlaw','brigand','attacker'] },
+    { name:'Giant Rat',    emoji:'🐀', hp:8,  minDmg:2, maxDmg:5,  loot:null,                              keywords:['rat','rats'] },
+  ],
+};
+
+function matchEncounterTemplate(enemyStr, terrainType) {
+  const lower = (enemyStr || '').toLowerCase();
+  const pool = [...(ENCOUNTER_TEMPLATES[terrainType] || []), ...ENCOUNTER_TEMPLATES._default];
+  for (const t of pool) { if (t.keywords.some(k => lower.includes(k))) return { ...t }; }
+  for (const t of pool) { if (lower.includes(t.name.toLowerCase())) return { ...t }; }
+  const fallback = { ...pool[0] };
+  if (enemyStr) fallback.name = enemyStr;
+  return fallback;
+}
+
+function startEphemeralCombat(enemyStr) {
+  const terrain = getCellMeta(state.pos.x, state.pos.y).type;
+  const tmpl = matchEncounterTemplate(enemyStr, terrain);
+  state.activeCombat = { ...tmpl, maxHp: tmpl.hp, isEphemeral: true };
+  updateEnemyHpBar();
+}
+
+function updateEnemyHpBar() {
+  const ac = state.activeCombat;
+  const bar = document.getElementById('enemy-hp-bar');
+  const label = document.getElementById('enemy-hp-label');
+  const nameEl = document.getElementById('enemy-name-display');
+  const wrap = document.getElementById('enemy-hp-wrap');
+  if (!bar || !ac) { if (wrap) wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  const pct = Math.max(0, Math.round((ac.hp / ac.maxHp) * 100));
+  bar.style.width = pct + '%';
+  // Colour: green → amber → red
+  bar.style.background = pct > 60 ? '#6a9a40' : pct > 30 ? '#c89030' : '#b83030';
+  if (label) label.textContent = ac.hp + ' / ' + ac.maxHp;
+  if (nameEl) nameEl.textContent = (ac.emoji || '') + ' ' + ac.name;
+}
+
+function applyEnemyDamage(playerDmg) {
+  if (!state.activeCombat) return;
+  state.activeCombat.hp = Math.max(0, state.activeCombat.hp - playerDmg);
+  updateEnemyHpBar();
+}
+
+// ═══════════════════════════════════════════════════
 // GAME STATE
 // ═══════════════════════════════════════════════════
 let state = {
@@ -229,6 +326,7 @@ let state = {
   worldState: { factions:[], activeWars:[], worldEvents:[], reputation:{} },
   npcs: {},
   inCombat: false, currentEnemy: null,
+  activeCombat: null,  // { name, emoji, hp, maxHp, minDmg, maxDmg, loot, isEphemeral }
   blockedBy: null,
 };
 
@@ -448,6 +546,8 @@ function toggleShopPanel() {
 function openNpcDrawer(npcId, forced = false) {
   const tmpl = NPC_TEMPLATES[npcId];
   if (!tmpl) return;
+  // Route creature-type NPCs to the creature drawer
+  if (tmpl.type === 'creature') { openCreatureDrawer(npcId, forced); return; }
   npcSession.npcId = npcId;
   npcSession.history = [];
   npcSession.isOpen = true;
@@ -514,6 +614,109 @@ function releaseNpcDrawer() {
     document.getElementById('blocked-notice')?.remove();
     updateMoveButtons();
   }
+}
+
+// ═══════════════════════════════════════════════════
+// CREATURE DRAWER (named permanent creatures)
+// ═══════════════════════════════════════════════════
+let creatureSession = { npcId: null };
+
+function openCreatureDrawer(npcId, forced = false) {
+  const tmpl = NPC_TEMPLATES[npcId];
+  if (!tmpl) return;
+  creatureSession.npcId = npcId;
+
+  document.getElementById('inv-drawer').classList.remove('open');
+  document.getElementById('map-drawer').classList.remove('open');
+  document.getElementById('npc-drawer').classList.remove('open');
+
+  const ns = getNpcState(npcId);
+  // Initialise creature hp from template if not set
+  if (!ns.hp) ns.hp = tmpl.maxHp || 30;
+  if (!ns.maxHp) ns.maxHp = tmpl.maxHp || 30;
+
+  document.getElementById('creature-avatar').textContent = tmpl.emoji || '🐾';
+  document.getElementById('creature-name').textContent = tmpl.name;
+  document.getElementById('creature-role').textContent = tmpl.role || 'Creature';
+
+  const hpPct = Math.max(0, Math.round((ns.hp / ns.maxHp) * 100));
+  const bar = document.getElementById('creature-hp-fill');
+  if (bar) {
+    bar.style.width = hpPct + '%';
+    bar.style.background = hpPct > 60 ? '#6a9a40' : hpPct > 30 ? '#c89030' : '#b83030';
+  }
+  document.getElementById('creature-hp-val').textContent = ns.hp + ' / ' + ns.maxHp;
+
+  // Build memory/status text
+  const memEl = document.getElementById('creature-memory');
+  if (memEl) {
+    const mem = ns.memory.slice(-2);
+    memEl.textContent = mem.length ? mem.join(' · ') : 'Never encountered before.';
+  }
+
+  if (forced) {
+    state.blockedBy = npcId;
+    updateMoveButtons();
+  }
+
+  document.getElementById('creature-drawer').classList.add('open');
+}
+
+function closeCreatureDrawer() {
+  if (creatureSession.npcId && state.blockedBy === creatureSession.npcId) {
+    state.blockedBy = null;
+    updateMoveButtons();
+  }
+  creatureSession.npcId = null;
+  document.getElementById('creature-drawer').classList.remove('open');
+}
+
+async function creatureAttack() {
+  const npcId = creatureSession.npcId;
+  if (!npcId) return;
+  const tmpl = NPC_TEMPLATES[npcId];
+  const ns = getNpcState(npcId);
+  closeCreatureDrawer();
+
+  // Set up activeCombat from the named creature's template
+  state.activeCombat = {
+    name: tmpl.name, emoji: tmpl.emoji || '🐾',
+    hp: ns.hp, maxHp: ns.maxHp,
+    minDmg: tmpl.minDmg || 4, maxDmg: tmpl.maxDmg || 10,
+    loot: tmpl.loot || null,
+    isEphemeral: false, npcId
+  };
+
+  const combatMsg = `You attack ${tmpl.name}!`;
+  state.history.push({ role:'assistant', content:`SITUATION: ${combatMsg}\nJSON: {"hasCombat":true,"enemy":"${tmpl.name}","hpDelta":0,"combatActions":[{"label":"Attack","action":"Attack"},{"label":"Defend yourself","action":"Defend yourself"},{"label":"Try to flee","action":"Try to flee"}],"factionRepChanges":{},"npcSpawn":null}` });
+  addMessage(combatMsg, 'combat');
+  setCombatMode(true, tmpl.name, [
+    { label:'Attack', action:'Attack' },
+    { label:'Defend yourself', action:'Defend yourself' },
+    { label:'Try to flee', action:'Try to flee' }
+  ]);
+  updateEnemyHpBar();
+}
+
+async function creatureExamine() {
+  const npcId = creatureSession.npcId;
+  if (!npcId) return;
+  const tmpl = NPC_TEMPLATES[npcId];
+  const ns = getNpcState(npcId);
+
+  // Ask AI to describe the creature
+  addMessage(`You study the ${tmpl.name} carefully.`, 'player');
+  const messages = [{ role:'user', content:`Describe the ${tmpl.name} (${tmpl.role}) in 2 sentences. Gritty, vivid detail. Mention any visible wounds or behaviour. Memory: ${ns.memory.slice(-1)[0] || 'first encounter'}.` }];
+  const { situation } = await callAI(messages, true);
+  if (situation) addMessage(situation, 'situation');
+
+  ns.memory.push(`Day ${Math.floor(state.player.day)}: Player examined the creature.`);
+  saveState();
+}
+
+function creatureBackOff() {
+  closeCreatureDrawer();
+  addMessage(`You back away cautiously.`, 'transition');
 }
 
 function addNpcConvoLine(text, type='npc') {
@@ -1054,7 +1257,24 @@ function removeTypingIndicator(){const t=document.getElementById('typing');if(t)
 function setLoading(show,text='The world stirs...'){document.getElementById('loading-text').textContent=text;document.getElementById('loading-overlay').classList.toggle('visible',show);}
 function updateHeader(){const{x,y}=state.pos;const meta=getCellMeta(x,y);const key=cellKey(x,y);const cell=state.cells[key];document.getElementById('location-tag').textContent=cell?.locationName||meta.name||terrainLabel(meta.type);document.getElementById('coords').textContent=`${x}, ${y}`;}
 function updateStats(){const p=state.player;document.getElementById('hp-val').textContent=p.hp;document.getElementById('sp-val').textContent=p.stamina;const rg=(walletTotalCopper()/1000).toFixed(2);document.getElementById('gold-val').textContent=`≈${rg}g`;document.getElementById('day-val').textContent=Math.floor(p.day);document.getElementById('hp-bar').style.width=`${(p.hp/p.maxHp)*100}%`;document.getElementById('sp-bar').style.width=`${(p.stamina/p.maxStamina)*100}%`;const dhp=document.getElementById('dhp-val');if(dhp){dhp.textContent=p.hp;document.getElementById('dsp-val').textContent=p.stamina;document.getElementById('dgold-val').textContent=`≈${rg}g`;document.getElementById('dday-val').textContent=Math.floor(p.day);document.getElementById('dhp-bar').style.width=`${(p.hp/p.maxHp)*100}%`;document.getElementById('dsp-bar').style.width=`${(p.stamina/p.maxStamina)*100}%`;}}
-function setCombatMode(on,enemy=null,actions=null){state.inCombat=on;state.currentEnemy=enemy;document.getElementById('combat-panel').classList.toggle('visible',on);if(on)renderCombatActions(actions);updateMoveButtons();}
+function setCombatMode(on,enemy=null,actions=null){
+  state.inCombat=on;
+  state.currentEnemy=enemy;
+  if(on && enemy && !state.activeCombat) startEphemeralCombat(enemy);
+  if(!on){
+    // Sync named creature HP back to persistent state
+    if(state.activeCombat && !state.activeCombat.isEphemeral && state.activeCombat.npcId){
+      const ns=getNpcState(state.activeCombat.npcId);
+      ns.hp=Math.max(0,state.activeCombat.hp);
+      ns.memory.push(`Day ${Math.floor(state.player.day)}: Fought player, ${ns.hp<=0?'defeated':'survived'}.`);
+    }
+    state.activeCombat=null;
+    updateEnemyHpBar();
+  }
+  document.getElementById('combat-panel').classList.toggle('visible',on);
+  if(on) renderCombatActions(actions);
+  updateMoveButtons();
+}
 function renderCombatActions(actions){const c=document.getElementById('combat-actions');c.innerHTML='';const def=[{label:'Attack',action:'Attack'},{label:'Defend',action:'Defend'},{label:'Flee',action:'Flee'}];const list=(actions&&actions.length)?actions:def;list.forEach(a=>{const btn=document.createElement('button');const isItem=a.label.toLowerCase().includes('item')||a.label.toLowerCase().includes('use');const isFlee=a.label.toLowerCase().includes('flee')||a.label.toLowerCase().includes('run');btn.className='combat-btn'+(isFlee?' flee-btn':'')+(isItem?' item-btn':'');if(isItem){btn.textContent='🧪 '+a.label;btn.onclick=()=>openItemUse();}else{btn.textContent=isFlee?'💨 '+a.label:'⚔ '+a.label;btn.onclick=()=>sendCombatAction(a.action);}c.appendChild(btn);});const hasItem=list.some(a=>a.label.toLowerCase().includes('item')||a.label.toLowerCase().includes('use'));if(!hasItem&&state.inventory.length>0){const btn=document.createElement('button');btn.className='combat-btn item-btn';btn.textContent='🧪 Use Item';btn.onclick=()=>openItemUse();c.appendChild(btn);}}
 function openItemUse(){const d=document.getElementById('item-use-drawer'),l=document.getElementById('item-use-list'),e=document.getElementById('item-use-empty');l.innerHTML='';if(state.inventory.length===0)e.style.display='block';else{e.style.display='none';state.inventory.forEach(item=>{const btn=document.createElement('button');btn.className='item-use-btn';btn.textContent=item.name;btn.onclick=()=>{closeItemUse();sendCombatAction(`I use the ${item.name}`);};l.appendChild(btn);});}d.classList.add('open');}
 function closeItemUse(){document.getElementById('item-use-drawer').classList.remove('open');}
@@ -1438,11 +1658,39 @@ async function sendCombatAction(action) {
   const { situation, notice, meta } = await callAI(messages, true);
   if (meta.hpDelta) state.player.hp = Math.max(0, Math.min(state.player.maxHp, state.player.hp + meta.hpDelta));
   applyInventoryChanges(meta); applyCellNotes(meta); applySkillChanges(meta); applyFactionRepChanges(meta);
+
+  // Infer damage dealt to ephemeral enemy from narrative context
+  if (state.activeCombat && state.activeCombat.isEphemeral) {
+    // Estimate damage: if player attacked, deal a random hit in the template range
+    const attackWords = /attack|strike|hit|stab|slash|swing|shoot|throw|kick|punch|stab|cut/i;
+    if (attackWords.test(action) && meta.hasCombat !== false) {
+      const dmg = Math.floor(Math.random() * (state.activeCombat.maxDmg - state.activeCombat.minDmg + 1)) + state.activeCombat.minDmg;
+      applyEnemyDamage(dmg);
+    }
+    // If AI says combat ended AND enemy hp > 0 narratively, trust the AI
+    if (!meta.hasCombat && state.activeCombat.hp > 0) {
+      state.activeCombat.hp = 0;
+      updateEnemyHpBar();
+    }
+  }
+
   state.history.push({ role:'assistant', content: `SITUATION: ${situation}\nJSON: ${JSON.stringify(meta)}` });
   addMessage(situation, 'combat');
   updateStats();
-  if (!meta.hasCombat) { setCombatMode(false); addMessage('The battle is over.', 'system'); }
-  else renderCombatActions(meta.combatActions);
+
+  if (!meta.hasCombat) {
+    // Award loot if enemy was ephemeral and had loot defined
+    if (state.activeCombat?.isEphemeral && state.activeCombat.loot) {
+      const loot = state.activeCombat.loot;
+      state.inventory.push(loot);
+      renderInventory();
+      addMessage(`You find: ${loot.name}.`, 'notice');
+    }
+    setCombatMode(false);
+    addMessage('The battle is over.', 'system');
+  } else {
+    renderCombatActions(meta.combatActions);
+  }
   await saveState();
 }
 

@@ -49,6 +49,11 @@
 
   #combat-panel { display: none; flex-shrink: 0; padding: 8px 12px; border-top: 1px solid rgba(139,58,42,0.4); background: rgba(107,30,30,0.12); }
   #combat-panel.visible { display: block; }
+  #enemy-hp-wrap { display: none; margin-bottom: 7px; padding: 5px 8px; background: rgba(0,0,0,0.25); border-radius: 3px; border: 1px solid rgba(180,60,40,0.25); }
+  #enemy-name-display { font-family: 'Cinzel Decorative', serif; font-size: 0.58rem; color: #d4805a; letter-spacing: 0.1em; margin-bottom: 4px; }
+  #enemy-hp-track { height: 5px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; margin-bottom: 3px; }
+  #enemy-hp-bar { height: 100%; border-radius: 3px; transition: width 0.3s ease, background 0.3s ease; background: #6a9a40; }
+  #enemy-hp-label { font-size: 0.62rem; color: var(--stone-light); text-align: right; }
   #combat-actions { display: flex; flex-wrap: wrap; gap: 6px; }
   .combat-btn { background: rgba(139,58,42,0.2); border: 1px solid rgba(139,58,42,0.5); color: #d4805a; padding: 8px 12px; font-family: 'Crimson Pro', serif; font-size: 0.85rem; cursor: pointer; border-radius: 3px; transition: background 0.15s; flex: 1; min-width: 70px; text-align: center; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
   .combat-btn:active { background: rgba(139,58,42,0.45); }
@@ -182,6 +187,33 @@
   #npc-shop-toggle { background: rgba(201,148,58,0.1); border: 1px solid rgba(201,148,58,0.25); color: var(--gold); font-size: 0.62rem; font-family: 'Cinzel Decorative', serif; padding: 3px 8px; border-radius: 3px; cursor: pointer; margin-left: auto; }
   .npc-dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #a0c878; box-shadow: 0 0 4px #a0c878; }
 
+  /* ── CREATURE DRAWER ── */
+  #creature-drawer { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: rgba(8,5,3,0.98); border-top: 2px solid rgba(180,100,40,0.5); z-index: 70; flex-direction: column; max-height: 55vh; animation: slideUp 0.22s ease; }
+  #creature-drawer.open { display: flex; }
+  #creature-drawer-header { flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 10px 14px 8px; border-bottom: 1px solid rgba(180,100,40,0.2); }
+  #creature-avatar { width: 34px; height: 34px; border-radius: 50%; background: rgba(180,100,40,0.15); border: 1px solid rgba(180,100,40,0.4); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+  #creature-name { font-family: 'Cinzel Decorative', serif; font-size: 0.65rem; color: #d4905a; letter-spacing: 0.12em; }
+  #creature-role { font-size: 0.68rem; color: var(--stone-light); font-style: italic; }
+  #creature-close { background: none; border: none; color: var(--stone-light); font-size: 1.1rem; cursor: pointer; padding: 0 4px; }
+  #creature-body { flex: 1; overflow-y: auto; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+  #creature-hp-row { display: flex; align-items: center; gap: 8px; }
+  #creature-hp-track { flex: 1; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; }
+  #creature-hp-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease, background 0.3s ease; background: #6a9a40; width: 100%; }
+  #creature-hp-val { font-size: 0.65rem; color: var(--stone-light); white-space: nowrap; }
+  #creature-memory { font-size: 0.75rem; color: var(--stone-light); font-style: italic; padding: 4px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+  #creature-actions { flex-shrink: 0; display: flex; gap: 8px; padding: 8px 12px 14px; }
+  .creature-btn { flex: 1; padding: 9px 8px; font-family: 'Crimson Pro', serif; font-size: 0.9rem; border-radius: 4px; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .creature-btn.attack { background: rgba(180,50,40,0.18); border: 1px solid rgba(212,80,60,0.5); color: #e07060; }
+  .creature-btn.attack:active { background: rgba(180,50,40,0.38); }
+  .creature-btn.examine { background: rgba(100,140,180,0.12); border: 1px solid rgba(100,160,200,0.35); color: #88b8d8; }
+  .creature-btn.examine:active { background: rgba(100,140,180,0.25); }
+  .creature-btn.backoff { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); color: var(--stone-light); }
+  .creature-btn.backoff:active { background: rgba(255,255,255,0.1); }
+
+  @media (min-width: 700px) {
+    #creature-drawer { max-width: 600px; left: 50%; transform: translateX(-50%); border-left: 1px solid rgba(180,100,40,0.3); border-right: 1px solid rgba(180,100,40,0.3); border-radius: 4px 4px 0 0; }
+  }
+
   @media (min-width: 700px) {
     #game { display: grid; grid-template-columns: 1fr 300px; grid-template-rows: auto 1fr; max-width: 1100px; margin: 0 auto; }
     #header { grid-column: 1 / -1; padding: 10px 20px; }
@@ -237,7 +269,14 @@
 
   <div id="scene-box"></div>
 
-  <div id="combat-panel"><div id="combat-actions"></div></div>
+  <div id="combat-panel">
+    <div id="enemy-hp-wrap">
+      <div id="enemy-name-display"></div>
+      <div id="enemy-hp-track"><div id="enemy-hp-bar"></div></div>
+      <div id="enemy-hp-label"></div>
+    </div>
+    <div id="combat-actions"></div>
+  </div>
 
   <div id="item-use-drawer">
     <div id="item-use-header">
@@ -407,7 +446,30 @@
   </div>
 </div>
 
-<!-- Settings modal -->
+<!-- Creature Drawer -->
+<div id="creature-drawer">
+  <div id="creature-drawer-header">
+    <div id="creature-avatar">🐾</div>
+    <div style="flex:1;min-width:0;">
+      <div id="creature-name">—</div>
+      <div id="creature-role"></div>
+    </div>
+    <button id="creature-close" onclick="closeCreatureDrawer()">✕</button>
+  </div>
+  <div id="creature-body">
+    <div id="creature-hp-row">
+      <span style="font-size:0.62rem;color:var(--stone-light);width:32px;flex-shrink:0;">HP</span>
+      <div id="creature-hp-track"><div id="creature-hp-fill"></div></div>
+      <span id="creature-hp-val" style="font-size:0.62rem;color:var(--stone-light);white-space:nowrap;padding-left:6px;"></span>
+    </div>
+    <div id="creature-memory"></div>
+  </div>
+  <div id="creature-actions">
+    <button class="creature-btn attack" onclick="creatureAttack()">⚔ Attack</button>
+    <button class="creature-btn examine" onclick="creatureExamine()">👁 Examine</button>
+    <button class="creature-btn backoff" onclick="creatureBackOff()">↩ Back Off</button>
+  </div>
+</div>
 <div id="settings-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;">
   <div style="background:rgba(12,9,6,0.98);border:1px solid rgba(201,148,58,0.35);border-radius:6px;padding:24px 20px;min-width:280px;max-width:360px;width:90%;">
     <div style="font-family:'Cinzel Decorative',serif;font-size:0.7rem;color:var(--gold);letter-spacing:0.14em;margin-bottom:18px;">— Settings —</div>
