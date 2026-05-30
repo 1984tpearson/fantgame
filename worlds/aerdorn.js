@@ -175,8 +175,8 @@ function makeSimpleTown(id,name,wx,wy,walls,doors){
   function sdef(x1,y1,x2,y2,t,n){for(let x=x1;x<=x2;x++)for(let y=y1;y<=y2;y++)m[`${x},${y}`]={type:t,name:n};}
   for(let x=-18;x<=18;x++){m[`${x},0`]={type:'wall',name:'Wall'};m[`${x},36`]={type:'wall',name:'Wall'};}
   for(let y=0;y<=36;y++){m[`-18,${y}`]={type:'wall',name:'Wall'};m[`18,${y}`]={type:'wall',name:'Wall'};}
-  m[`0,0`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:260,y:152}}};
-  m[`0,36`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:260,y:144}}};
+  m[`0,0`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:260,y:144}}};
+  m[`0,36`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:260,y:152}}};
   for(let y=1;y<=35;y++)m[`0,${y}`]={type:'street',name:'High Street'};
   for(let x=-17;x<=17;x++)m[`${x},18`]={type:'street',name:'Cross Road'};
   sdef(-8,2,8,8,'market','Market Square');sdef(-15,2,-2,8,'building',"Weaver's Hall");
@@ -193,8 +193,8 @@ function makeSimpleTown(id,name,wx,wy,walls,doors){
   function sdef(x1,y1,x2,y2,t,n){for(let x=x1;x<=x2;x++)for(let y=y1;y<=y2;y++)m[`${x},${y}`]={type:t,name:n};}
   for(let x=-20;x<=20;x++){m[`${x},0`]={type:'wall',name:'Outer Wall'};m[`${x},40`]={type:'wall',name:'Outer Wall'};}
   for(let y=0;y<=40;y++){m[`-20,${y}`]={type:'wall',name:'Outer Wall'};m[`20,${y}`]={type:'wall',name:'Outer Wall'};}
-  m[`0,0`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:253,y:400}}};
-  m[`0,40`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:253,y:392}}};
+  m[`0,0`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:253,y:392}}};
+  m[`0,40`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:253,y:400}}};
   for(let y=1;y<=39;y++)m[`0,${y}`]={type:'street',name:'Castle Road'};
   sdef(-18,2,-2,18,'courtyard','Outer Bailey');sdef(2,2,18,18,'building','Barracks');
   sdef(-18,22,-2,38,'building','Great Hall');sdef(2,22,18,38,'building','Royal Quarters');
