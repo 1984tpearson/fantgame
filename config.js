@@ -27,6 +27,7 @@ const CONFIG = {
   NPC_IMAGE_STYLE_SUFFIX: 'Mediaeval+++, Full body shot++, No background+++ (gritty Comic book Art style+, Thick black ink outlines, flat cell shading, painterly colouring)++',
   NPC_IMAGE_NEGATIVE: 'Background-- Close up, Anime--, Photo Realistic, Smooth shading, texture, extra cloth--, loose fabric--, monochrome, sketch, tattoos, big mouth, big smile, sci-fi, superhero, muscles, muscular, extra limbs, badly drawn hands',
 
-  ENABLE_IMAGES: false,
+  ENABLE_SCENE_IMAGES: false,
+  ENABLE_NPC_IMAGES: true,
   ENABLE_SUPABASE: true,
 };

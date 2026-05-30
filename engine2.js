@@ -108,7 +108,7 @@ const DB = {
 // IMAGE GENERATION (DEZGO)
 // ═══════════════════════════════════════════════════
 async function generateSceneImage(description, cellKeyStr) {
-  if (!CONFIG.ENABLE_IMAGES) return null;
+  if (!CONFIG.ENABLE_SCENE_IMAGES) return null;
   try {
     const prompt = `${CONFIG.IMAGE_STYLE_SUFFIX}, ${description}`;
     const form = new FormData();
@@ -172,7 +172,7 @@ function buildNpcImagePrompt(tmpl) {
 }
 
 async function generateNpcImage(npcId) {
-  if (!CONFIG.ENABLE_IMAGES) return null;
+  if (!CONFIG.ENABLE_NPC_IMAGES) return null;
   const tmpl = NPC_TEMPLATES[npcId];
   if (!tmpl) return null;
   // Return cached URL immediately if already generated
