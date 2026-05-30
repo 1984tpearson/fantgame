@@ -1435,6 +1435,20 @@ async function enterCell(x, y) {
   }
 
   updateHeader(); updateStats(); updateMoveButtons(); renderMinimap(); renderNpcPresence();
+
+  // Show door hints for adjacent buildings
+  if (state.layer === 'settlement') {
+    const doorHints = [];
+    const cardinals = [{dx:0,dy:-1,label:'north'},{dx:0,dy:1,label:'south'},{dx:1,dy:0,label:'east'},{dx:-1,dy:0,label:'west'}];
+    for (const {dx,dy,label} of cardinals) {
+      const nm = getCellMeta(x+dx, y+dy);
+      const face = dx===1?'west':dx===-1?'east':dy===1?'north':dy===-1?'south':null;
+      if (nm.type===T.BUILDING && nm.doors && face && nm.doors.includes(face))
+        doorHints.push(`There is a door to your ${label} — <em>${nm.name||'building'}</em>.`);
+    }
+    if (doorHints.length) addMessage(doorHints.join(' '), 'notice');
+  }
+
   if (meta.hasCombat && meta.enemy) setCombatMode(true, meta.enemy, meta.combatActions);
   if (!_inTransition) await saveState();
 
