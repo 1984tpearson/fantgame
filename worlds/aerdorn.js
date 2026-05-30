@@ -134,8 +134,8 @@ function makeSimpleTown(id,name,wx,wy,walls,doors){
   const m={};const hw=Math.floor(walls/2);
   for(let x=-hw;x<=hw;x++){m[`${x},0`]={type:'wall',name:'Wall'};m[`${x},${walls}`]={type:'wall',name:'Wall'};}
   for(let y=0;y<=walls;y++){m[`-${hw},${y}`]={type:'wall',name:'Wall'};m[`${hw},${y}`]={type:'wall',name:'Wall'};}
-  const _fh=Math.floor(walls/4)+3;m[`0,0`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:wx,y:wy+_fh}}};
-  m[`0,${walls}`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:wx,y:wy-_fh}}};
+  const _fh=Math.floor(walls/4)+3;m[`0,0`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:wx,y:wy-_fh}}};
+  m[`0,${walls}`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:wx,y:wy+_fh}}};
   for(let y=1;y<walls;y++)m[`0,${y}`]={type:'street',name:'Main Street'};
   const mid=Math.floor(walls/2);
   for(let x=-(hw-1);x<=(hw-1);x++)m[`${x},${mid}`]={type:'street',name:'Cross Street'};
@@ -152,8 +152,8 @@ function makeSimpleTown(id,name,wx,wy,walls,doors){
   function sdef(x1,y1,x2,y2,t,n){for(let x=x1;x<=x2;x++)for(let y=y1;y<=y2;y++)m[`${x},${y}`]={type:t,name:n};}
   for(let x=-30;x<=30;x++){m[`${x},0`]={type:'wall',name:'South Wall'};m[`${x},60`]={type:'wall',name:'North Wall'};}
   for(let y=0;y<=60;y++){m[`-30,${y}`]={type:'wall',name:'West Wall'};m[`30,${y}`]={type:'wall',name:'East Wall'};}
-  m[`0,0`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:139,y:267}}};
-  m[`0,60`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:139,y:257}}};
+  m[`0,0`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:139,y:257}}};
+  m[`0,60`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:139,y:267}}};
   m[`-30,30`]={type:'gate',name:'West Gate',exit:{layer:'overworld',pos:{x:135,y:262}}};
   m[`30,30`]={type:'gate',name:'East Gate',exit:{layer:'overworld',pos:{x:143,y:262}}};
   for(let y=1;y<=59;y++)m[`0,${y}`]={type:'street',name:"King's Road"};

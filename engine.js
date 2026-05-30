@@ -1007,7 +1007,9 @@ async function enterSettlement(id){const s=SETTLEMENTS[id];if(!s)return;
     const refY=prev?prev.y:ow.y, refX=prev?prev.x:ow.x;
     const dy=refY-fpCY, dx=refX-fpCX;
     if(Math.abs(dy)>=Math.abs(dx)){
-      entryPos=dy>=0?{x:midX,y:minY+2}:{x:midX,y:maxY-2};
+      // dy>=0: came from south (higher y) -> enter south end (maxY-2)
+      // dy<0: came from north (lower y) -> enter north end (minY+2)
+      entryPos=dy>=0?{x:midX,y:maxY-2}:{x:midX,y:minY+2};
     } else {
       entryPos=dx>=0?{x:maxX-2,y:midY}:{x:minX+2,y:midY};
     }
