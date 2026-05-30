@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════
 // VALDENMERE ENGINE
 // Reads world data from window.WORLD_DATA (set by worlds/*.js)
 // Reads config from window.CONFIG (set by config.js)
@@ -34,10 +34,11 @@ const DB = {
           'apikey': CONFIG.SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json',
-          'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
+          'Prefer': 'return=minimal'
         }
       };
       if (body) opts.body = JSON.stringify(body);
+      if (method === 'POST') opts.headers['Prefer'] = 'resolution=merge-duplicates,return=minimal';
       const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/${path}`, opts);
       if (!res.ok) return null;
       const text = await res.text();
@@ -199,10 +200,8 @@ async function refreshSceneImage() {
   const key = cellKey(state.pos.x, state.pos.y);
   const cell = state.cells[key];
   const meta = getCellMeta(state.pos.x, state.pos.y);
-  const northMeta = getCellMeta(state.pos.x, state.pos.y - 1);
-  const northHint = (northMeta.name && northMeta.name !== meta.name) ? ` To the north: ${northMeta.name}.` : '';
   // Use stored description if available, otherwise location name
-  const desc = (cell?.description || cell?.locationName || terrainLabel(meta.type)) + northHint;
+  const desc = (cell?.description || cell?.locationName || terrainLabel(meta.type)) ;
   const newKey = key + '_' + Date.now();
   const url = await generateSceneImage(desc, newKey);
   if (url) {
@@ -308,7 +307,14 @@ function getNpcsAtCurrentLocation() {
           if (nx === state.pos.x && ny === state.pos.y) { present.push(id); break; }
         }
       } else if (state.layer === 'overworld') {
-        present.push(id); break;
+        if (slot.posKey) {
+          const parts = slot.posKey.split(',');
+          if (parts.length === 2) {
+            const nx=parseInt(parts[0]),ny=parseInt(parts[1]);
+            const dist=Math.abs(nx-state.pos.x)+Math.abs(ny-state.pos.y);
+            if (dist <= 1) { present.push(id); break; }
+          }
+        } else { present.push(id); break; }
       }
     }
   }
@@ -595,11 +601,15 @@ function buildNpcSystemPrompt(npcId) {
   const memStr = ns.memory.length ? ns.memory.slice(-5).join('; ') : 'none';
   const hasTrader = !!tmpl.trader;
 
+  // Only reveal player name to NPC if it appears in their memory
+  const npcKnowsName = state.player.name && memStr.toLowerCase().includes(state.player.name.toLowerCase());
+  const playerRef = npcKnowsName ? `PLAYER NAME: ${state.player.name}` : `PLAYER NAME: unknown — do not use their name unless they introduce themselves. If they do, include "learned name: [name]" in your memoryNote.`;
   return `You are ${tmpl.name}, ${tmpl.role}, in the world of Valdenmere.
 PERSONALITY: ${tmpl.personality}
 FACTION: ${FACTIONS[tmpl.faction]?.name || tmpl.faction}. Faction rep with player: ${factionRep > 0 ? '+'+factionRep : factionRep} (${dl.label}).
 DISPOSITION toward player: ${disp.toFixed(0)} / 100 (${dl.label}).
 YOUR MEMORY of this player: ${memStr}
+${playerRef}
 WORLD: The Kingdom of Aerdorn. Day ${Math.floor(state.player.day)}.
 PLAYER WALLET: ${formatWallet()}. Inventory: ${state.inventory.map(i=>i.name).join(', ')||'nothing notable'}.
 ${hasTrader ? `You are a trader. Mention wares exist — UI shows them separately. Don't list prices in dialogue.` : ''}
@@ -873,6 +883,8 @@ async function saveState() {
 
   // Also save to Supabase (non-blocking)
   if (CONFIG.ENABLE_SUPABASE) {
+    const seenForDB = {};
+    for (const [k,v] of Object.entries(state.seen)) seenForDB[k] = [...v];
     DB.savePlayer({
       layer: state.layer, settlement_id: state.settlementId, interior_id: state.interiorId,
       pos_x: state.pos.x, pos_y: state.pos.y,
@@ -880,7 +892,7 @@ async function saveState() {
       player: state.player, wallet: state.wallet, inventory: state.inventory,
       equipped: state.equipped, skills: state.skills, world_state: state.worldState,
       layer_history: state.layerHistory, blocked_by: state.blockedBy,
-      meta: { npcs: state.npcs }
+      meta: { npcs: state.npcs, cells: state.cells, seen: seenForDB }
     }).catch(() => {});
   }
 }
@@ -894,7 +906,9 @@ async function loadState() {
       state.settlementId = row.settlement_id || null;
       state.interiorId = row.interior_id || null;
       state.layerHistory = row.layer_history || [];
-      state.pos = { x: row.pos_x || 0, y: row.pos_y || 0 };
+      const lx = row.pos_x || 0, ly = row.pos_y || 0;
+      const loadedTerrain = WORLD_DATA.inferTerrain ? WORLD_DATA.inferTerrain(lx, ly) : null;
+      state.pos = (loadedTerrain && loadedTerrain.type === 'ocean') ? {x:139,y:264} : {x:lx,y:ly};
       state.lastOverworldPos = { x: row.last_overworld_x || 0, y: row.last_overworld_y || 0 };
       state.player = { ...state.player, ...(row.player || {}) };
       state.wallet = { other: [], ...state.wallet, ...(row.wallet || {}) };
@@ -904,13 +918,19 @@ async function loadState() {
       state.worldState = { ...state.worldState, ...(row.world_state || {}) };
       state.blockedBy = row.blocked_by || null;
       if (row.npcs) state.npcs = row.npcs;
-      // Cells still from localStorage (large data)
-      const raw = localStorage.getItem('aerdorn-state');
-      if (raw) {
-        const s = JSON.parse(raw);
-        state.cells = s.cells || {};
+      // Load cells+seen: prefer Supabase meta, fall back to localStorage
+      if (row.meta && row.meta.cells) {
+        state.cells = row.meta.cells || {};
         state.seen = {};
-        if (s.seen) for (const [k,v] of Object.entries(s.seen)) state.seen[k] = new Set(v);
+        if (row.meta.seen) for (const [k,v] of Object.entries(row.meta.seen)) state.seen[k] = new Set(v);
+      } else {
+        const raw = localStorage.getItem('aerdorn-state');
+        if (raw) {
+          const s = JSON.parse(raw);
+          state.cells = s.cells || {};
+          state.seen = {};
+          if (s.seen) for (const [k,v] of Object.entries(s.seen)) state.seen[k] = new Set(v);
+        }
       }
       return true;
     }
@@ -936,7 +956,9 @@ async function loadState() {
       state.skills = s.skills || {};
       state.worldState = { ...state.worldState, ...s.worldState };
       state.npcs = s.npcs || {};
-      state.pos = s.pos || { x:0, y:0 };
+      const rawPos = s.pos || {x:0,y:0};
+      const rawTerrain = WORLD_DATA.inferTerrain ? WORLD_DATA.inferTerrain(rawPos.x, rawPos.y) : null;
+      state.pos = (rawTerrain && rawTerrain.type === 'ocean') ? {x:139,y:264} : rawPos;
       state.lastOverworldPos = s.lastOverworldPos || { ...state.pos };
       state.blockedBy = s.blockedBy || null;
       return true;
@@ -948,7 +970,7 @@ async function loadState() {
 // ═══════════════════════════════════════════════════
 // TERRAIN / MAP HELPERS
 // ═══════════════════════════════════════════════════
-function getCellMeta(x,y){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];return s?.map[`${x},${y}`]||{type:T.COURTYARD,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${x},${y}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(x,y):null)||{type:T.PLAINS,name:''};}
+function getCellMeta(x,y){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];return s?.map[`${x},${y}`]||{type:T.WALL,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${x},${y}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(x,y):null)||{type:T.PLAINS,name:''};}
 function terrainLabel(type){return{ocean:'Ocean',plains:'Plains',forest:'Forest',mountain:'Mountains',city:'City',town:'Town',village:'Village',road:'Road',farmland:'Farmland',river:'River',street:'Street',building:'Building',door:'Doorway',wall:'Wall',courtyard:'Courtyard',market:'Market',docks:'Docks',gate:'Gate',interior:'Interior',swamp:'Swamp',bog:'Bog',wilds:'Wilds',fens:'Fens',shore:'Shore',peaks:'Peaks',castle:'Castle',keep:'Keep',ruins:'Ruins'}[type]||'Wilderness';}
 function getNeighbourMeta(x,y){return{n:getCellMeta(x,y-1),s:getCellMeta(x,y+1),e:getCellMeta(x+1,y),w:getCellMeta(x-1,y)};}
 function isTraversable(type){return type!==T.OCEAN&&type!==T.WALL&&type!==T.BUILDING;}
@@ -960,7 +982,33 @@ let _suppressTransitions=false, _inTransition=false;
 
 function getCellTransition(x,y){if(_suppressTransitions)return null;if(state.layer==='overworld'){const sid=OVERWORLD_TO_SETTLEMENT[`${x},${y}`];if(sid&&SETTLEMENTS[sid])return{type:'enter_settlement',id:sid};return null;}if(state.layer==='settlement'){const cell=SETTLEMENTS[state.settlementId]?.map[`${x},${y}`];if(cell?.enter)return{type:'enter_interior',...cell.enter};return null;}return null;}
 
-async function enterSettlement(id){const s=SETTLEMENTS[id];if(!s)return;state.layerHistory.push({layer:state.layer,settlementId:state.settlementId,interiorId:state.interiorId,pos:{...state.lastOverworldPos}});state.layer='settlement';state.settlementId=id;state.interiorId=null;state.pos={...s.entryPos};addMessage(`You pass through the gates of ${s.name}.`,'transition');updateLayerBadge();_suppressTransitions=true;_inTransition=true;await enterCell(state.pos.x,state.pos.y);_inTransition=false;_suppressTransitions=false;await saveState();}
+async function enterSettlement(id){const s=SETTLEMENTS[id];if(!s)return;
+  // Determine entry direction from overworld approach
+  // Use lastOverworldPos (where player was before entering) vs footprint center
+  const ow=state.pos;
+  const prev=state.lastOverworldPos;
+  let entryPos={...s.entryPos};
+  if(s.map){
+    const keys=Object.keys(s.map).filter(k=>s.map[k].type!=='wall');
+    const xs=keys.map(k=>parseInt(k.split(',')[0])),ys=keys.map(k=>parseInt(k.split(',')[1]));
+    const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+    const midX=Math.round((minX+maxX)/2),midY=Math.round((minY+maxY)/2);
+    // Find footprint center by averaging nearby matching cells
+    let fpSumX=0,fpSumY=0,fpCount=0;
+    for(let sx=ow.x-6;sx<=ow.x+6;sx++)for(let sy=ow.y-6;sy<=ow.y+6;sy++){
+      if(WORLD_META[`${sx},${sy}`]?.name===id){fpSumX+=sx;fpSumY+=sy;fpCount++;}
+    }
+    const fpCX=fpCount?Math.round(fpSumX/fpCount):ow.x;
+    const fpCY=fpCount?Math.round(fpSumY/fpCount):ow.y;
+    const refY=prev?prev.y:ow.y, refX=prev?prev.x:ow.x;
+    const dy=refY-fpCY, dx=refX-fpCX;
+    if(Math.abs(dy)>=Math.abs(dx)){
+      entryPos=dy>=0?{x:midX,y:minY+2}:{x:midX,y:maxY-2};
+    } else {
+      entryPos=dx>=0?{x:maxX-2,y:midY}:{x:minX+2,y:midY};
+    }
+  }
+  state.layerHistory.push({layer:state.layer,settlementId:state.settlementId,interiorId:state.interiorId,pos:{...state.lastOverworldPos}});state.layer='settlement';state.settlementId=id;state.interiorId=null;state.pos=entryPos;addMessage(`You pass through the gates of ${s.name}.`,'transition');updateLayerBadge();_suppressTransitions=true;_inTransition=true;await enterCell(state.pos.x,state.pos.y);_inTransition=false;_suppressTransitions=false;await saveState();}
 async function enterInterior(id,ep){state.layerHistory.push({layer:state.layer,settlementId:state.settlementId,interiorId:state.interiorId,pos:{...state.pos}});state.layer='interior';state.interiorId=id;state.pos={...ep}||{x:1,y:1};const dc=state.cells[`${state.layerHistory[state.layerHistory.length-1]?.settlementId}:${state.layerHistory[state.layerHistory.length-1]?.pos?.x},${state.layerHistory[state.layerHistory.length-1]?.pos?.y}`];addMessage(`You step inside ${dc?.locationName||'the building'}.`,'transition');updateLayerBadge();_suppressTransitions=true;_inTransition=true;await enterCell(state.pos.x,state.pos.y);_inTransition=false;_suppressTransitions=false;await saveState();}
 async function exitLayer(){if(state.layerHistory.length===0)return;if(npcSession.isOpen)closeNpcDrawer();state.blockedBy=null;document.getElementById('blocked-notice')?.remove();const prev=state.layerHistory.pop();if(state.layer==='interior')addMessage(`You step back outside.`,'transition');else if(state.layer==='settlement')addMessage(`You pass back through the gates of ${SETTLEMENTS[state.settlementId]?.name||'the settlement'}.`,'transition');state.layer=prev.layer;state.settlementId=prev.settlementId;state.interiorId=prev.interiorId;state.pos={...prev.pos};updateLayerBadge();_suppressTransitions=true;_inTransition=true;await enterCell(state.pos.x,state.pos.y);_inTransition=false;_suppressTransitions=false;await saveState();}
 function handleCentreBtn(){if(state.layer!=='overworld')exitLayer();}
@@ -988,10 +1036,10 @@ function updateLayerBadge(){
 // ═══════════════════════════════════════════════════
 // CANVAS MAP
 // ═══════════════════════════════════════════════════
-const CELL_PX=16;
+const CELL_PX=32;
 const TERRAIN_HEX={ocean:'#1a2d3a',plains:'#3a4a2a',forest:'#1e3a1e',mountain:'#4a4040',city:'#6a5030',town:'#5a4525',village:'#4a3a20',road:'#3a4a2a',farmland:'#4a4a20',river:'#3a4a2a',unknown:'#181410',street:'#4a3e30',building:'#5a3a20',door:'#7a5030',wall:'#3a3030',courtyard:'#3a4228',market:'#5a4a28',docks:'#2a3a4a',gate:'#6a5540',interior:'#3a2a18',swamp:'#2a3a28',bog:'#2a3828',wilds:'#162a16',fens:'#263428',shore:'#3a4a40',peaks:'#4a4448',castle:'#5a4838',keep:'#604830',ruins:'#3a3228'};
 let mapView={x:0,y:0,scale:1,travelTarget:null};
-function getVisibleCellMeta(cx,cy){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];return s?.map[`${cx},${cy}`]||{type:T.COURTYARD,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${cx},${cy}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(cx,cy):null)||{type:T.PLAINS,name:''};}
+function getVisibleCellMeta(cx,cy){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];return s?.map[`${cx},${cy}`]||{type:T.WALL,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${cx},${cy}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(cx,cy):null)||{type:T.PLAINS,name:''};}
 function drawMapCanvas(){const canvas=document.getElementById('map-canvas');if(!canvas)return;const hEl=document.getElementById('map-drawer-header'),lEl=document.getElementById('map-legend');const hH=hEl?hEl.offsetHeight:44,lH=lEl?lEl.offsetHeight:32;const W=window.innerWidth,H=window.innerHeight-hH-lH;if(W<10||H<10)return;if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H;canvas.style.width=W+'px';canvas.style.height=H+'px';}
 const ctx=canvas.getContext('2d');ctx.clearRect(0,0,W,H);const cs=CELL_PX*mapView.scale;const{x:px,y:py}=state.pos;const ox=W/2-(px*cs)+mapView.x,oy=H/2-(py*cs)+mapView.y;const x0=Math.floor(-ox/cs)-2,y0=Math.floor(-oy/cs)-2,x1=Math.floor((W-ox)/cs)+2,y1=Math.floor((H-oy)/cs)+2;const lt=new Set();const ss=seenSet();
 // ── WORLD MAP IMAGE BACKGROUND ──────────────────────
@@ -1018,11 +1066,11 @@ const leg=document.getElementById('map-legend');if(leg){leg.innerHTML='';lt.forE
 
 let mapDrag={active:false,startX:0,startY:0,startMapX:0,startMapY:0},mapPinch={active:false,startDist:0,startScale:1},mapInteractionInit=false;
 function initMapInteraction(){if(mapInteractionInit)return;mapInteractionInit=true;const canvas=document.getElementById('map-canvas');if(!canvas)return;canvas.addEventListener('touchstart',e=>{e.preventDefault();if(e.touches.length===2){mapPinch.active=true;mapDrag.active=false;mapPinch.startDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);mapPinch.startScale=mapView.scale;}else if(e.touches.length===1){mapDrag.active=true;mapPinch.active=false;mapDrag.startX=e.touches[0].clientX;mapDrag.startY=e.touches[0].clientY;mapDrag.startMapX=mapView.x;mapDrag.startMapY=mapView.y;mapDrag.moved=false;}},{passive:false});
-canvas.addEventListener('touchmove',e=>{e.preventDefault();if(mapPinch.active&&e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);mapView.scale=Math.max(0.5,Math.min(4,mapPinch.startScale*(d/mapPinch.startDist)));drawMapCanvas();}else if(mapDrag.active&&e.touches.length===1){const dx=e.touches[0].clientX-mapDrag.startX,dy=e.touches[0].clientY-mapDrag.startY;if(Math.abs(dx)>3||Math.abs(dy)>3)mapDrag.moved=true;mapView.x=mapDrag.startMapX+dx;mapView.y=mapDrag.startMapY+dy;drawMapCanvas();}},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();if(mapPinch.active&&e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);mapView.scale=Math.max(0.08,Math.min(4,mapPinch.startScale*(d/mapPinch.startDist)));drawMapCanvas();}else if(mapDrag.active&&e.touches.length===1){const dx=e.touches[0].clientX-mapDrag.startX,dy=e.touches[0].clientY-mapDrag.startY;if(Math.abs(dx)>3||Math.abs(dy)>3)mapDrag.moved=true;mapView.x=mapDrag.startMapX+dx;mapView.y=mapDrag.startMapY+dy;drawMapCanvas();}},{passive:false});
 canvas.addEventListener('touchend',e=>{if(mapDrag.active&&!mapDrag.moved&&e.changedTouches.length===1)handleMapTap(e.changedTouches[0].clientX,e.changedTouches[0].clientY);mapDrag.active=false;mapPinch.active=false;},{passive:false});
-canvas.addEventListener('mousedown',e=>{mapDrag.active=true;mapDrag.startX=e.clientX;mapDrag.startY=e.clientY;mapDrag.startMapX=mapView.x;mapDrag.startMapY=mapView.y;mapDrag.moved=false;});canvas.addEventListener('mousemove',e=>{if(!mapDrag.active)return;const dx=e.clientX-mapDrag.startX,dy=e.clientY-mapDrag.startY;if(Math.abs(dx)>3||Math.abs(dy)>3)mapDrag.moved=true;mapView.x=mapDrag.startMapX+dx;mapView.y=mapDrag.startMapY+dy;drawMapCanvas();});canvas.addEventListener('mouseup',e=>{if(mapDrag.active&&!mapDrag.moved)handleMapTap(e.clientX,e.clientY);mapDrag.active=false;});canvas.addEventListener('wheel',e=>{e.preventDefault();const d=e.deltaY>0?0.9:1.1;mapView.scale=Math.max(0.5,Math.min(4,mapView.scale*d));drawMapCanvas();},{passive:false});}
+canvas.addEventListener('mousedown',e=>{mapDrag.active=true;mapDrag.startX=e.clientX;mapDrag.startY=e.clientY;mapDrag.startMapX=mapView.x;mapDrag.startMapY=mapView.y;mapDrag.moved=false;});canvas.addEventListener('mousemove',e=>{if(!mapDrag.active)return;const dx=e.clientX-mapDrag.startX,dy=e.clientY-mapDrag.startY;if(Math.abs(dx)>3||Math.abs(dy)>3)mapDrag.moved=true;mapView.x=mapDrag.startMapX+dx;mapView.y=mapDrag.startMapY+dy;drawMapCanvas();});canvas.addEventListener('mouseup',e=>{if(mapDrag.active&&!mapDrag.moved)handleMapTap(e.clientX,e.clientY);mapDrag.active=false;});canvas.addEventListener('wheel',e=>{e.preventDefault();const d=e.deltaY>0?0.9:1.1;mapView.scale=Math.max(0.08,Math.min(4,mapView.scale*d));drawMapCanvas();},{passive:false});}
 
-function handleMapTap(cx,cy){const canvas=document.getElementById('map-canvas');const rect=canvas.getBoundingClientRect();const W=rect.width,H=rect.height;const cs=CELL_PX*mapView.scale;const{x:px,y:py}=state.pos;const ox=W/2-(px*cs)+mapView.x,oy=H/2-(py*cs)+mapView.y;const x=Math.floor((cx-rect.left-ox)/cs),y=Math.floor((cy-rect.top-oy)/cs);const key=cellKey(x,y);if(x===px&&y===py)return;const meta=getVisibleCellMeta(x,y);if(!isTraversable(meta.type))return;if(state.layer!=='overworld')return;const steps=Math.abs(x-px)+Math.abs(y-py);const ec=Math.round((1-Math.pow(0.995,steps))*100);mapView.travelTarget={x,y};drawMapCanvas();document.getElementById('map-travel-dest').textContent=state.cells[key]?.locationName||meta.name||terrainLabel(meta.type);document.getElementById('map-travel-info').textContent=`~${steps} steps · ${ec}% chance of encounter`;document.getElementById('map-travel-go').onclick=()=>startQuickTravel(x,y);document.getElementById('map-travel-confirm').classList.add('visible');}
+function handleMapTap(cx,cy){const canvas=document.getElementById('map-canvas');const rect=canvas.getBoundingClientRect();const W=canvas.width,H=canvas.height;const scaleX=W/rect.width,scaleY=H/rect.height;cx=(cx-rect.left)*scaleX;cy=(cy-rect.top)*scaleY;const cs=CELL_PX*mapView.scale;const{x:px,y:py}=state.pos;const ox=W/2-(px*cs)+mapView.x,oy=H/2-(py*cs)+mapView.y;const x=Math.floor((cx-ox)/cs),y=Math.floor((cy-oy)/cs);const key=cellKey(x,y);if(x===px&&y===py)return;const meta=getVisibleCellMeta(x,y);if(!isTraversable(meta.type))return;if(state.layer!=='overworld')return;const steps=Math.abs(x-px)+Math.abs(y-py);const ec=Math.round((1-Math.pow(0.995,steps))*100);mapView.travelTarget={x,y};drawMapCanvas();document.getElementById('map-travel-dest').textContent=state.cells[key]?.locationName||meta.name||terrainLabel(meta.type);document.getElementById('map-travel-info').textContent=`~${steps} steps · ${ec}% chance of encounter`;document.getElementById('map-travel-go').onclick=()=>startQuickTravel(x,y);document.getElementById('map-travel-confirm').classList.add('visible');}
 function cancelTravel(){mapView.travelTarget=null;document.getElementById('map-travel-confirm').classList.remove('visible');drawMapCanvas();}
 async function startQuickTravel(dx,dy){document.getElementById('map-travel-confirm').classList.remove('visible');toggleMap();const{x:sx,y:sy}=state.pos;mapView.travelTarget=null;const path=[];let cx=sx,cy=sy;while(cx!==dx||cy!==dy){if(cx!==dx)cx+=cx<dx?1:-1;else if(cy!==dy)cy+=cy<dy?1:-1;path.push({x:cx,y:cy});}addMessage(`You set off toward ${state.cells[cellKey(dx,dy)]?.locationName||terrainLabel(getVisibleCellMeta(dx,dy).type)}...`,'system');for(let i=0;i<path.length;i++){const step=path[i];const meta=getVisibleCellMeta(step.x,step.y);if(!isTraversable(meta.type)){addMessage('Your path is blocked. You stop here.','system');await enterCell(path[i-1]?.x??sx,path[i-1]?.y??sy);return;}state.player.day+=0.05;state.player.stamina=Math.min(state.player.maxStamina,state.player.stamina+1);state.pos={x:step.x,y:step.y};const ss2=seenSet();for(let dy2=-FOV_RADIUS;dy2<=FOV_RADIUS;dy2++)for(let dx2=-FOV_RADIUS;dx2<=FOV_RADIUS;dx2++)ss2.add(`${step.x+dx2},${step.y+dy2}`);if(Math.random()<0.005){addMessage(`Something catches your attention after ${i+1} step${i>0?'s':''}...`,'system');await enterCell(step.x,step.y);return;}}await enterCell(dx,dy);}
 
@@ -1062,7 +1110,7 @@ function closeItemUse(){document.getElementById('item-use-drawer').classList.rem
 // ═══════════════════════════════════════════════════
 // AI — MAIN GAME (via OpenRouter)
 // ═══════════════════════════════════════════════════
-function layerContext(){if(state.layer==='interior')return'INTERIOR SCALE: 1m per cell. Inside a building. Describe room details: furniture, light, smells, sounds, occupants.';if(state.layer==='settlement'){const name=SETTLEMENTS[state.settlementId]?.name||state.settlementId;return`SETTLEMENT SCALE: 5m per cell. Inside ${name}. Describe street-scale details: stalls, doorways, crowds, signage, cobblestones.`;}return'OVERWORLD SCALE: ~35m per cell across a large island kingdom. Describe landscape, weather, distant landmarks, feel of the region.';}
+function layerContext(){if(state.layer==='interior')return'INTERIOR SCALE: 1m per cell. Inside a building. Describe room details: furniture, light, smells, sounds, occupants.';if(state.layer==='settlement'){const name=SETTLEMENTS[state.settlementId]?.name||state.settlementId;return`SETTLEMENT SCALE: 5m per cell. Inside ${name}. Describe street-scale details: stalls, doorways, crowds, signage, cobblestones.`;}return'OVERWORLD SCALE: ~280m per cell across a large island kingdom. Describe landscape, weather, distant landmarks, feel of the region.';}
 
 function buildNpcContextForSystemPrompt(){const present=getNpcsAtCurrentLocation();if(present.length===0)return'';const lines=present.map(id=>{const tmpl=NPC_TEMPLATES[id];const disp=getNpcDisposition(id);const dl=dispositionLabel(disp);const ns=getNpcState(id);const mem=ns.memory.length?ns.memory.slice(-2).join('; '):'not yet met';return`  - ${tmpl.name} (${tmpl.role}): disposition=${dl.label}, memory="${mem}"`;});return`\nNPCS PRESENT HERE:\n${lines.join('\n')}\nIf the player tries to talk to one, mention they can use the Talk button or type "talk to [name]".`;}
 
@@ -1078,7 +1126,7 @@ function buildSystemPrompt(actionOnly=false){
   const emptyActions='"combatActions":[]';
   return `You are the game master for Valdenmere, a gritty high fantasy world with realistic consequences.
 
-PLAYER NAME: ${playerName}
+PLAYER: A traveller whose name is unknown to the world unless they have shared it. Refer to them as 'you' — never use their name in narration.
 
 WORLD: The Kingdom of Aerdorn, a large island. Aethel-Keep (capital NW ~1114,2092), Weaver's Deep (port N ~2076,1181), High-Crown Castle (royal seat centre ~2025,3171), Gladehome (E ~2488,1677), Sylvanis-Root (deep wilds ~2705,3309), Briar-Town (far E ~3212,3528), Frilar-Town (S fens ~2778,4447), Harvestfell (S coast ~1519,5154). Terrain: Verdant Heart (NW forest), Eldritch Wilds (dark E forest), Great Bog (central), Shadow Fens (SE), Azure Shore (S coast), Sunset Peaks (W spine), Wyvern's Spine (central ridge). Tone: gritty, vivid, grounded. Think early Tolkien with real danger.
 COORDINATE SYSTEM: Lower Y = north. Higher Y = south. Higher X = east. Lower X = west.
@@ -1203,7 +1251,7 @@ function applyInventoryChanges(meta){if(meta.inventoryAdd&&Array.isArray(meta.in
 function applyCellNotes(meta){if(!meta.cellNotes)return;const key=cellKey(state.pos.x,state.pos.y);if(!state.cells[key])return;const ex=state.cells[key].notes;if(ex&&!meta.cellNotes.includes(ex))state.cells[key].notes=ex+'; '+meta.cellNotes;else state.cells[key].notes=meta.cellNotes;}
 function applySkillChanges(meta){if(!meta.skillUpdates||typeof meta.skillUpdates!=='object')return;for(const[skill,delta]of Object.entries(meta.skillUpdates)){if(typeof delta!=='number')continue;const cur=state.skills[skill]||0;const next=cur+delta;if(next<=0)delete state.skills[skill];else state.skills[skill]=next;}}
 function applyFactionRepChanges(meta){if(!meta.factionRepChanges||typeof meta.factionRepChanges!=='object')return;for(const[faction,delta]of Object.entries(meta.factionRepChanges)){if(typeof delta!=='number')continue;state.worldState.reputation[faction]=Math.max(-100,Math.min(100,(state.worldState.reputation[faction]||0)+delta));}}
-function buildCellPrompt(x,y){const meta=getCellMeta(x,y);const nb=getNeighbourMeta(x,y);const key=cellKey(x,y);const cell=state.cells[key];const visited=!!cell;const notesLine=cell?.notes?`\nPersistent notes: "${cell.notes}"`:'';function dirDesc(m){return m.name?`${m.type} (${m.name})`:m.type;}const dirContext=`Layout: N=${dirDesc(nb.n)}, S=${dirDesc(nb.s)}, E=${dirDesc(nb.e)}, W=${dirDesc(nb.w)}.`;const presentNpcs=getNpcsAtCurrentLocation();const npcHint=presentNpcs.length>0?`\nNPCs present: ${presentNpcs.map(id=>NPC_TEMPLATES[id]?.name).join(', ')}.`:'';if(visited)return`Player returns to (${x},${y}). Terrain: ${meta.type}${meta.name?`, ${meta.name}`:''}.Previously: "${cell.locationName}". ${dirContext}${notesLine}${npcHint}\nBriefly acknowledge return.`;return`First visit to (${x},${y}). Terrain: ${meta.type}${meta.name?`, part of ${meta.name}`:''}.${dirContext} Day ${Math.floor(state.player.day)}.${notesLine}${npcHint}\nDescribe what the player sees, smells, hears.`;}
+function buildCellPrompt(x,y){const meta=getCellMeta(x,y);const nb=getNeighbourMeta(x,y);const key=cellKey(x,y);const cell=state.cells[key];const visited=!!cell;const notesLine=cell?.notes?`\nPersistent notes: "${cell.notes}"`:'';function dirDesc(m){const named=['city','town','village','castle','keep','ruins','gate'].includes(m.type)&&m.name;return named?`${m.type} (${m.name})`:m.type;}const dirContext=`Layout: N=${dirDesc(nb.n)}, S=${dirDesc(nb.s)}, E=${dirDesc(nb.e)}, W=${dirDesc(nb.w)}.`;const presentNpcs=getNpcsAtCurrentLocation();const npcHint=presentNpcs.length>0?`\nNPCs present: ${presentNpcs.map(id=>NPC_TEMPLATES[id]?.name).join(', ')}.`:'';if(visited)return`Player returns to (${x},${y}). Terrain: ${meta.type}${meta.name?`, ${meta.name}`:''}.Previously: "${cell.locationName}". ${dirContext}${notesLine}${npcHint}\nBriefly acknowledge return. Do not invent new signposts or waymarkers.`;return`First visit to (${x},${y}). Terrain: ${meta.type}${meta.name?`, part of ${meta.name}`:''}.${dirContext} Day ${Math.floor(state.player.day)}.${notesLine}${npcHint}\nDescribe what the player sees, smells, hears. Do NOT mention signposts, waymarkers, or written directions unless a road or gate cell is explicitly adjacent.`;}
 
 
 // ═══════════════════════════════════════════════════
@@ -1341,6 +1389,16 @@ async function move(dx, dy) {
   const nx = state.pos.x + dx, ny = state.pos.y + dy;
   const meta = getCellMeta(nx, ny);
   if (!isTraversable(meta.type)) return;
+  // Gate cells in settlements trigger exit to overworld
+  if ((state.layer === 'settlement' || state.layer === 'interior') && meta.type === T.GATE) {
+    if (meta.exit) {
+      // Specific exit destination defined on gate cell
+      await doLayerMove(meta.exit);
+    } else {
+      await exitLayer();
+    }
+    return;
+  }
   state.player.day += (state.layer === 'overworld') ? 0.1 : 0.01;
   state.player.day = Math.round(state.player.day * 10) / 10;
   state.player.stamina = Math.min(state.player.maxStamina, state.player.stamina + 2);
@@ -1476,6 +1534,8 @@ async function clearSave() {
   try { localStorage.removeItem('aerdorn-state'); } catch(e) {}
   if (CONFIG.ENABLE_SUPABASE) {
     await DB.query(`player_state?world_id=eq.${WORLD_DATA.id}&player_id=eq.default`, 'DELETE').catch(()=>{});
+    await DB.query(`cells?world_id=eq.${WORLD_DATA.id}&player_id=eq.default`, 'DELETE').catch(()=>{});
+    await DB.query(`npc_state?world_id=eq.${WORLD_DATA.id}&player_id=eq.default`, 'DELETE').catch(()=>{});
   }
   addMessage('Save cleared. Reloading...', 'system');
   setTimeout(() => location.reload(), 800);
@@ -1542,7 +1602,7 @@ async function init() {
       ];
       state.inventory = [{ name:'Heel of Bread' }, ri[Math.floor(Math.random() * ri.length)]];
       addMessage(`Welcome to the Kingdom of Aerdorn.`, 'system');
-      await enterCell(1114, 2094);
+      await enterCell(139, 264);
     }
   } catch(e) {
     console.error('Init error:', e);
@@ -1554,3 +1614,4 @@ async function init() {
 }
 
 init();
+
