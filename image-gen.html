@@ -26,7 +26,7 @@ h1 { font-size: 1.4rem; font-weight: 500; color: var(--accent); margin-bottom: 0
 .key-row input { flex: 1; min-width: 200px; font-size: 13px; padding: 0 12px; height: 38px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--ink); }
 .key-row input:focus { outline: none; border-color: var(--accent); }
 .tabs { display: flex; border-bottom: 1px solid var(--border2); margin-bottom: 1.5rem; }
-.tab-btn { background: none; border: none; border-bottom: 2px solid transparent; padding: 10px 24px; font-size: 14px; font-weight: 500; color: var(--muted); cursor: pointer; margin-bottom: -1px; transition: color 0.15s; }
+.tab-btn { background: none; border: none; border-bottom: 2px solid transparent; padding: 10px 24px; font-size: 14px; font-weight: 500; color: var(--muted); cursor: pointer; margin-bottom: -1px; }
 .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 .panel { display: none; }
 .panel.active { display: block; }
@@ -75,15 +75,17 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
 <body>
 <div class="container">
   <h1>Image Generator</h1>
-  <p class="subtitle">NPC portraits &amp; background scenes — powered by Dezgo</p>
+  <p class="subtitle">NPC portraits &amp; background scenes</p>
+
   <div class="key-row">
-    <input type="password" id="dezgo-key" placeholder="Dezgo API key" autocomplete="off" />
     <input type="password" id="github-token" placeholder="GitHub token" autocomplete="off" />
   </div>
+
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('npc')">&#128100; NPC</button>
     <button class="tab-btn" onclick="switchTab('bg')">&#127760; Background</button>
   </div>
+
   <div id="panel-npc" class="panel active">
     <div class="mode-toggle">
       <button class="mode-btn active" onclick="setMode('npc','fields')">Structured fields</button>
@@ -117,6 +119,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
       </select>
     </div>
   </div>
+
   <div id="panel-bg" class="panel">
     <div class="mode-toggle">
       <button class="mode-btn active" onclick="setMode('bg','fields')">Structured fields</button>
@@ -149,6 +152,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
       </select>
     </div>
   </div>
+
   <div id="results-section" style="display:none">
     <hr />
     <div class="results-header">
@@ -159,12 +163,17 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
     <div id="global-status"></div>
   </div>
 </div>
+
 <script>
+const IMAGE_PROXY_URL = 'https://keqzqhykfygplolcnxnn.supabase.co/functions/v1/image-proxy';
+const SUPABASE_ANON_KEY = 'sb_publishable_w0h8f1AIXQGty5X5nKrJtg_ThI1-a-j';
+const GITHUB_OWNER = '1984tpearson';
+const GITHUB_REPO = 'fantgame';
+
 const NPC_SUFFIX = `Mediaeval+++, Fully body shot++, No background+++ (gritty Comic book Art style+, Thick black ink outlines, flat cell shading, painterly colouring)++`;
 const NPC_NEG = `Background-- Close up, Anime--, Photo Realistic, Smooth shading, texture, extra cloth--, loose fabric--, monochrome, sketch, tattoos, big mouth, big smile, sci-fi, superhero, muscles, muscular, extra limbs, badly drawn hands`;
 const BG_NEG = ``;
-const GITHUB_OWNER = '1984tpearson';
-const GITHUB_REPO = 'fantgame';
+
 let modes = { npc: 'fields', bg: 'fields' };
 let generatedImages = [];
 
@@ -194,8 +203,7 @@ function buildFilename(tab) {
   return [slug(v('bg-location')||'location'), slug(v('bg-time')||'unknown'), slug(v('bg-detail')||v('bg-mood')||'scene')].join('_');
 }
 function buildFreeFilename(tab, text) {
-  const words = text.trim().toLowerCase().replace(/[^a-z0-9 ]/g,'').split(/\s+/).slice(0,4);
-  return words.join('_') || (tab==='npc' ? 'npc_unknown' : 'bg_unknown');
+  return text.trim().toLowerCase().replace(/[^a-z0-9 ]/g,'').split(/\s+/).slice(0,4).join('_') || (tab==='npc' ? 'npc_unknown' : 'bg_unknown');
 }
 function slug(s) { return s.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''); }
 function v(id) { return (document.getElementById(id)||{}).value||''; }
@@ -214,8 +222,6 @@ function v(id) { return (document.getElementById(id)||{}).value||''; }
 });
 
 async function generate(tab) {
-  const dezgoKey = v('dezgo-key');
-  if (!dezgoKey) { alert('Enter your Dezgo API key first.'); return; }
   const isNpc = tab === 'npc';
   const mode = modes[tab];
   let prompt, baseName;
@@ -245,6 +251,7 @@ async function generate(tab) {
   const width = isNpc ? 768 : 1024;
   const height = isNpc ? 1024 : 768;
   const negPrompt = isNpc ? NPC_NEG : BG_NEG;
+
   const promises = Array.from({length: count}, async (_, i) => {
     try {
       const body = new FormData();
@@ -254,8 +261,14 @@ async function generate(tab) {
       body.append('guidance', '2.0'); body.append('sampler', 'ddim');
       body.append('format', 'png'); body.append('transparent_background', 'false');
       if (negPrompt) body.append('negative_prompt', negPrompt);
-      const res = await fetch('https://api.dezgo.com/text2image', { method: 'POST', headers: { 'X-Dezgo-Key': dezgoKey }, body });
-      if (!res.ok) throw new Error(`Dezgo error ${res.status}`);
+
+      const res = await fetch(IMAGE_PROXY_URL, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'apikey': SUPABASE_ANON_KEY },
+        body
+      });
+      if (!res.ok) { const t = await res.text(); throw new Error(`Proxy error ${res.status}: ${t}`); }
+
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const suffix = count > 1 ? `_${i+1}` : '';
@@ -305,7 +318,7 @@ async function saveToGitHub(idx) {
     btn.textContent = '&#10003; Saved';
   } catch(err) {
     status.className = 'status-msg status-err'; status.textContent = err.message;
-    btn.disabled = false; btn.textContent = '&#128190; GitHub';
+    btn.disabled = false; btn.innerHTML = '&#128190; GitHub';
   }
 }
 async function saveAllToGitHub() {
