@@ -18,6 +18,15 @@ const CONFIG = {
   IMAGE_STYLE_SUFFIX: 'fantasy landscape painting, rolling countryside, naturalistic lighting, painterly brushwork, bold ink outlines, muted earthy tones with occasional colour, cinematic composition, grounded medieval fantasy, detailed environment art',
   IMAGE_NEGATIVE_PROMPT: 'western, desert, arid, cactus, cowboys, modern, sci-fi, photorealistic, 3D render, monochrome, flat, cartoon, anime, top-down, map, watermark, signature, text, people, person, ugly, blurry, low quality',
 
+  // ── NPC / CREATURE PORTRAIT GENERATION ──────────────────────────────────
+  NPC_IMAGE_MODEL:    'envy_starlight_xl_01_lightning_1024px',
+  NPC_IMAGE_WIDTH:    768,
+  NPC_IMAGE_HEIGHT:   1024,
+  NPC_IMAGE_GUIDANCE: 2.0,
+  NPC_IMAGE_SAMPLER:  'ddim',
+  NPC_IMAGE_STYLE_SUFFIX: 'Mediaeval+++, Full body shot++, No background+++ (gritty Comic book Art style+, Thick black ink outlines, flat cell shading, painterly colouring)++',
+  NPC_IMAGE_NEGATIVE: 'Background-- Close up, Anime--, Photo Realistic, Smooth shading, texture, extra cloth--, loose fabric--, monochrome, sketch, tattoos, big mouth, big smile, sci-fi, superhero, muscles, muscular, extra limbs, badly drawn hands',
+
   ENABLE_IMAGES: false,
   ENABLE_SUPABASE: true,
 };

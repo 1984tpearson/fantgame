@@ -405,12 +405,14 @@ const NPC_TEMPLATES={
 
   // Harbormaster
   'ep_harbormaster':{id:'ep_harbormaster',name:'Aldric Crane',role:'Harbormaster, East-Port',faction:'eastport_guard',emoji:'⚓',
+    race:'human', age:52, traits:['weathered','precise','quietly corrupt'],
     personality:`Weathered man in his 50s. Precise and formal. Keeps meticulous records. Quietly corrupt — takes a cut from incoming cargo but never skims enough to draw attention. Respects competence.`,
     schedule:[{timeStart:7,timeEnd:19,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:10,14'},{timeStart:19,timeEnd:7,layer:'settlement',settlementId:'frilar_town',posKey:'10,14'}],
     relationships:{spouse:null,friends:['ep_guard_rona'],rivals:['ep_smuggler']}},
 
   // Salt & Sail Innkeeper
   'ep_innkeeper':{id:'ep_innkeeper',name:'Bess Oldwater',role:'Innkeeper, The Salt & Sail',faction:'eastport_citizens',emoji:'🍺',
+    race:'human', age:44, traits:['round-faced','warm','sharp-eared'],
     personality:`Round-faced woman, always warm, always listening. Knows every rumour in town before the person it concerns does. Charges fair but remembers debts. Widow — her husband drowned three winters ago.`,
     schedule:[{timeStart:6,timeEnd:24,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:-5,12'}],
     relationships:{spouse:null,friends:['ep_priest'],rivals:[]},
@@ -418,6 +420,7 @@ const NPC_TEMPLATES={
 
   // Blacksmith
   'ep_blacksmith':{id:'ep_blacksmith',name:'Tor Ashfen',role:'Blacksmith, East-Port',faction:'eastport_citizens',emoji:'🔨',
+    race:'human', age:38, traits:['enormous','taciturn','scarred hands'],
     personality:`Enormous man. Barely speaks. When he does, it matters. Lost two fingers on his left hand to a forge accident years ago and is oddly cheerful about it. Married to Mira.`,
     schedule:[{timeStart:6,timeEnd:18,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:6,11'},{timeStart:18,timeEnd:6,layer:'settlement',settlementId:'frilar_town',posKey:'-9,7'}],
     relationships:{spouse:'ep_mira',friends:[],rivals:[]},
@@ -425,24 +428,28 @@ const NPC_TEMPLATES={
 
   // Blacksmith's wife — domestic, residential SW
   'ep_mira':{id:'ep_mira',name:'Mira Ashfen',role:'Resident, East-Port',faction:'eastport_citizens',emoji:'👩',
+    race:'human', age:35, traits:['sharp-tongued','capable','worried'],
     personality:`Sharp-tongued but generous. Runs the household accounts with an iron grip. Keeps a kitchen garden and gives surplus vegetables to the chapel. Quietly worries about Tor's health.`,
     schedule:[{timeStart:8,timeEnd:20,layer:'settlement',settlementId:'frilar_town',posKey:'-9,7'},{timeStart:20,timeEnd:8,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:-9,7'}],
     relationships:{spouse:'ep_blacksmith',friends:['ep_priest'],rivals:[]}},
 
   // Watch guard — patrols streets
   'ep_guard_rona':{id:'ep_guard_rona',name:'Rona Stebbe',role:'Town Watch, East-Port',faction:'eastport_guard',emoji:'🛡',
+    race:'human', age:24, traits:['ambitious','suspicious','sharp-eyed'],
     personality:`Young woman. Ambitious. Suspicious of strangers but not hostile — yet. Knows something is wrong with the cargo manifests but hasn't worked out who. Admires the harbormaster without realising he's part of the problem.`,
     schedule:[{timeStart:6,timeEnd:20,layer:'settlement',settlementId:'frilar_town',posKey:'0,14'},{timeStart:20,timeEnd:6,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:-6,3'}],
     relationships:{spouse:null,friends:['ep_harbormaster'],rivals:['ep_smuggler']}},
 
   // Second guard — older, lazier
   'ep_guard_peck':{id:'ep_guard_peck',name:'Oswin Peck',role:'Town Watch, East-Port',faction:'eastport_guard',emoji:'🛡',
+    race:'human', age:48, traits:['fat','comfortable','deliberately blind'],
     personality:`Fat, slow, and comfortable with it. Has been on the watch for twenty years without incident — largely because he avoids incidents. Knows about the smuggling. Has decided not to know about it.`,
     schedule:[{timeStart:8,timeEnd:16,layer:'settlement',settlementId:'frilar_town',posKey:'0,6'},{timeStart:16,timeEnd:8,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:-6,7'}],
     relationships:{spouse:null,friends:[],rivals:[]}},
 
   // Priest at chapel
   'ep_priest':{id:'ep_priest',name:'Sister Avane',role:'Keeper of the Chapel of the Tides',faction:'eastport_church',emoji:'✝',
+    race:'human', age:58, traits:['calm','unhurried','compassionate'],
     personality:`Calm and unhurried. Speaks slowly, as if choosing every word from a large and careful inventory. Tends the sick. Knows more about people's sins than anyone and judges none of them. Has a soft spot for strays — human or animal.`,
     schedule:[{timeStart:6,timeEnd:22,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:-6,10'},{timeStart:22,timeEnd:6,layer:'settlement',settlementId:'frilar_town',posKey:'-6,11'}],
     relationships:{spouse:null,friends:['ep_innkeeper','ep_mira'],rivals:[]}},

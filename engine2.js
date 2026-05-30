@@ -148,6 +148,126 @@ async function generateSceneImage(description, cellKeyStr) {
   }
 }
 
+// ═══════════════════════════════════════════════════
+// NPC / CREATURE PORTRAIT GENERATION
+// ═══════════════════════════════════════════════════
+function buildNpcImageFilename(npcId, tmpl) {
+  const race  = (tmpl.race  || 'human').toLowerCase().replace(/\s+/g, '_');
+  const role  = (tmpl.role  || 'npc').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+  const trait = (tmpl.traits?.[0] || 'unknown').toLowerCase().replace(/\s+/g, '_');
+  return `npc_${race}_${role}_${trait}.png`;
+}
+
+function buildNpcImagePrompt(tmpl) {
+  const age    = tmpl.age    ? `${tmpl.age} year old ` : '';
+  const race   = tmpl.race   || 'human';
+  const role   = tmpl.role   || 'villager';
+  const traits = (tmpl.traits || []).join(', ');
+  // Pull first sentence of personality for flavour, strip quotes/asterisks
+  const personality = (tmpl.personality || '').split(/[.!]/)[0].replace(/[*"]/g, '').trim();
+  const parts = [`${age}${race} ${role}`];
+  if (traits)       parts.push(traits);
+  if (personality)  parts.push(personality);
+  return parts.join(', ') + ', ' + CONFIG.NPC_IMAGE_STYLE_SUFFIX;
+}
+
+async function generateNpcImage(npcId) {
+  if (!CONFIG.ENABLE_IMAGES) return null;
+  const tmpl = NPC_TEMPLATES[npcId];
+  if (!tmpl) return null;
+  // Return cached URL immediately if already generated
+  if (tmpl.imageUrl) return tmpl.imageUrl;
+
+  try {
+    const prompt   = buildNpcImagePrompt(tmpl);
+    const filename = buildNpcImageFilename(npcId, tmpl);
+
+    // Check Supabase storage first — avoids re-generating on every session
+    if (CONFIG.ENABLE_SUPABASE) {
+      const storedUrl = `${CONFIG.SUPABASE_URL}/storage/v1/object/public/scene-images/npcs/${filename}`;
+      const check = await fetch(storedUrl, { method: 'HEAD' }).catch(() => null);
+      if (check?.ok) {
+        tmpl.imageUrl = storedUrl;
+        return storedUrl;
+      }
+    }
+
+    const form = new FormData();
+    form.append('prompt', prompt);
+    form.append('negative_prompt', CONFIG.NPC_IMAGE_NEGATIVE);
+    form.append('model',    CONFIG.NPC_IMAGE_MODEL);
+    form.append('width',    String(CONFIG.NPC_IMAGE_WIDTH));
+    form.append('height',   String(CONFIG.NPC_IMAGE_HEIGHT));
+    form.append('guidance', String(CONFIG.NPC_IMAGE_GUIDANCE));
+    form.append('sampler',  CONFIG.NPC_IMAGE_SAMPLER);
+    form.append('format',   'png');
+    form.append('transparent_background', 'false');
+
+    const res = await fetch(CONFIG.IMAGE_PROXY_URL, {
+      method: 'POST',
+      headers: {
+        'apikey': CONFIG.SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+      },
+      body: form
+    });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+
+    // Upload to npcs/ subfolder in storage
+    let url = null;
+    if (CONFIG.ENABLE_SUPABASE) {
+      const uploadRes = await fetch(
+        `${CONFIG.SUPABASE_URL}/storage/v1/object/scene-images/npcs/${filename}`,
+        {
+          method: 'POST',
+          headers: {
+            'apikey': CONFIG.SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+            'Content-Type': 'image/png',
+            'x-upsert': 'true'
+          },
+          body: blob
+        }
+      );
+      if (uploadRes.ok) url = `${CONFIG.SUPABASE_URL}/storage/v1/object/public/scene-images/npcs/${filename}`;
+    }
+    if (!url) url = URL.createObjectURL(blob);
+
+    tmpl.imageUrl = url;
+    return url;
+  } catch(e) {
+    console.warn('NPC image generation failed:', e);
+    return null;
+  }
+}
+
+function applyNpcPortrait(imageUrl, drawerId) {
+  const avatarWrap = document.getElementById(drawerId + '-portrait-wrap');
+  const avatarEmoji = document.getElementById(drawerId + '-avatar-emoji');
+  const img = document.getElementById(drawerId + '-portrait-img');
+  if (!avatarWrap || !img) return;
+  if (!imageUrl) {
+    avatarWrap.classList.remove('has-portrait');
+    img.src = '';
+    img.style.display = 'none';
+    if (avatarEmoji) avatarEmoji.style.display = '';
+    return;
+  }
+  img.onload = () => {
+    avatarWrap.classList.add('has-portrait');
+    img.style.display = 'block';
+    if (avatarEmoji) avatarEmoji.style.display = 'none';
+  };
+  img.src = imageUrl;
+}
+
+// Apply portrait silently in background — called when drawer opens
+async function triggerNpcPortrait(npcId, drawerId) {
+  const url = await generateNpcImage(npcId);
+  if (url) applyNpcPortrait(url, drawerId);
+}
+
 // Apply scene image as background of the scene area
 function applySceneBackground(imageUrl) {
   const sceneBox = document.getElementById('scene-box');
@@ -461,7 +581,7 @@ function renderShopPanel(npcId) {
   const tmpl = NPC_TEMPLATES[npcId];
   if (!tmpl?.trader) return;
   const ns = getNpcState(npcId);
-  const stockData = tmpl.trader.stock;
+  const stockData = tmpl.trader.stock || [];
   const panel = document.getElementById('npc-shop-panel');
   const itemsEl = document.getElementById('npc-shop-items');
   panel.classList.add('visible');
@@ -558,7 +678,8 @@ function openNpcDrawer(npcId, forced = false) {
   const purse = document.getElementById('purse-drawer');
   if (purse) purse.style.display = 'none';
 
-  document.getElementById('npc-avatar').textContent = tmpl.emoji;
+  const emojiEl = document.getElementById('npc-avatar-emoji');
+  if (emojiEl) emojiEl.textContent = tmpl.emoji;
   document.getElementById('npc-drawer-name').textContent = tmpl.name;
   document.getElementById('npc-drawer-role').textContent = tmpl.role;
   const disp = getNpcDisposition(npcId);
@@ -573,6 +694,13 @@ function openNpcDrawer(npcId, forced = false) {
   document.getElementById('npc-shop-panel').classList.remove('visible');
   document.getElementById('npc-convo-box').innerHTML = '';
   document.getElementById('npc-cmd').value = '';
+  // Reset portrait
+  const portraitWrap = document.getElementById('npc-portrait-wrap');
+  const portraitImg  = document.getElementById('npc-portrait-img');
+  if (portraitWrap) { portraitWrap.classList.remove('has-portrait'); }
+  if (portraitImg)  { portraitImg.style.display = 'none'; portraitImg.src = ''; }
+  const emojiSpan = document.getElementById('npc-avatar-emoji');
+  if (emojiSpan) emojiSpan.style.display = '';
   document.getElementById('npc-drawer').classList.add('open');
 
   // Hide or show close button depending on forced mode
@@ -591,6 +719,9 @@ function openNpcDrawer(npcId, forced = false) {
   // Show fight/flee buttons in forced mode
   const actionBar = document.getElementById('npc-forced-actions');
   if (actionBar) actionBar.style.display = forced ? 'flex' : 'none';
+
+  // Generate portrait silently in background
+  triggerNpcPortrait(npcId, 'npc');
 }
 
 function closeNpcDrawer() {
@@ -635,9 +766,16 @@ function openCreatureDrawer(npcId, forced = false) {
   if (!ns.hp) ns.hp = tmpl.maxHp || 30;
   if (!ns.maxHp) ns.maxHp = tmpl.maxHp || 30;
 
-  document.getElementById('creature-avatar').textContent = tmpl.emoji || '🐾';
+  const cEmojiEl = document.getElementById('creature-avatar-emoji');
+  if (cEmojiEl) { cEmojiEl.textContent = tmpl.emoji || '🐾'; cEmojiEl.style.display = ''; }
   document.getElementById('creature-name').textContent = tmpl.name;
   document.getElementById('creature-role').textContent = tmpl.role || 'Creature';
+
+  // Reset portrait
+  const cPortraitWrap = document.getElementById('creature-portrait-wrap');
+  const cPortraitImg  = document.getElementById('creature-portrait-img');
+  if (cPortraitWrap) cPortraitWrap.classList.remove('has-portrait');
+  if (cPortraitImg)  { cPortraitImg.style.display = 'none'; cPortraitImg.src = ''; }
 
   const hpPct = Math.max(0, Math.round((ns.hp / ns.maxHp) * 100));
   const bar = document.getElementById('creature-hp-fill');
@@ -660,6 +798,9 @@ function openCreatureDrawer(npcId, forced = false) {
   }
 
   document.getElementById('creature-drawer').classList.add('open');
+
+  // Generate portrait silently in background
+  triggerNpcPortrait(npcId, 'creature');
 }
 
 function closeCreatureDrawer() {
