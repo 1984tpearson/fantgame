@@ -424,14 +424,14 @@ const NPC_TEMPLATES={
     trader:{stock:[{name:'Iron Knife',basePriceCp:120,stock:2},{name:'Hatchet',basePriceCp:200,stock:1},{name:'Iron-Tipped Spear',basePriceCp:380,stock:1},{name:'Leather Armour',basePriceCp:450,stock:1},{name:'Iron Shield',basePriceCp:300,stock:1},{name:'Horseshoe Nail (bundle)',basePriceCp:15,stock:8},{name:'Rope (10m)',basePriceCp:25,stock:3}],buyRate:0.35,sellMarkup:1.3}},
 
   // Blacksmith's wife — domestic, residential SW
-  'ep_mira':{id:'ep_mira',name:'Mira Ashfen',role:'Resident, East-Port',faction:'eastport_citizens',emoji:'👩',
+  \'ep_mira':{id:'ep_mira',name:'Mira Ashfen',role:'Resident, East-Port',faction:'eastport_citizens',emoji:'👩',
     personality:'Sharp-tongued but generous. Runs the household accounts with an iron grip. Keeps a kitchen garden and gives surplus vegetables to the chapel. Quietly worries about Tor\'s health.',
     schedule:[{timeStart:8,timeEnd:20,layer:'settlement',settlementId:'frilar_town',posKey:'-9,7'},{timeStart:20,timeEnd:8,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:-9,7'}],
     relationships:{spouse:'ep_blacksmith',friends:['ep_priest'],rivals:[]}},
 
   // Watch guard — patrols streets
   'ep_guard_rona':{id:'ep_guard_rona',name:'Rona Stebbe',role:'Town Watch, East-Port',faction:'eastport_guard',emoji:'🛡',
-    personality:'Young woman. Ambitious. Suspicious of strangers but not hostile — yet. Knows something is wrong with the cargo manifests but hasn\'t worked out who. Admires the harbormaster without realising he's part of the problem.',
+    personality:'Young woman. Ambitious. Suspicious of strangers but not hostile — yet. Knows something is wrong with the cargo manifests but hasn\'t worked out who. Admires the harbormaster without realising he\'s part of the problem.',
     schedule:[{timeStart:6,timeEnd:20,layer:'settlement',settlementId:'frilar_town',posKey:'0,14'},{timeStart:20,timeEnd:6,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:-6,3'}],
     relationships:{spouse:null,friends:['ep_harbormaster'],rivals:['ep_smuggler']}},
 
@@ -473,14 +473,14 @@ const NPC_TEMPLATES={
     relationships:{spouse:null,friends:['ep_priest'],rivals:[]}},
 
   // Fisher wife — residential
-  'ep_fishwife':{id:'ep_fishwife',name:'Nance Cord',role:'Resident, Fishermen's Quarter',faction:'eastport_citizens',emoji:'👩',
+  'ep_fishwife':{id:'ep_fishwife',name:'Nance Cord',role:'Resident, Fishermen\'s Quarter',faction:'eastport_citizens',emoji:'👩',
     personality:'Practical, weather-beaten, completely unimpressed by anything. Repairs nets, salts fish, raises three children largely alone while her husband is at sea. Has a dry wit that catches people off guard.',
     schedule:[{timeStart:7,timeEnd:19,layer:'settlement',settlementId:'frilar_town',posKey:'7,19'},{timeStart:19,timeEnd:7,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:7,19'}],
     relationships:{spouse:'ep_fisher',friends:[],rivals:[]}},
 
   // Fisher — out at sea during day, home at night
   'ep_fisher':{id:'ep_fisher',name:'Cole Cord',role:'Fisherman, East-Port',faction:'eastport_citizens',emoji:'🎣',
-    personality:'Sun-dark, quiet. At sea more than he's home. Loves his wife deeply and is bad at showing it. Knows the coastal waters better than anyone. Has seen things in the fens at night that he doesn't talk about.',
+    personality:'Sun-dark, quiet. At sea more than he\'s home. Loves his wife deeply and is bad at showing it. Knows the coastal waters better than anyone. Has seen things in the fens at night that he doesn\'t talk about.',
     schedule:[{timeStart:4,timeEnd:15,layer:'settlement',settlementId:'frilar_town',posKey:'11,4'},{timeStart:15,timeEnd:22,layer:'settlement',settlementId:'frilar_town',posKey:'7,19'},{timeStart:22,timeEnd:4,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:7,19'}],
     relationships:{spouse:'ep_fishwife',friends:[],rivals:[]}},
 
@@ -490,8 +490,8 @@ const NPC_TEMPLATES={
     schedule:[{timeStart:6,timeEnd:17,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:9,7'},{timeStart:17,timeEnd:6,layer:'settlement',settlementId:'frilar_town',posKey:'9,8'}],
     relationships:{spouse:null,friends:[],rivals:['ep_tanner']}},
 
-  // 'hunter_sylvanis' continues below...
-  'hunter_sylvanis':{id:'hunter_sylvanis',name:'Bryn of the Root',role:"Hunter, Hunters' Hall",faction:'sylvanis_citizens',emoji:'🏹',personality:'Quiet and watchful. Short precise sentences. Suspicious of city folk. Respects those who know the wild.',schedule:[{timeStart:8,timeEnd:18,layer:'interior',settlementId:'sylvanis_root',posKey:'sylvanis_hunters'}],trader:{stock:[{name:"Hunter's Shortbow",basePriceCp:450,stock:1},{name:'Arrow Bundle (24)',basePriceCp:36,stock:8},{name:'Skinning Knife',basePriceCp:120,stock:2},{name:'Dried Venison (3 days)',basePriceCp:28,stock:4},{name:'Wilds Salve',basePriceCp:70,stock:2}],buyRate:0.4,sellMarkup:1.2}},
+  // 'hunter_sylvanis\' continues below...
+  \'hunter_sylvanis':{id:'hunter_sylvanis',name:'Bryn of the Root',role:"Hunter, Hunters' Hall",faction:\'sylvanis_citizens',emoji:'🏹',personality:'Quiet and watchful. Short precise sentences. Suspicious of city folk. Respects those who know the wild.',schedule:[{timeStart:8,timeEnd:18,layer:'interior',settlementId:'sylvanis_root',posKey:'sylvanis_hunters'}],trader:{stock:[{name:"Hunter's Shortbow",basePriceCp:450,stock:1},{name:\'Arrow Bundle (24)',basePriceCp:36,stock:8},{name:'Skinning Knife',basePriceCp:120,stock:2},{name:'Dried Venison (3 days)',basePriceCp:28,stock:4},{name:'Wilds Salve',basePriceCp:70,stock:2}],buyRate:0.4,sellMarkup:1.2}},
 };
 
 const FACTIONS={
