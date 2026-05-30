@@ -7,7 +7,8 @@
 // Secret: supabase secrets set DEZGO_API_KEY=your-key
 // ═══════════════════════════════════════════════════
 
-const DEZGO_URL = 'https://api.dezgo.com/text2image_sdxl';
+const DEZGO_URL_DEFAULT = 'https://api.dezgo.com/text2image_sdxl';
+const DEZGO_URL_LIGHTNING = 'https://api.dezgo.com/text2image_sdxl_lightning';
 const ALLOWED_ORIGINS = Deno.env.get('ALLOWED_ORIGIN') || '*';
 
 Deno.serve(async (req: Request) => {
@@ -42,6 +43,11 @@ Deno.serve(async (req: Request) => {
   }
 
   // ── Forward to Dezgo ────────────────────────────
+  // Allow caller to specify which endpoint via 'dezgo_endpoint' field
+  const endpointHint = formData.get('dezgo_endpoint') as string | null;
+  formData.delete('dezgo_endpoint'); // don't forward this to Dezgo
+  const DEZGO_URL = endpointHint === 'lightning' ? DEZGO_URL_LIGHTNING : DEZGO_URL_DEFAULT;
+
   const upstream = await fetch(DEZGO_URL, {
     method: 'POST',
     headers: {

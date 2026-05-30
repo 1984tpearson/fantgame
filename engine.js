@@ -200,6 +200,7 @@ async function generateNpcImage(npcId) {
     form.append('height',   String(CONFIG.NPC_IMAGE_HEIGHT));
     form.append('guidance', String(CONFIG.NPC_IMAGE_GUIDANCE));
     form.append('sampler',  CONFIG.NPC_IMAGE_SAMPLER);
+    form.append('dezgo_endpoint', 'lightning');
     form.append('format',   'png');
     form.append('transparent_background', 'false');
 
@@ -1538,6 +1539,22 @@ async function startQuickTravel(dx,dy){document.getElementById('map-travel-confi
 
 const FOV_RADIUS=2,MAP_VIEW=9;
 function renderMinimapInto(mapEl,legEl,vr){if(!mapEl)return;const size=vr*2+1;mapEl.style.gridTemplateColumns=`repeat(${size}, 13px)`;mapEl.innerHTML='';const{x:px,y:py}=state.pos;const ss=seenSet();const shown=new Set();
+
+// Build NPC cell set for dot rendering
+const npcCells=new Set();
+const _hour=(state.player.day%1)*24;
+for(const[id,tmpl]of Object.entries(NPC_TEMPLATES)){
+  if(tmpl.dynamic)continue;
+  for(const slot of(tmpl.schedule||[])){
+    if(slot.layer!==state.layer)continue;
+    if(slot.settlementId&&slot.settlementId!==state.settlementId)continue;
+    const _active=slot.timeStart<slot.timeEnd?(_hour>=slot.timeStart&&_hour<slot.timeEnd):(_hour>=slot.timeStart||_hour<slot.timeEnd);
+    if(!_active)continue;
+    if(slot.posKey){npcCells.add(slot.posKey);}
+  }
+}
+for(const[id,ns]of Object.entries(state.npcs)){if(ns.cellKey)npcCells.add(ns.cellKey);}
+
 // Render north (lower y) at top: iterate dy from -vr (north) to +vr (south)
 for(let dy=-vr;dy<=vr;dy++)for(let dx=-vr;dx<=vr;dx++){const cx=px+dx,cy=py+dy;const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],isCurrent=dx===0&&dy===0,seen=ss.has(`${cx},${cy}`),revealed=visited||isCurrent||seen;const isLinear=meta.type==='road'||meta.type==='river';const cell=document.createElement('div');cell.className=`mmc t-${isLinear?'plains':meta.type}`;if(isCurrent)cell.classList.add('current');if(revealed&&isLinear){const s=makeCellSVG(cx,cy,meta.type);if(s)cell.appendChild(s);}if(revealed&&(meta.type===T.DOOR||meta.type===T.GATE)){const dot=document.createElement('div');dot.style.cssText='position:absolute;inset:3px;background:rgba(232,184,75,0.7);border-radius:50%;';cell.appendChild(dot);}
 if(revealed&&meta.type===T.BUILDING&&meta.doors&&meta.doors.length){const ds=document.createElementNS('http://www.w3.org/2000/svg','svg');ds.setAttribute('viewBox','0 0 13 13');ds.setAttribute('style','position:absolute;inset:0;width:100%;height:100%;');meta.doors.forEach(d=>{const ln=document.createElementNS('http://www.w3.org/2000/svg','line');ln.setAttribute('stroke','#e8b84b');ln.setAttribute('stroke-width','2');ln.setAttribute('stroke-linecap','round');if(d==='north'){ln.setAttribute('x1','3');ln.setAttribute('y1','0.5');ln.setAttribute('x2','10');ln.setAttribute('y2','0.5');}else if(d==='south'){ln.setAttribute('x1','3');ln.setAttribute('y1','12.5');ln.setAttribute('x2','10');ln.setAttribute('y2','12.5');}else if(d==='west'){ln.setAttribute('x1','0.5');ln.setAttribute('y1','3');ln.setAttribute('x2','0.5');ln.setAttribute('y2','10');}else if(d==='east'){ln.setAttribute('x1','12.5');ln.setAttribute('y1','3');ln.setAttribute('x2','12.5');ln.setAttribute('y2','10');}ds.appendChild(ln);});cell.appendChild(ds);}
