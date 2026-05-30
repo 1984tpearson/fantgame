@@ -1272,6 +1272,8 @@ async function enterCell(x, y) {
   }
 
   const key = cellKey(x, y);
+  // Track gate exit for exitLayer to use
+  if((state.layer==='settlement'||state.layer==='interior')){const _gm=getCellMeta(x,y);if(_gm.type===T.GATE&&_gm.exit?.pos)state._pendingGateExit={..._gm.exit.pos};else if(_gm.type!==T.GATE)state._pendingGateExit=null;}
   state.pos = { x, y };
   state.history = [];
   const ss = seenSet();
@@ -1592,8 +1594,8 @@ async function init() {
       else if (!CONFIG.ENABLE_IMAGES) applySceneBackground('background.png');
       // If saved inside a settlement, reset to entryPos to avoid north/south confusion
       if (state.layer === 'settlement' && state.settlementId && SETTLEMENTS[state.settlementId]) {
-        state.pos = { ...SETTLEMENTS[state.settlementId].entryPos };
-      }
+        // Validate saved pos is inside settlement bounds; if not, use entryPos
+        const _s = SETTLEMENTS[state.settlementId]; if (!_s.map[`${state.pos.x},${state.pos.y}`]) state.pos = {..._s.entryPos};
       _suppressTransitions = true;
       await enterCell(state.pos.x, state.pos.y);
       _suppressTransitions = false;
