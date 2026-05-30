@@ -473,7 +473,7 @@ const NPC_TEMPLATES={
     relationships:{spouse:null,friends:['ep_priest'],rivals:[]}},
 
   // Fisher wife — residential
-  'ep_fishwife':{id:'ep_fishwife',name:'Nance Cord',role:'Resident, Fishermen\'s Quarter',faction:'eastport_citizens',emoji:'👩',
+  'ep_fishwife':{id:'ep_fishwife',name:'Nance Cord',role:'Resident, Fishermen's Quarter',faction:'eastport_citizens',emoji:'👩',
     personality:`Practical, weather-beaten, completely unimpressed by anything. Repairs nets, salts fish, raises three children largely alone while her husband is at sea. Has a dry wit that catches people off guard.`,
     schedule:[{timeStart:7,timeEnd:19,layer:'settlement',settlementId:'frilar_town',posKey:'7,19'},{timeStart:19,timeEnd:7,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:7,19'}],
     relationships:{spouse:'ep_fisher',friends:[],rivals:[]}},
@@ -490,8 +490,8 @@ const NPC_TEMPLATES={
     schedule:[{timeStart:6,timeEnd:17,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:9,7'},{timeStart:17,timeEnd:6,layer:'settlement',settlementId:'frilar_town',posKey:'9,8'}],
     relationships:{spouse:null,friends:[],rivals:['ep_tanner']}},
 
-  // 'hunter_sylvanis\' continues below...
-  'hunter_sylvanis':{id:'hunter_sylvanis',name:'Bryn of the Root',role:"Hunter, Hunters' Hall",faction:\'sylvanis_citizens',emoji:'🏹',personality:`Quiet and watchful. Short precise sentences. Suspicious of city folk. Respects those who know the wild.`,schedule:[{timeStart:8,timeEnd:18,layer:'interior',settlementId:'sylvanis_root',posKey:'sylvanis_hunters'}],trader:{stock:[{name:"Hunter's Shortbow",basePriceCp:450,stock:1},{name:\'Arrow Bundle (24)',basePriceCp:36,stock:8},{name:'Skinning Knife',basePriceCp:120,stock:2},{name:'Dried Venison (3 days)',basePriceCp:28,stock:4},{name:'Wilds Salve',basePriceCp:70,stock:2}],buyRate:0.4,sellMarkup:1.2}},
+  // 'hunter_sylvanis' continues below...
+  'hunter_sylvanis':{id:'hunter_sylvanis',name:'Bryn of the Root',role:"Hunter, Hunters' Hall",faction:'sylvanis_citizens',emoji:'🏹',personality:`Quiet and watchful. Short precise sentences. Suspicious of city folk. Respects those who know the wild.`,schedule:[{timeStart:8,timeEnd:18,layer:'interior',settlementId:'sylvanis_root',posKey:'sylvanis_hunters'}],trader:{stock:[{name:"Hunter's Shortbow",basePriceCp:450,stock:1},{name:'Arrow Bundle (24)',basePriceCp:36,stock:8},{name:'Skinning Knife',basePriceCp:120,stock:2},{name:'Dried Venison (3 days)',basePriceCp:28,stock:4},{name:'Wilds Salve',basePriceCp:70,stock:2}],buyRate:0.4,sellMarkup:1.2}},
 };
 
 const FACTIONS={
