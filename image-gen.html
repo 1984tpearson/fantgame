@@ -270,7 +270,13 @@ async function generate(tab) {
       const suffix = count > 1 ? `_${i+1}` : '';
       const filename = `${baseName}${suffix}.png`;
       const arrayBuffer = await blob.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = '';
+      const chunkSize = 8192;
+      for (let j = 0; j < bytes.length; j += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(j, j + chunkSize));
+      }
+      const base64 = btoa(binary);
       generatedImages.push({ url, filename, base64, subfolder, saved: false });
       const idx = generatedImages.length - 1;
       const card = document.createElement('div');
