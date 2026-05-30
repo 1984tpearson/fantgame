@@ -1596,6 +1596,7 @@ async function init() {
       if (state.layer === 'settlement' && state.settlementId && SETTLEMENTS[state.settlementId]) {
         // Validate saved pos is inside settlement bounds; if not, use entryPos
         const _s = SETTLEMENTS[state.settlementId]; if (!_s.map[`${state.pos.x},${state.pos.y}`]) state.pos = {..._s.entryPos};
+      }
       _suppressTransitions = true;
       await enterCell(state.pos.x, state.pos.y);
       _suppressTransitions = false;
