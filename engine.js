@@ -1058,6 +1058,7 @@ for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){try{const key=cellKey(cx,cy
 if(isLinear){ctx.globalAlpha=0.9;const fn=meta.type==='river'?isRiverType:isRoadType;const conn=getConnectionsAt(cx,cy,fn);const cc=cs/2;ctx.strokeStyle=meta.type==='river'?'#5aaad4':'#c8a878';ctx.lineWidth=meta.type==='river'?cs*0.22:cs*0.16;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();const{n,s,e,w}=conn;const cnt=[n,s,e,w].filter(Boolean).length;if(cnt>0){if(n&&s&&!e&&!w){ctx.moveTo(sx+cc,sy);ctx.lineTo(sx+cc,sy+cs);}else if(e&&w&&!n&&!s){ctx.moveTo(sx,sy+cc);ctx.lineTo(sx+cs,sy+cc);}else if(n&&e&&!s&&!w){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(n&&w&&!s&&!e){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else if(s&&e&&!n&&!w){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(s&&w&&!n&&!e){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else{if(n||s){ctx.moveTo(sx+cc,n?sy:sy+cc);ctx.lineTo(sx+cc,s?sy+cs:sy+cc);}if(e||w){ctx.moveTo(w?sx:sx+cc,sy+cc);ctx.lineTo(e?sx+cs:sx+cc,sy+cc);}}ctx.stroke();}ctx.globalAlpha=1;}
 if(meta.type===T.DOOR||meta.type===T.GATE){ctx.globalAlpha=0.8;ctx.fillStyle='#e8b84b';ctx.fillRect(sx+cs*0.35,sy+cs*0.35,cs*0.3,cs*0.3);ctx.globalAlpha=1;}
 if(meta.type===T.BUILDING&&meta.doors&&meta.doors.length){ctx.globalAlpha=0.85;ctx.strokeStyle='#e8b84b';ctx.lineWidth=Math.max(1.5,cs*0.12);ctx.lineCap='round';const dm=cs*0.25,dc=cs/2;meta.doors.forEach(d=>{ctx.beginPath();if(d==='north'){ctx.moveTo(sx+dc-dm,sy);ctx.lineTo(sx+dc+dm,sy);}else if(d==='south'){ctx.moveTo(sx+dc-dm,sy+cs-1);ctx.lineTo(sx+dc+dm,sy+cs-1);}else if(d==='west'){ctx.moveTo(sx,sy+dc-dm);ctx.lineTo(sx,sy+dc+dm);}else if(d==='east'){ctx.moveTo(sx+cs-1,sy+dc-dm);ctx.lineTo(sx+cs-1,sy+dc+dm);}ctx.stroke();});ctx.globalAlpha=1;}
+if(meta.type===T.BUILDING&&meta.name&&cs>=10){ctx.globalAlpha=0.75;ctx.fillStyle='#e8c87a';ctx.font=`${Math.max(7,Math.min(10,cs*0.35))}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';const label=meta.name.length>12?meta.name.slice(0,11)+'\u2026':meta.name;ctx.fillText(label,sx+cs/2,sy+cs/2);ctx.globalAlpha=1;}
 if(mapView.travelTarget&&mapView.travelTarget.x===cx&&mapView.travelTarget.y===cy){ctx.strokeStyle='#e8b84b';ctx.lineWidth=2;ctx.strokeRect(sx+1,sy+1,cs-3,cs-3);}
 if(isCurrent){const cc=cs/2;ctx.beginPath();ctx.arc(sx+cc,sy+cc,cs*0.22,0,Math.PI*2);ctx.fillStyle='#e8b84b';ctx.shadowColor='#e8b84b';ctx.shadowBlur=cs*0.5;ctx.fill();ctx.shadowBlur=0;}
 lt.add(meta.type);}catch(e){}}
@@ -1069,9 +1070,49 @@ canvas.addEventListener('touchmove',e=>{e.preventDefault();if(mapPinch.active&&e
 canvas.addEventListener('touchend',e=>{if(mapDrag.active&&!mapDrag.moved&&e.changedTouches.length===1)handleMapTap(e.changedTouches[0].clientX,e.changedTouches[0].clientY);mapDrag.active=false;mapPinch.active=false;},{passive:false});
 canvas.addEventListener('mousedown',e=>{mapDrag.active=true;mapDrag.startX=e.clientX;mapDrag.startY=e.clientY;mapDrag.startMapX=mapView.x;mapDrag.startMapY=mapView.y;mapDrag.moved=false;});canvas.addEventListener('mousemove',e=>{if(!mapDrag.active)return;const dx=e.clientX-mapDrag.startX,dy=e.clientY-mapDrag.startY;if(Math.abs(dx)>3||Math.abs(dy)>3)mapDrag.moved=true;mapView.x=mapDrag.startMapX+dx;mapView.y=mapDrag.startMapY+dy;drawMapCanvas();});canvas.addEventListener('mouseup',e=>{if(mapDrag.active&&!mapDrag.moved)handleMapTap(e.clientX,e.clientY);mapDrag.active=false;});canvas.addEventListener('wheel',e=>{e.preventDefault();const d=e.deltaY>0?0.9:1.1;mapView.scale=Math.max(0.08,Math.min(4,mapView.scale*d));drawMapCanvas();},{passive:false});}
 
-function handleMapTap(cx,cy){const canvas=document.getElementById('map-canvas');const rect=canvas.getBoundingClientRect();const W=canvas.width,H=canvas.height;const scaleX=W/rect.width,scaleY=H/rect.height;cx=(cx-rect.left)*scaleX;cy=(cy-rect.top)*scaleY;const cs=CELL_PX*mapView.scale;const{x:px,y:py}=state.pos;const ox=W/2-(px*cs)+mapView.x,oy=H/2-(py*cs)+mapView.y;const x=Math.floor((cx-ox)/cs),y=Math.floor((cy-oy)/cs);const key=cellKey(x,y);if(x===px&&y===py)return;const meta=getVisibleCellMeta(x,y);if(!isTraversable(meta.type))return;if(state.layer!=='overworld')return;const steps=Math.abs(x-px)+Math.abs(y-py);const ec=Math.round((1-Math.pow(0.995,steps))*100);mapView.travelTarget={x,y};drawMapCanvas();document.getElementById('map-travel-dest').textContent=state.cells[key]?.locationName||meta.name||terrainLabel(meta.type);document.getElementById('map-travel-info').textContent=`~${steps} steps · ${ec}% chance of encounter`;document.getElementById('map-travel-go').onclick=()=>startQuickTravel(x,y);document.getElementById('map-travel-confirm').classList.add('visible');}
+function aStarPath(sx,sy,dx,dy,layerOverride){
+  const layer=layerOverride||state.layer;
+  function key(x,y){return x+','+y;}
+  function meta(x,y){if(layer==='settlement'){const s=SETTLEMENTS[state.settlementId];if(!s)return{type:T.WALL};return s.map[key(x,y)]||{type:T.COURTYARD};}return WORLD_META[key(x,y)]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(x,y):null)||{type:T.PLAINS};}
+  function h(x,y){return Math.abs(x-dx)+Math.abs(y-dy);}
+  const open=new Map();const closed=new Set();const gScore=new Map();const parent=new Map();
+  const startKey=key(sx,sy);open.set(startKey,{x:sx,y:sy,f:h(sx,sy),g:0});gScore.set(startKey,0);
+  let iterations=0;
+  while(open.size>0&&iterations++<2000){
+    let best=null,bestF=Infinity;
+    for(const[k,v]of open){if(v.f<bestF){bestF=v.f;best=k;}}
+    const cur=open.get(best);open.delete(best);closed.add(best);
+    if(cur.x===dx&&cur.y===dy){
+      const path=[];let k=best;
+      while(parent.has(k)){path.unshift({x:parseInt(k),y:parseInt(k.split(',')[1])});k=parent.get(k);}
+      // Fix: properly parse coords
+      const result=[];let pk=best;
+      while(parent.has(pk)){const parts=pk.split(',');result.unshift({x:parseInt(parts[0]),y:parseInt(parts[1])});pk=parent.get(pk);}
+      return result;
+    }
+    for(const[nx2,ny2]of[[cur.x,cur.y-1],[cur.x,cur.y+1],[cur.x-1,cur.y],[cur.x+1,cur.y]]){
+      const nk=key(nx2,ny2);if(closed.has(nk))continue;
+      const nm=meta(nx2,ny2);if(!isTraversable(nm.type)&&!(nx2===dx&&ny2===dy))continue;
+      const ng=gScore.get(best)+1;
+      if(ng<(gScore.get(nk)??Infinity)){
+        gScore.set(nk,ng);parent.set(nk,best);
+        open.set(nk,{x:nx2,y:ny2,f:ng+h(nx2,ny2),g:ng});
+      }
+    }
+  }
+  return null;
+}
+
+function handleMapTap(cx,cy){const canvas=document.getElementById('map-canvas');const rect=canvas.getBoundingClientRect();const W=canvas.width,H=canvas.height;const scaleX=W/rect.width,scaleY=H/rect.height;cx=(cx-rect.left)*scaleX;cy=(cy-rect.top)*scaleY;const cs=CELL_PX*mapView.scale;const{x:px,y:py}=state.pos;const ox=W/2-(px*cs)+mapView.x,oy=H/2-(py*cs)+mapView.y;const x=Math.floor((cx-ox)/cs),y=Math.floor((cy-oy)/cs);const key=cellKey(x,y);if(x===px&&y===py)return;const meta=getVisibleCellMeta(x,y);if(!isTraversable(meta.type))return;
+  // For settlements, verify A* can find a path
+  if(state.layer==='settlement'){const testPath=aStarPath(px,py,x,y);if(!testPath){return;}const steps=testPath.length;mapView.travelTarget={x,y};drawMapCanvas();document.getElementById('map-travel-dest').textContent=state.cells[key]?.locationName||meta.name||terrainLabel(meta.type);document.getElementById('map-travel-info').textContent=`~${steps} steps`;document.getElementById('map-travel-go').onclick=()=>startQuickTravel(x,y);document.getElementById('map-travel-confirm').classList.add('visible');return;}
+  const steps=Math.abs(x-px)+Math.abs(y-py);const ec=Math.round((1-Math.pow(0.995,steps))*100);mapView.travelTarget={x,y};drawMapCanvas();document.getElementById('map-travel-dest').textContent=state.cells[key]?.locationName||meta.name||terrainLabel(meta.type);document.getElementById('map-travel-info').textContent=`~${steps} steps · ${ec}% chance of encounter`;document.getElementById('map-travel-go').onclick=()=>startQuickTravel(x,y);document.getElementById('map-travel-confirm').classList.add('visible');}
 function cancelTravel(){mapView.travelTarget=null;document.getElementById('map-travel-confirm').classList.remove('visible');drawMapCanvas();}
-async function startQuickTravel(dx,dy){document.getElementById('map-travel-confirm').classList.remove('visible');toggleMap();const{x:sx,y:sy}=state.pos;mapView.travelTarget=null;const path=[];let cx=sx,cy=sy;while(cx!==dx||cy!==dy){if(cx!==dx)cx+=cx<dx?1:-1;else if(cy!==dy)cy+=cy<dy?1:-1;path.push({x:cx,y:cy});}addMessage(`You set off toward ${state.cells[cellKey(dx,dy)]?.locationName||terrainLabel(getVisibleCellMeta(dx,dy).type)}...`,'system');for(let i=0;i<path.length;i++){const step=path[i];const meta=getVisibleCellMeta(step.x,step.y);if(!isTraversable(meta.type)){addMessage('Your path is blocked. You stop here.','system');await enterCell(path[i-1]?.x??sx,path[i-1]?.y??sy);return;}state.player.day+=0.05;state.player.stamina=Math.min(state.player.maxStamina,state.player.stamina+1);state.pos={x:step.x,y:step.y};const ss2=seenSet();for(let dy2=-FOV_RADIUS;dy2<=FOV_RADIUS;dy2++)for(let dx2=-FOV_RADIUS;dx2<=FOV_RADIUS;dx2++)ss2.add(`${step.x+dx2},${step.y+dy2}`);if(Math.random()<0.005){addMessage(`Something catches your attention after ${i+1} step${i>0?'s':''}...`,'system');await enterCell(step.x,step.y);return;}}await enterCell(dx,dy);}
+async function startQuickTravel(dx,dy){document.getElementById('map-travel-confirm').classList.remove('visible');toggleMap();const{x:sx,y:sy}=state.pos;mapView.travelTarget=null;
+  // Use A* for settlements, straight-line for overworld
+  let path=[];
+  if(state.layer==='settlement'){const apath=aStarPath(sx,sy,dx,dy);if(!apath||apath.length===0){addMessage('No path found.','system');return;}path=apath;}
+  else{let cx=sx,cy=sy;while(cx!==dx||cy!==dy){if(cx!==dx)cx+=cx<dx?1:-1;else if(cy!==dy)cy+=cy<dy?1:-1;path.push({x:cx,y:cy});}}addMessage(`You set off toward ${state.cells[cellKey(dx,dy)]?.locationName||terrainLabel(getVisibleCellMeta(dx,dy).type)}...`,'system');for(let i=0;i<path.length;i++){const step=path[i];const meta=getVisibleCellMeta(step.x,step.y);if(!isTraversable(meta.type)){addMessage('Your path is blocked. You stop here.','system');await enterCell(path[i-1]?.x??sx,path[i-1]?.y??sy);return;}state.player.day+=0.05;state.player.stamina=Math.min(state.player.maxStamina,state.player.stamina+1);state.pos={x:step.x,y:step.y};const ss2=seenSet();for(let dy2=-FOV_RADIUS;dy2<=FOV_RADIUS;dy2++)for(let dx2=-FOV_RADIUS;dx2<=FOV_RADIUS;dx2++)ss2.add(`${step.x+dx2},${step.y+dy2}`);if(Math.random()<0.005){addMessage(`Something catches your attention after ${i+1} step${i>0?'s':''}...`,'system');await enterCell(step.x,step.y);return;}}await enterCell(dx,dy);}
 
 const FOV_RADIUS=2,MAP_VIEW=9;
 function renderMinimapInto(mapEl,legEl,vr){if(!mapEl)return;const size=vr*2+1;mapEl.style.gridTemplateColumns=`repeat(${size}, 13px)`;mapEl.innerHTML='';const{x:px,y:py}=state.pos;const ss=seenSet();const shown=new Set();
