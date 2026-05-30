@@ -128,8 +128,8 @@ defRect(175,108,312,118,'ocean','The Whispering Sea');
 defRect(150,750,350,775,'ocean','The Sea of Storms');
 defRect(0,250,50,500,'ocean','Aetherial Ocean');
 defRect(450,250,500,500,'ocean','Aetherial Ocean');
-// East-Port harbour strip — docks tile between town and open sea
-defRect(347,553,349,560,'docks','East-Port Harbour');
+// East-Port harbour — 2 squares east of town footprint
+defRect(347,556,348,557,'docks','East-Port Harbour');
 
 const SETTLEMENTS={};
 function makeSimpleTown(id,name,wx,wy,walls,doors){
