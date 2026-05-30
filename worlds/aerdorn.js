@@ -226,7 +226,7 @@ makeSimpleTown('sylvanis_root','Sylvanis-Root',338,414,28,[[-8,2,'Sylvan Lodge',
 (function(){
 // ═══════════════════════════════════════════════════
 // EAST-PORT — full layout
-// 50×60 tiles, 10m/tile (~500m×600m). No walls.
+// 25×30 tiles, 20m/tile (~500m×600m). No walls.
 // x: -25(west) to +25(east/harbour). y: 0(south) to 60(north).
 // Coordinate origin is the south road entry point.
 //
@@ -254,176 +254,176 @@ function rect(x1,y1,x2,y2,type,name,extra={}){
 
 // ── STREETS ──────────────────────────────────────
 // Harbour Street (E-W spine, y=30)
-for(let x=-25;x<=21;x++)t(x,30,'street','Harbour Street');
+for(let x=-13;x<=10;x++)t(x,30,'street','Harbour Street');
 // Fisher's Way (N-S spine, x=0)
-for(let y=0;y<=60;y++)t(0,y,'street',"Fisher's Way");
+for(let y=0;y<=30;y++)t(0,y,'street',"Fisher's Way");
 // Tanner's Lane (N-S east, x=10)
-for(let y=0;y<=60;y++)t(10,y,'street',"Tanner's Lane");
+for(let y=0;y<=30;y++)t(10,y,'street',"Tanner's Lane");
 // Chapel Lane (N-S west, x=-10)
-for(let y=0;y<=60;y++)t(-10,y,'street',"Chapel Lane");
+for(let y=0;y<=30;y++)t(-10,y,'street',"Chapel Lane");
 // Quay Road (E-W south, y=12)
-for(let x=-25;x<=21;x++)t(x,12,'street','Quay Road');
+for(let x=-13;x<=10;x++)t(x,12,'street','Quay Road');
 // Chandler's Walk (E-W north, y=48)
-for(let x=-25;x<=21;x++)t(x,48,'street',"Chandler's Walk");
+for(let x=-13;x<=10;x++)t(x,48,'street',"Chandler's Walk");
 // Short connector lanes
-for(let y=12;y<=30;y++)t(5,y,'street','Rope Lane');
-for(let y=30;y<=48;y++)t(-5,y,'street','Salt Lane');
-for(let y=12;y<=30;y++)t(15,y,'street','Smoker Lane');
-for(let y=30;y<=48;y++)t(20,y,'street','Pier Lane');
+for(let y=6;y<=15;y++)t(5,y,'street','Rope Lane');
+for(let y=15;y<=24;y++)t(-5,y,'street','Salt Lane');
+for(let y=6;y<=15;y++)t(15,y,'street','Smoker Lane');
+for(let y=15;y<=24;y++)t(20,y,'street','Pier Lane');
 
 // ── ROAD ENTRIES (open ends, no gates) ──────────
 t(0,0,'road',"Fisher's Way");   // south entry
-t(0,60,'road',"Fisher's Way");  // north entry
-t(-25,30,'road','Harbour Street'); // west entry
+t(0,30,'road',"Fisher's Way");  // north entry
+t(-13,15,'road','Harbour Street'); // west entry
 
 // ── HARBOUR (east edge, natural inlet) ──────────
-rect(22,8,25,52,'docks','East-Port Harbour');
-t(22,30,'street','Harbour Street'); // street meets docks
+rect(11,4,12,26,'docks','East-Port Harbour');
+t(11,15,'street','Harbour Street'); // street meets docks
 
 // ── MARKET DISTRICT (centre) ─────────────────────
 // Market square itself
-rect(-7,23,7,29,'market','Market Square');
-rect(-7,31,7,37,'market','Market Square');
+rect(-4,11,3,14,'market','Market Square');
+rect(-4,15,3,18,'market','Market Square');
 // Key buildings around the square
-t(-8,26,'building','The Salt & Sail Inn',{interiorType:'inn',doors:['east']});
-t(-8,34,'building','Market Hall',{interiorType:'market_hall',doors:['east']});
-t(8,26,'building','Chandler & Rope',{interiorType:'shop',doors:['west']});
-t(8,34,'building','Spice Merchant',{interiorType:'shop',doors:['west']});
-t(-4,22,'building',"Fletcher's Stall",{interiorType:'shop',doors:['north']});
-t(4,22,'building','Grain Exchange',{interiorType:'shop',doors:['north']});
-t(-4,38,'building','Apothecary',{interiorType:'shop',doors:['south']});
-t(4,38,'building','Moneylender',{interiorType:'shop',doors:['south']});
+t(-4,13,'building','The Salt & Sail Inn',{interiorType:'inn',doors:['east']});
+t(-4,17,'building','Market Hall',{interiorType:'market_hall',doors:['east']});
+t(4,13,'building','Chandler & Rope',{interiorType:'shop',doors:['west']});
+t(4,17,'building','Spice Merchant',{interiorType:'shop',doors:['west']});
+t(-2,11,'building',"Fletcher's Stall",{interiorType:'shop',doors:['north']});
+t(2,11,'building','Grain Exchange',{interiorType:'shop',doors:['north']});
+t(-2,19,'building','Apothecary',{interiorType:'shop',doors:['south']});
+t(2,19,'building','Moneylender',{interiorType:'shop',doors:['south']});
 
 // ── FISHERMEN'S QUARTER (NE) ─────────────────────
 // Net sheds and cottages
-rect(11,49,14,59,'building','Net Shed',{interiorType:'house',doors:['south']});
-rect(16,49,19,59,'building','Net Shed',{interiorType:'house',doors:['south']});
-rect(21,49,21,59,'building','Net Shed',{interiorType:'house',doors:['west']});
+rect(5,24,7,29,'building','Net Shed',{interiorType:'house',doors:['south']});
+rect(8,24,9,29,'building','Net Shed',{interiorType:'house',doors:['south']});
+rect(10,24,10,29,'building','Net Shed',{interiorType:'house',doors:['west']});
 // Fishermen's cottages
-t(11,43,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
-t(13,43,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
-t(15,43,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
-t(17,43,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
-t(19,43,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
-t(21,43,'building',"Fisher's Cottage",{interiorType:'house',doors:['west']});
-t(11,40,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
-t(13,40,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
-t(15,40,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
-t(17,40,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
-t(19,40,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
+t(5,21,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
+t(6,21,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
+t(7,21,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
+t(8,21,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
+t(9,21,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
+t(10,21,'building',"Fisher's Cottage",{interiorType:'house',doors:['west']});
+t(5,20,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
+t(6,20,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
+t(7,20,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
+t(8,20,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
+t(9,20,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
 // Smokehouse — notable building
-t(11,34,'building','Smokehouse',{interiorType:'shop',doors:['west','south']});
-t(12,34,'building','Smokehouse',{interiorType:'shop',doors:['south']});
+t(5,17,'building','Smokehouse',{interiorType:'shop',doors:['west','south']});
+t(6,17,'building','Smokehouse',{interiorType:'shop',doors:['south']});
 
 // ── MERCHANT QUARTER (NW) ────────────────────────
 // Larger, well-spaced houses
-t(-11,49,'building','Merchant House',{interiorType:'house',doors:['east','south']});
-t(-12,49,'building','Merchant House',{interiorType:'house',doors:['south']});
-t(-14,49,'building','Merchant House',{interiorType:'house',doors:['east','south']});
-t(-15,49,'building','Merchant House',{interiorType:'house',doors:['south']});
-t(-17,49,'building','Merchant House',{interiorType:'house',doors:['east','south']});
-t(-18,49,'building','Merchant House',{interiorType:'house',doors:['south']});
-t(-20,49,'building','Merchant House',{interiorType:'house',doors:['east','south']});
-t(-21,49,'building','Merchant House',{interiorType:'house',doors:['south']});
-t(-23,49,'building','Merchant House',{interiorType:'house',doors:['east','south']});
-t(-24,49,'building','Merchant House',{interiorType:'house',doors:['south']});
-t(-11,52,'building','Merchant House',{interiorType:'house',doors:['east']});
-t(-14,52,'building','Merchant House',{interiorType:'house',doors:['east']});
-t(-17,52,'building','Merchant House',{interiorType:'house',doors:['east']});
-t(-20,52,'building','Merchant House',{interiorType:'house',doors:['east']});
-t(-23,52,'building','Merchant House',{interiorType:'house',doors:['east']});
-t(-11,55,'building','Merchant House',{interiorType:'house',doors:['east','south']});
-t(-14,55,'building','Merchant House',{interiorType:'house',doors:['south']});
-t(-17,55,'building','Merchant House',{interiorType:'house',doors:['east','south']});
-t(-20,55,'building','Merchant House',{interiorType:'house',doors:['south']});
-t(-23,55,'building','Merchant House',{interiorType:'house',doors:['east']});
+t(-6,24,'building','Merchant House',{interiorType:'house',doors:['east','south']});
+t(-6,24,'building','Merchant House',{interiorType:'house',doors:['south']});
+t(-7,24,'building','Merchant House',{interiorType:'house',doors:['east','south']});
+t(-8,24,'building','Merchant House',{interiorType:'house',doors:['south']});
+t(-9,24,'building','Merchant House',{interiorType:'house',doors:['east','south']});
+t(-9,24,'building','Merchant House',{interiorType:'house',doors:['south']});
+t(-10,24,'building','Merchant House',{interiorType:'house',doors:['east','south']});
+t(-11,24,'building','Merchant House',{interiorType:'house',doors:['south']});
+t(-12,24,'building','Merchant House',{interiorType:'house',doors:['east','south']});
+t(-12,24,'building','Merchant House',{interiorType:'house',doors:['south']});
+t(-6,26,'building','Merchant House',{interiorType:'house',doors:['east']});
+t(-7,26,'building','Merchant House',{interiorType:'house',doors:['east']});
+t(-9,26,'building','Merchant House',{interiorType:'house',doors:['east']});
+t(-10,26,'building','Merchant House',{interiorType:'house',doors:['east']});
+t(-12,26,'building','Merchant House',{interiorType:'house',doors:['east']});
+t(-6,27,'building','Merchant House',{interiorType:'house',doors:['east','south']});
+t(-7,27,'building','Merchant House',{interiorType:'house',doors:['south']});
+t(-9,27,'building','Merchant House',{interiorType:'house',doors:['east','south']});
+t(-10,27,'building','Merchant House',{interiorType:'house',doors:['south']});
+t(-12,27,'building','Merchant House',{interiorType:'house',doors:['east']});
 // Notary/scribe — merchant quarter's functional building
-t(-11,43,'building','Notary & Scribe',{interiorType:'shop',doors:['east','south']});
-t(-12,43,'building','Notary & Scribe',{interiorType:'shop',doors:['south']});
-t(-11,40,'building','Merchant House',{interiorType:'house',doors:['east']});
-t(-14,40,'building','Merchant House',{interiorType:'house',doors:['east']});
-t(-17,40,'building','Merchant House',{interiorType:'house',doors:['east']});
-t(-20,40,'building','Merchant House',{interiorType:'house',doors:['east']});
-t(-23,40,'building','Merchant House',{interiorType:'house',doors:['east']});
+t(-6,21,'building','Notary & Scribe',{interiorType:'shop',doors:['east','south']});
+t(-6,21,'building','Notary & Scribe',{interiorType:'shop',doors:['south']});
+t(-6,20,'building','Merchant House',{interiorType:'house',doors:['east']});
+t(-7,20,'building','Merchant House',{interiorType:'house',doors:['east']});
+t(-9,20,'building','Merchant House',{interiorType:'house',doors:['east']});
+t(-10,20,'building','Merchant House',{interiorType:'house',doors:['east']});
+t(-12,20,'building','Merchant House',{interiorType:'house',doors:['east']});
 
 // ── RESIDENTIAL (SW) ─────────────────────────────
 // Chapel — landmark
-t(-11,20,'building','Chapel of the Tides',{interiorType:'chapel',doors:['east','south']});
-t(-12,20,'building','Chapel of the Tides',{interiorType:'chapel',doors:['south']});
-t(-11,19,'building','Chapel of the Tides',{interiorType:'chapel',doors:['east']});
-t(-12,19,'building','Chapel of the Tides',{interiorType:'chapel',doors:['east']});
+t(-6,10,'building','Chapel of the Tides',{interiorType:'chapel',doors:['east','south']});
+t(-6,10,'building','Chapel of the Tides',{interiorType:'chapel',doors:['south']});
+t(-6,9,'building','Chapel of the Tides',{interiorType:'chapel',doors:['east']});
+t(-6,9,'building','Chapel of the Tides',{interiorType:'chapel',doors:['east']});
 // Ordinary houses
-t(-11,15,'building','House',{interiorType:'house',doors:['east']});
-t(-13,15,'building','House',{interiorType:'house',doors:['east']});
-t(-15,15,'building','House',{interiorType:'house',doors:['east']});
-t(-17,15,'building','House',{interiorType:'house',doors:['east']});
-t(-19,15,'building','House',{interiorType:'house',doors:['east']});
-t(-21,15,'building','House',{interiorType:'house',doors:['east']});
-t(-23,15,'building','House',{interiorType:'house',doors:['east']});
-t(-11,8,'building','House',{interiorType:'house',doors:['east','north']});
-t(-13,8,'building','House',{interiorType:'house',doors:['north']});
-t(-15,8,'building','House',{interiorType:'house',doors:['north']});
-t(-17,8,'building','House',{interiorType:'house',doors:['north']});
-t(-19,8,'building','House',{interiorType:'house',doors:['north']});
-t(-21,8,'building','House',{interiorType:'house',doors:['north']});
-t(-23,8,'building','House',{interiorType:'house',doors:['north']});
-t(-11,5,'building','House',{interiorType:'house',doors:['east']});
-t(-13,5,'building','House',{interiorType:'house',doors:['east']});
-t(-15,5,'building','House',{interiorType:'house',doors:['east']});
-t(-17,5,'building','House',{interiorType:'house',doors:['east']});
-t(-19,5,'building','House',{interiorType:'house',doors:['east']});
-t(-21,5,'building','House',{interiorType:'house',doors:['east']});
-t(-23,5,'building','House',{interiorType:'house',doors:['east']});
+t(-6,7,'building','House',{interiorType:'house',doors:['east']});
+t(-7,7,'building','House',{interiorType:'house',doors:['east']});
+t(-8,7,'building','House',{interiorType:'house',doors:['east']});
+t(-9,7,'building','House',{interiorType:'house',doors:['east']});
+t(-10,7,'building','House',{interiorType:'house',doors:['east']});
+t(-11,7,'building','House',{interiorType:'house',doors:['east']});
+t(-12,7,'building','House',{interiorType:'house',doors:['east']});
+t(-6,4,'building','House',{interiorType:'house',doors:['east','north']});
+t(-7,4,'building','House',{interiorType:'house',doors:['north']});
+t(-8,4,'building','House',{interiorType:'house',doors:['north']});
+t(-9,4,'building','House',{interiorType:'house',doors:['north']});
+t(-10,4,'building','House',{interiorType:'house',doors:['north']});
+t(-11,4,'building','House',{interiorType:'house',doors:['north']});
+t(-12,4,'building','House',{interiorType:'house',doors:['north']});
+t(-6,2,'building','House',{interiorType:'house',doors:['east']});
+t(-7,2,'building','House',{interiorType:'house',doors:['east']});
+t(-8,2,'building','House',{interiorType:'house',doors:['east']});
+t(-9,2,'building','House',{interiorType:'house',doors:['east']});
+t(-10,2,'building','House',{interiorType:'house',doors:['east']});
+t(-11,2,'building','House',{interiorType:'house',doors:['east']});
+t(-12,2,'building','House',{interiorType:'house',doors:['east']});
 
 // ── TRADESMEN'S ROW (SE) ─────────────────────────
 // Blacksmith
-t(11,20,'building','Blacksmith',{interiorType:'blacksmith',doors:['west','south']});
-t(12,20,'building','Blacksmith',{interiorType:'blacksmith',doors:['south']});
-t(11,19,'building','Blacksmith',{interiorType:'blacksmith',doors:['west']});
-t(12,19,'building','Blacksmith',{interiorType:'blacksmith',doors:['west']});
+t(5,10,'building','Blacksmith',{interiorType:'blacksmith',doors:['west','south']});
+t(6,10,'building','Blacksmith',{interiorType:'blacksmith',doors:['south']});
+t(5,9,'building','Blacksmith',{interiorType:'blacksmith',doors:['west']});
+t(6,9,'building','Blacksmith',{interiorType:'blacksmith',doors:['west']});
 // Bathhouse
-t(14,20,'building','Bathhouse',{interiorType:'bathhouse',doors:['west','south']});
-t(15,20,'building','Bathhouse',{interiorType:'bathhouse',doors:['south']});
-t(14,19,'building','Bathhouse',{interiorType:'bathhouse',doors:['west']});
-t(15,19,'building','Bathhouse',{interiorType:'bathhouse',doors:['west']});
+t(7,10,'building','Bathhouse',{interiorType:'bathhouse',doors:['west','south']});
+t(7,10,'building','Bathhouse',{interiorType:'bathhouse',doors:['south']});
+t(7,9,'building','Bathhouse',{interiorType:'bathhouse',doors:['west']});
+t(7,9,'building','Bathhouse',{interiorType:'bathhouse',doors:['west']});
 // Tanner
-t(11,15,'building','Tannery',{interiorType:'shop',doors:['west']});
-t(12,15,'building','Tannery',{interiorType:'shop',doors:['west']});
+t(5,7,'building','Tannery',{interiorType:'shop',doors:['west']});
+t(6,7,'building','Tannery',{interiorType:'shop',doors:['west']});
 // Carpenter
-t(14,15,'building','Carpenter',{interiorType:'shop',doors:['west']});
-t(15,15,'building','Carpenter',{interiorType:'shop',doors:['west']});
+t(7,7,'building','Carpenter',{interiorType:'shop',doors:['west']});
+t(7,7,'building','Carpenter',{interiorType:'shop',doors:['west']});
 // Ordinary tradesmen houses
-t(11,8,'building','House',{interiorType:'house',doors:['west','north']});
-t(13,8,'building','House',{interiorType:'house',doors:['north']});
-t(15,8,'building','House',{interiorType:'house',doors:['north']});
-t(17,8,'building','House',{interiorType:'house',doors:['north']});
-t(19,8,'building','House',{interiorType:'house',doors:['north']});
-t(21,8,'building','House',{interiorType:'house',doors:['north']});
-t(11,5,'building','House',{interiorType:'house',doors:['west']});
-t(13,5,'building','House',{interiorType:'house',doors:['west']});
-t(15,5,'building','House',{interiorType:'house',doors:['west']});
-t(17,5,'building','House',{interiorType:'house',doors:['west']});
-t(19,5,'building','House',{interiorType:'house',doors:['west']});
-t(21,5,'building','House',{interiorType:'house',doors:['west']});
+t(5,4,'building','House',{interiorType:'house',doors:['west','north']});
+t(6,4,'building','House',{interiorType:'house',doors:['north']});
+t(7,4,'building','House',{interiorType:'house',doors:['north']});
+t(8,4,'building','House',{interiorType:'house',doors:['north']});
+t(9,4,'building','House',{interiorType:'house',doors:['north']});
+t(10,4,'building','House',{interiorType:'house',doors:['north']});
+t(5,2,'building','House',{interiorType:'house',doors:['west']});
+t(6,2,'building','House',{interiorType:'house',doors:['west']});
+t(7,2,'building','House',{interiorType:'house',doors:['west']});
+t(8,2,'building','House',{interiorType:'house',doors:['west']});
+t(9,2,'building','House',{interiorType:'house',doors:['west']});
+t(10,2,'building','House',{interiorType:'house',doors:['west']});
 
 // ── HARBORMASTER (east, near docks) ──────────────
-t(20,31,'building','Harbormaster',{interiorType:'harbormaster',doors:['west','south']});
-t(20,32,'building','Harbormaster',{interiorType:'harbormaster',doors:['west']});
-t(21,31,'building','Harbormaster',{interiorType:'harbormaster',doors:['south']});
-t(21,32,'building','Harbormaster',{interiorType:'harbormaster',doors:['west']});
+t(10,15,'building','Harbormaster',{interiorType:'harbormaster',doors:['west','south']});
+t(10,16,'building','Harbormaster',{interiorType:'harbormaster',doors:['west']});
+t(10,15,'building','Harbormaster',{interiorType:'harbormaster',doors:['south']});
+t(10,16,'building','Harbormaster',{interiorType:'harbormaster',doors:['west']});
 
 // ── OPEN GROUND / COURTYARD ──────────────────────
 // Small plaza at main crossing
-rect(-2,28,2,32,'courtyard','Town Crossing');
+rect(-1,14,1,16,'courtyard','Town Crossing');
 // Dockside open area
-rect(16,27,21,29,'courtyard','Dockside Yard');
-rect(16,31,21,33,'courtyard','Dockside Yard');
+rect(8,13,10,14,'courtyard','Dockside Yard');
+rect(8,15,10,16,'courtyard','Dockside Yard');
 
 SETTLEMENTS['frilar_town']={
   map:m,
   name:'East-Port',
   hasWalls:false,
-  entryPos:{x:0,y:2},
+  entryPos:{x:0,y:1},
   overworldCell:{x:346,y:556},
   description:'A natural harbour town on the east coast. Smells of salt, smoke, and fish. The kind of place where you can find passage east if you have coin — or find trouble if you do not.',
 };
