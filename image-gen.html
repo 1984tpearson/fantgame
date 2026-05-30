@@ -288,7 +288,10 @@ async function generate(tab) {
 
       const res = await fetch(IMAGE_PROXY_URL, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'apikey': SUPABASE_ANON_KEY },
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
         body
       });
       if (!res.ok) { const t = await res.text(); throw new Error(`Proxy error ${res.status}: ${t}`); }

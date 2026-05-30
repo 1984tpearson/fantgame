@@ -7,7 +7,7 @@
 // Secret: supabase secrets set DEZGO_API_KEY=your-key
 // ═══════════════════════════════════════════════════
 
-const DEZGO_URL = 'https://api.dezgo.com/text2image';
+const DEZGO_URL = 'https://api.dezgo.com/text2image_sdxl';
 const ALLOWED_ORIGINS = [
   'https://1984tpearson.github.io',
   'http://localhost',
@@ -23,7 +23,6 @@ Deno.serve(async (req: Request) => {
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey',
   };
 
-  // ── CORS preflight ──────────────────────────────
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -32,9 +31,6 @@ Deno.serve(async (req: Request) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  // ── Read FormData from the browser ─────────────
-  // The browser sends the same FormData fields as before,
-  // minus the API key. We add the key here server-side.
   let formData: FormData;
   try {
     formData = await req.formData();
@@ -47,13 +43,9 @@ Deno.serve(async (req: Request) => {
     return new Response('Server misconfiguration', { status: 500 });
   }
 
-  // ── Forward to Dezgo ────────────────────────────
   const upstream = await fetch(DEZGO_URL, {
     method: 'POST',
-    headers: {
-      'X-Dezgo-Key': apiKey,
-      // No Content-Type header — let fetch set it with the boundary
-    },
+    headers: { 'X-Dezgo-Key': apiKey },
     body: formData,
   });
 
@@ -62,14 +54,10 @@ Deno.serve(async (req: Request) => {
     return new Response(errText, { status: upstream.status, headers: corsHeaders });
   }
 
-  // ── Return the image blob ───────────────────────
   const imageBlob = await upstream.arrayBuffer();
 
   return new Response(imageBlob, {
     status: 200,
-    headers: {
-      ...corsHeaders,
-      'Content-Type': 'image/png',
-    }
+    headers: { ...corsHeaders, 'Content-Type': 'image/png' }
   });
 });
