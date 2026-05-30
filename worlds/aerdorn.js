@@ -422,6 +422,7 @@ rect(16,31,21,33,'courtyard','Dockside Yard');
 SETTLEMENTS['frilar_town']={
   map:m,
   name:'East-Port',
+  hasWalls:false,
   entryPos:{x:0,y:2},
   overworldCell:{x:346,y:556},
   description:'A natural harbour town on the east coast. Smells of salt, smoke, and fish. The kind of place where you can find passage east if you have coin — or find trouble if you do not.',
