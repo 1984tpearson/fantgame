@@ -1480,9 +1480,14 @@ async function move(dx, dy) {
   const nx = state.pos.x + dx, ny = state.pos.y + dy;
   const meta = getCellMeta(nx, ny);
   if (meta.type === T.BUILDING && meta.doors && Array.isArray(meta.doors)) {
-    const approach = dx===1?'west':dx===-1?'east':dy===1?'south':dy===-1?'north':null;
-    if (approach && meta.doors.includes(approach)) {
-      showDoorPrompt(nx, ny, approach, meta);
+    // doors[] = which face of the building has a door
+    // if moving dx=+1 (east), you approach from west, door must be on west face
+    // if moving dx=-1 (west), you approach from east, door must be on east face
+    // if moving dy=+1 (south in screen = increasing y), door must be on north face (lower y side)
+    // if moving dy=-1 (north in screen = decreasing y), door must be on south face (higher y side)
+    const doorNeeded = dx===1?'west':dx===-1?'east':dy===1?'north':dy===-1?'south':null;
+    if (doorNeeded && meta.doors.includes(doorNeeded)) {
+      showDoorPrompt(nx, ny, doorNeeded, meta);
       return;
     }
   }
