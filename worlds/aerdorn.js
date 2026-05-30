@@ -473,7 +473,7 @@ const NPC_TEMPLATES={
     relationships:{spouse:null,friends:['ep_priest'],rivals:[]}},
 
   // Fisher wife — residential
-  'ep_fishwife':{id:'ep_fishwife',name:'Nance Cord',role:'Resident, Fishermen's Quarter',faction:'eastport_citizens',emoji:'👩',
+  'ep_fishwife':{id:'ep_fishwife',name:'Nance Cord',role:"Resident, Fishermen's Quarter",faction:'eastport_citizens',emoji:'👩',
     personality:`Practical, weather-beaten, completely unimpressed by anything. Repairs nets, salts fish, raises three children largely alone while her husband is at sea. Has a dry wit that catches people off guard.`,
     schedule:[{timeStart:7,timeEnd:19,layer:'settlement',settlementId:'frilar_town',posKey:'7,19'},{timeStart:19,timeEnd:7,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:7,19'}],
     relationships:{spouse:'ep_fisher',friends:[],rivals:[]}},
