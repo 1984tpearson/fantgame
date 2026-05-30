@@ -7,25 +7,19 @@
 // Secret: supabase secrets set DEZGO_API_KEY=your-key
 // ═══════════════════════════════════════════════════
 
-const DEZGO_URL = 'https://api.dezgo.com/text2image';
-const ALLOWED_ORIGINS = [
-  'https://1984tpearson.github.io',
-  'http://localhost',
-  'http://127.0.0.1',
-];
+const DEZGO_URL = 'https://api.dezgo.com/text2image_sdxl';
+const ALLOWED_ORIGINS = Deno.env.get('ALLOWED_ORIGIN') || '*';
 
 Deno.serve(async (req: Request) => {
-  const origin = req.headers.get('origin') || '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey',
-  };
-
   // ── CORS preflight ──────────────────────────────
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, {
+      headers: {
+        'Access-Control-Allow-Origin': ALLOWED_ORIGINS,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey',
+      }
+    });
   }
 
   if (req.method !== 'POST') {
@@ -59,7 +53,7 @@ Deno.serve(async (req: Request) => {
 
   if (!upstream.ok) {
     const errText = await upstream.text();
-    return new Response(errText, { status: upstream.status, headers: corsHeaders });
+    return new Response(errText, { status: upstream.status });
   }
 
   // ── Return the image blob ───────────────────────
@@ -68,8 +62,8 @@ Deno.serve(async (req: Request) => {
   return new Response(imageBlob, {
     status: 200,
     headers: {
-      ...corsHeaders,
       'Content-Type': 'image/png',
+      'Access-Control-Allow-Origin': ALLOWED_ORIGINS,
     }
   });
 });
