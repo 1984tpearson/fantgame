@@ -973,7 +973,7 @@ async function loadState() {
 // ═══════════════════════════════════════════════════
 // TERRAIN / MAP HELPERS
 // ═══════════════════════════════════════════════════
-function getCellMeta(x,y){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];if(!s)return{type:T.WALL,name:''};if(s.map[`${x},${y}`])return s.map[`${x},${y}`];if(!s._bounds){const ks=Object.keys(s.map);const xs=ks.map(k=>parseInt(k.split(',')[0])),ys=ks.map(k=>parseInt(k.split(',')[1]));s._bounds={minX:Math.min(...xs),maxX:Math.max(...xs),minY:Math.min(...ys),maxY:Math.max(...ys)};}const b=s._bounds;return(x>=b.minX&&x<=b.maxX&&y>=b.minY&&y<=b.maxY)?{type:T.COURTYARD,name:''}:{type:T.WALL,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${x},${y}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(x,y):null)||{type:T.PLAINS,name:''};}
+function getCellMeta(x,y){if(state.layer==='interior'){const si=SETTLEMENTS[state.interiorId];if(si&&si.map){if(si.map[`${x},${y}`])return si.map[`${x},${y}`];if(!si._bounds){const ks=Object.keys(si.map);const xs=ks.map(k=>parseInt(k.split(',')[0])),ys=ks.map(k=>parseInt(k.split(',')[1]));si._bounds={minX:Math.min(...xs),maxX:Math.max(...xs),minY:Math.min(...ys),maxY:Math.max(...ys)};}const b=si._bounds;return(x>=b.minX&&x<=b.maxX&&y>=b.minY&&y<=b.maxY)?{type:T.INTERIOR,name:''}:{type:T.WALL,name:''};} return{type:T.INTERIOR,name:''};} if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];if(!s)return{type:T.WALL,name:''};if(s.map[`${x},${y}`])return s.map[`${x},${y}`];if(!s._bounds){const ks=Object.keys(s.map);const xs=ks.map(k=>parseInt(k.split(',')[0])),ys=ks.map(k=>parseInt(k.split(',')[1]));s._bounds={minX:Math.min(...xs),maxX:Math.max(...xs),minY:Math.min(...ys),maxY:Math.max(...ys)};}const b=s._bounds;return(x>=b.minX&&x<=b.maxX&&y>=b.minY&&y<=b.maxY)?{type:T.COURTYARD,name:''}:{type:T.WALL,name:''};}return WORLD_META[`${x},${y}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(x,y):null)||{type:T.PLAINS,name:''};}
 
 function terrainLabel(type){return{ocean:'Ocean',plains:'Plains',forest:'Forest',mountain:'Mountains',city:'City',town:'Town',village:'Village',road:'Road',farmland:'Farmland',river:'River',street:'Street',building:'Building',door:'Doorway',wall:'Wall',courtyard:'Courtyard',market:'Market',docks:'Docks',gate:'Gate',interior:'Interior',swamp:'Swamp',bog:'Bog',wilds:'Wilds',fens:'Fens',shore:'Shore',peaks:'Peaks',castle:'Castle',keep:'Keep',ruins:'Ruins'}[type]||'Wilderness';}
 function getNeighbourMeta(x,y){return{n:getCellMeta(x,y-1),s:getCellMeta(x,y+1),e:getCellMeta(x+1,y),w:getCellMeta(x-1,y)};}
@@ -1479,15 +1479,79 @@ async function enterBuilding(bx, by) {
   const itype = meta.interiorType || 'house';
   const bname = meta.name || 'building';
   const interiorId = `${state.settlementId}:bld:${bx},${by}`;
-  if (SETTLEMENTS[interiorId]) {
-    await enterInterior(interiorId, {x:1,y:1});
-  } else {
-    const bkey = `${state.settlementId}:${bx},${by}`;
-    if (!state.cells[bkey]) state.cells[bkey] = {};
-    state.cells[bkey].buildingType = itype;
-    state.cells[bkey].buildingName = bname;
-    await enterInterior(interiorId, {x:1,y:1});
+
+  // Generate interior map if not already built
+  if (!SETTLEMENTS[interiorId]) {
+    SETTLEMENTS[interiorId] = generateBuildingInterior(interiorId, itype, bname);
   }
+
+  await enterInterior(interiorId, SETTLEMENTS[interiorId].entryPos || {x:1,y:1});
+}
+
+function generateBuildingInterior(id, itype, bname) {
+  // Sizes at 2m/tile. Entry always on south wall (y=0), exit door there too.
+  const sizes = {
+    house:       {w:5, h:4},
+    inn:         {w:9, h:7},
+    market_hall: {w:8, h:6},
+    blacksmith:  {w:6, h:5},
+    bathhouse:   {w:7, h:6},
+    shop:        {w:5, h:4},
+    chapel:      {w:6, h:7},
+    harbormaster:{w:5, h:5},
+  };
+  const sz = sizes[itype] || {w:5, h:4};
+  const W = sz.w, H = sz.h;
+  const hw = Math.floor(W/2);
+  const m = {};
+
+  function tile(x,y,type,name,extra={}){m[`${x},${y}`]=Object.assign({type,name},extra);}
+  function fill(x1,y1,x2,y2,type,name){for(let x=x1;x<=x2;x++)for(let y=y1;y<=y2;y++)tile(x,y,type,name);}
+
+  // Walls
+  for(let x=-hw;x<=hw;x++){tile(x,0,'wall','Wall');tile(x,H,'wall','Wall');}
+  for(let y=0;y<=H;y++){tile(-hw,y,'wall','Wall');tile(hw,y,'wall','Wall');}
+
+  // Floor
+  fill(-hw+1,1,hw-1,H-1,'interior','Interior');
+
+  // Entry door on south wall
+  tile(0,0,'door','Doorway',{exit:{layer:'settlement',pos:null}});
+
+  // Type-specific furniture zones
+  if(itype==='inn'){
+    fill(-hw+1,1,hw-1,2,'market','Common Room');
+    fill(-hw+1,3,0,H-1,'building','Private Rooms');
+    fill(1,3,hw-1,H-1,'courtyard','Kitchen & Store');
+    tile(-hw+1,1,'door','Bar',{interactable:true});
+  } else if(itype==='blacksmith'){
+    fill(-hw+1,1,0,H-1,'building','Forge');
+    fill(1,1,hw-1,H-1,'courtyard','Workshop');
+  } else if(itype==='bathhouse'){
+    fill(-hw+1,1,0,2,'courtyard','Changing Room');
+    fill(-hw+1,3,hw-1,H-1,'market','Baths');
+  } else if(itype==='chapel'){
+    fill(-hw+1,1,hw-1,H-2,'courtyard','nave');
+    fill(-hw+1,H-1,hw-1,H-1,'building','Sanctuary');
+  } else if(itype==='market_hall'){
+    fill(-hw+1,1,hw-1,H-1,'market','Market Floor');
+  } else if(itype==='harbormaster'){
+    fill(-hw+1,1,0,H-1,'building','Office');
+    fill(1,1,hw-1,H-1,'courtyard','Records Room');
+  }
+  // house and shop get plain floor — AI describes contents
+
+  // Second door on north wall for larger buildings
+  if(H>=6) tile(0,H,'door','Back Door',{exit:{layer:'settlement',pos:null}});
+
+  return {
+    map: m,
+    name: bname,
+    entryPos: {x:0, y:1},
+    overworldCell: null,
+    isGenerated: true,
+    buildingType: itype,
+  };
 }
 
 async function move(dx, dy) {
