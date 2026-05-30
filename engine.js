@@ -1146,7 +1146,7 @@ function makeCellSVG(x,y,type){const isR=type==='river';const fn=isR?isRiverType
 
 function updateMoveButtons(){const{x,y}=state.pos;const centre=document.getElementById('btn-center');if(centre){const cm=getCellMeta(x,y);centre.style.background=TERRAIN_HEX[cm.type]||TERRAIN_HEX.unknown;const os=centre.querySelector('svg.tile-svg');if(os)os.remove();if(cm.type==='road'||cm.type==='river'){const s=makeCellSVG(x,y,cm.type);if(s)centre.insertBefore(s,centre.firstChild);}}
 const isBlocked=!!state.blockedBy;
-const dirs={n:[0,-1],s:[0,1],e:[1,0],w:[-1,0],ne:[1,-1],nw:[-1,-1],se:[1,1],sw:[-1,1]};for(const[d,[dx,dy]]of Object.entries(dirs)){const btn=document.getElementById(`btn-${d}`);if(!btn)continue;const nx=x+dx,ny=y+dy;const wm=getCellMeta(nx,ny);btn.disabled=!isTraversable(wm.type)||state.inCombat||isBlocked;const os=btn.querySelector('svg.tile-svg');if(os)os.remove();btn.style.background=TERRAIN_HEX[wm.type]||TERRAIN_HEX.unknown;if(wm.type==='road'||wm.type==='river'){const s=makeCellSVG(nx,ny,wm.type);if(s)btn.insertBefore(s,btn.firstChild);}}}
+const dirs={n:[0,-1],s:[0,1],e:[1,0],w:[-1,0],ne:[1,-1],nw:[-1,-1],se:[1,1],sw:[-1,1]};for(const[d,[dx,dy]]of Object.entries(dirs)){const btn=document.getElementById(`btn-${d}`);if(!btn)continue;const nx=x+dx,ny=y+dy;const wm=getCellMeta(nx,ny);const doorFace=dx===1?'west':dx===-1?'east':dy===1?'north':dy===-1?'south':null;const hasDoor=wm.type===T.BUILDING&&wm.doors&&doorFace&&wm.doors.includes(doorFace);btn.disabled=(!isTraversable(wm.type)&&!hasDoor)||state.inCombat||isBlocked;btn.style.outline=hasDoor?'2px solid rgba(201,148,58,0.7)':'';const os=btn.querySelector('svg.tile-svg');if(os)os.remove();btn.style.background=TERRAIN_HEX[wm.type]||TERRAIN_HEX.unknown;if(wm.type==='road'||wm.type==='river'){const s=makeCellSVG(nx,ny,wm.type);if(s)btn.insertBefore(s,btn.firstChild);}}}
 
 
 // ═══════════════════════════════════════════════════
@@ -1487,7 +1487,7 @@ async function move(dx, dy) {
     // if moving dy=-1 (north in screen = decreasing y), door must be on south face (higher y side)
     const doorNeeded = dx===1?'west':dx===-1?'east':dy===1?'north':dy===-1?'south':null;
     if (doorNeeded && meta.doors.includes(doorNeeded)) {
-      showDoorPrompt(nx, ny, doorNeeded, meta);
+      await enterBuilding(nx, ny);
       return;
     }
   }
