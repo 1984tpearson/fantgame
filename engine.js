@@ -1117,7 +1117,7 @@ function closeItemUse(){document.getElementById('item-use-drawer').classList.rem
 // ═══════════════════════════════════════════════════
 // AI — MAIN GAME (via OpenRouter)
 // ═══════════════════════════════════════════════════
-function layerContext(){if(state.layer==='interior')return'INTERIOR SCALE: 1m per cell. Inside a building. Describe room details: furniture, light, smells, sounds, occupants.';if(state.layer==='settlement'){const name=SETTLEMENTS[state.settlementId]?.name||state.settlementId;return`SETTLEMENT SCALE: 5m per cell. Inside ${name}. Describe street-scale details: stalls, doorways, crowds, signage, cobblestones.`;}return'OVERWORLD SCALE: ~280m per cell across a large island kingdom. Describe landscape, weather, distant landmarks, feel of the region.';}
+function layerContext(){if(state.layer==='interior')return'INTERIOR SCALE: 1m per cell. Inside a building. Describe room details: furniture, light, smells, sounds, occupants.';if(state.layer==='settlement'){const name=SETTLEMENTS[state.settlementId]?.name||state.settlementId;const s=SETTLEMENTS[state.settlementId];const gateInfo=s?Object.entries(s.map).filter(([k,v])=>v.type==='gate').map(([k,v])=>{const[gx,gy]=k.split(',').map(Number);return`${v.name} at local (${gx},${gy})`;}).join(', '):'';return`SETTLEMENT SCALE: 5m per cell. Inside ${name}. Describe street-scale details: stalls, doorways, crowds, signage, cobblestones.\nGATES: ${gateInfo}. IMPORTANT: if player says they leave via a specific gate (e.g. north gate), set exitVia to that gate name in JSON so the engine uses the correct exit. exitVia options match gate names above.`;}return'OVERWORLD SCALE: ~280m per cell across a large island kingdom. Describe landscape, weather, distant landmarks, feel of the region.';}
 
 function buildNpcContextForSystemPrompt(){const present=getNpcsAtCurrentLocation();if(present.length===0)return'';const lines=present.map(id=>{const tmpl=NPC_TEMPLATES[id];const disp=getNpcDisposition(id);const dl=dispositionLabel(disp);const ns=getNpcState(id);const mem=ns.memory.length?ns.memory.slice(-2).join('; '):'not yet met';return`  - ${tmpl.name} (${tmpl.role}): disposition=${dl.label}, memory="${mem}"`;});return`\nNPCS PRESENT HERE:\n${lines.join('\n')}\nIf the player tries to talk to one, mention they can use the Talk button or type "talk to [name]".`;}
 
@@ -1130,7 +1130,7 @@ function buildSystemPrompt(actionOnly=false){
   const skillSummary=Object.keys(state.skills).length?Object.entries(state.skills).map(([k,v])=>`${k}:${v}`).join(', '):'none yet';
   const repSummary=Object.entries(state.worldState.reputation||{}).filter(([,v])=>v!==0).map(([k,v])=>`${FACTIONS[k]?.name||k}:${v>0?'+'+v:v}`).join(', ')||'none';
   const npcCtx=buildNpcContextForSystemPrompt();
-  const emptyActions='"combatActions":[]';
+  const emptyActions='"combatActions":[],"exitVia":null';
   return `You are the game master for Valdenmere, a gritty high fantasy world with realistic consequences.
 
 PLAYER: A traveller whose name is unknown to the world unless they have shared it. Refer to them as 'you' — never use their name in narration.
@@ -1480,6 +1480,19 @@ async function handleInput() {
     });
   }
 
+  // Handle exitVia - player specified which gate to leave through
+  if (meta.exitVia && state.layer === 'settlement') {
+    const s = SETTLEMENTS[state.settlementId];
+    if (s) {
+      const gateEntry = Object.entries(s.map).find(([k,v]) => v.type==='gate' && v.name && v.name.toLowerCase().includes(meta.exitVia.toLowerCase()));
+      if (gateEntry && gateEntry[1].exit?.pos) {
+        state._pendingGateExit = {...gateEntry[1].exit.pos};
+        addMessage(`You pass back through the gates of ${s.name}.`, 'transition');
+        await exitLayer();
+        return;
+      }
+    }
+  }
   if (meta.npcSpawn && meta.npcSpawn.name) {
     const newId = spawnNpc(meta.npcSpawn, cellKey(state.pos.x, state.pos.y));
     setTimeout(() => openNpcDrawer(newId), 300);
