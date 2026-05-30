@@ -425,13 +425,13 @@ const NPC_TEMPLATES={
 
   // Blacksmith's wife — domestic, residential SW
   'ep_mira':{id:'ep_mira',name:'Mira Ashfen',role:'Resident, East-Port',faction:'eastport_citizens',emoji:'👩',
-    personality:'Sharp-tongued but generous. Runs the household accounts with an iron grip. Keeps a kitchen garden and gives surplus vegetables to the chapel. Quietly worries about Tor's health.',
+    personality:'Sharp-tongued but generous. Runs the household accounts with an iron grip. Keeps a kitchen garden and gives surplus vegetables to the chapel. Quietly worries about Tor\'s health.',
     schedule:[{timeStart:8,timeEnd:20,layer:'settlement',settlementId:'frilar_town',posKey:'-9,7'},{timeStart:20,timeEnd:8,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:-9,7'}],
     relationships:{spouse:'ep_blacksmith',friends:['ep_priest'],rivals:[]}},
 
   // Watch guard — patrols streets
   'ep_guard_rona':{id:'ep_guard_rona',name:'Rona Stebbe',role:'Town Watch, East-Port',faction:'eastport_guard',emoji:'🛡',
-    personality:'Young woman. Ambitious. Suspicious of strangers but not hostile — yet. Knows something is wrong with the cargo manifests but hasn't worked out who. Admires the harbormaster without realising he's part of the problem.',
+    personality:'Young woman. Ambitious. Suspicious of strangers but not hostile — yet. Knows something is wrong with the cargo manifests but hasn\'t worked out who. Admires the harbormaster without realising he's part of the problem.',
     schedule:[{timeStart:6,timeEnd:20,layer:'settlement',settlementId:'frilar_town',posKey:'0,14'},{timeStart:20,timeEnd:6,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:-6,3'}],
     relationships:{spouse:null,friends:['ep_harbormaster'],rivals:['ep_smuggler']}},
 
@@ -443,7 +443,7 @@ const NPC_TEMPLATES={
 
   // Priest at chapel
   'ep_priest':{id:'ep_priest',name:'Sister Avane',role:'Keeper of the Chapel of the Tides',faction:'eastport_church',emoji:'✝',
-    personality:'Calm and unhurried. Speaks slowly, as if choosing every word from a large and careful inventory. Tends the sick. Knows more about people's sins than anyone and judges none of them. Has a soft spot for strays — human or animal.',
+    personality:'Calm and unhurried. Speaks slowly, as if choosing every word from a large and careful inventory. Tends the sick. Knows more about people\'s sins than anyone and judges none of them. Has a soft spot for strays — human or animal.',
     schedule:[{timeStart:6,timeEnd:22,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:-6,10'},{timeStart:22,timeEnd:6,layer:'settlement',settlementId:'frilar_town',posKey:'-6,11'}],
     relationships:{spouse:null,friends:['ep_innkeeper','ep_mira'],rivals:[]}},
 
@@ -455,7 +455,7 @@ const NPC_TEMPLATES={
 
   // Tanner
   'ep_tanner':{id:'ep_tanner',name:'Wulf Grent',role:'Tanner, East-Port',faction:'eastport_citizens',emoji:'🪣',
-    personality:'Permanently stained, permanently cheerful. Talks constantly about the merits of different hides. Has opinions about everything and shares them freely. His wife left years ago and he still doesn't understand why.',
+    personality:'Permanently stained, permanently cheerful. Talks constantly about the merits of different hides. Has opinions about everything and shares them freely. His wife left years ago and he still doesn\'t understand why.',
     schedule:[{timeStart:6,timeEnd:17,layer:'interior',settlementId:'frilar_town',posKey:'frilar_town:bld:6,7'},{timeStart:17,timeEnd:6,layer:'settlement',settlementId:'frilar_town',posKey:'6,8'}],
     relationships:{spouse:null,friends:['ep_blacksmith'],rivals:[]}},
 
@@ -468,7 +468,7 @@ const NPC_TEMPLATES={
 
   // Beggar — no fixed home
   'ep_beggar':{id:'ep_beggar',name:'Old Fetch',role:'Beggar',faction:'eastport_citizens',emoji:'🧤',
-    personality:'Ancient. Possibly mad. Calls everyone "captain." Has lived in East-Port longer than anyone can remember and knows things about the town's history that no one else does — but getting a straight answer out of him requires patience and food.',
+    personality:'Ancient. Possibly mad. Calls everyone "captain." Has lived in East-Port longer than anyone can remember and knows things about the town\'s history that no one else does — but getting a straight answer out of him requires patience and food.',
     schedule:[{timeStart:0,timeEnd:24,layer:'settlement',settlementId:'frilar_town',posKey:'-3,14'}],
     relationships:{spouse:null,friends:['ep_priest'],rivals:[]}},
 
