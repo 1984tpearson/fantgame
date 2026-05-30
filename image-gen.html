@@ -73,7 +73,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
     <input type="password" id="dezgo-key" placeholder="Dezgo API key" autocomplete="off" />
     <input type="password" id="github-token" placeholder="GitHub token" autocomplete="off" />
     <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap;">
-      <input type="checkbox" id="remember-token" style="accent-color:var(--accent);width:14px;height:14px;" /> Remember token
+      <input type="checkbox" id="remember-token" style="accent-color:var(--accent);width:14px;height:14px;" /> Remember keys
     </label>
   </div>
   <div class="tabs">
@@ -163,14 +163,26 @@ let modes = { npc: 'fields', bg: 'fields' };
 let generatedImages = [];
 
 window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('gh_token');
-  if (saved) { document.getElementById('github-token').value = saved; document.getElementById('remember-token').checked = true; }
+  const dezgoInput = document.getElementById('dezgo-key');
   const tokenInput = document.getElementById('github-token');
   const rememberBox = document.getElementById('remember-token');
+  const savedDezgo = localStorage.getItem('dezgo_key');
+  const savedToken = localStorage.getItem('gh_token');
+  if (savedDezgo || savedToken) {
+    if (savedDezgo) dezgoInput.value = savedDezgo;
+    if (savedToken) tokenInput.value = savedToken;
+    rememberBox.checked = true;
+  }
   rememberBox.addEventListener('change', () => {
-    if (rememberBox.checked) localStorage.setItem('gh_token', tokenInput.value);
-    else localStorage.removeItem('gh_token');
+    if (rememberBox.checked) {
+      localStorage.setItem('dezgo_key', dezgoInput.value);
+      localStorage.setItem('gh_token', tokenInput.value);
+    } else {
+      localStorage.removeItem('dezgo_key');
+      localStorage.removeItem('gh_token');
+    }
   });
+  dezgoInput.addEventListener('input', () => { if (rememberBox.checked) localStorage.setItem('dezgo_key', dezgoInput.value); });
   tokenInput.addEventListener('input', () => { if (rememberBox.checked) localStorage.setItem('gh_token', tokenInput.value); });
 });
 
