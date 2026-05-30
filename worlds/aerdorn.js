@@ -128,8 +128,8 @@ defRect(175,108,312,118,'ocean','The Whispering Sea');
 defRect(150,750,350,775,'ocean','The Sea of Storms');
 defRect(0,250,50,500,'ocean','Aetherial Ocean');
 defRect(450,250,500,500,'ocean','Aetherial Ocean');
-// East-Port harbour — 2 squares east of town footprint
-defRect(347,556,348,557,'docks','East-Port Harbour');
+// East-Port harbour — 2 squares east of town footprint (town=346-347, docks=348-349)
+defRect(348,556,349,557,'docks','East-Port Harbour');
 
 const SETTLEMENTS={};
 function makeSimpleTown(id,name,wx,wy,walls,doors){
@@ -253,8 +253,8 @@ function rect(x1,y1,x2,y2,type,name,extra={}){
 }
 
 // ── STREETS ──────────────────────────────────────
-// Harbour Street (E-W spine, y=30)
-for(let x=-13;x<=10;x++)t(x,30,'street','Harbour Street');
+// Harbour Street (E-W spine, y=15)
+for(let x=-13;x<=11;x++)t(x,15,'street','Harbour Street');
 // Fisher's Way (N-S spine, x=0)
 for(let y=0;y<=30;y++)t(0,y,'street',"Fisher's Way");
 // Tanner's Lane (N-S east, x=10)
@@ -263,13 +263,13 @@ for(let y=0;y<=30;y++)t(10,y,'street',"Tanner's Lane");
 for(let y=0;y<=30;y++)t(-10,y,'street',"Chapel Lane");
 // Quay Road (E-W south, y=12)
 for(let x=-13;x<=10;x++)t(x,12,'street','Quay Road');
-// Chandler's Walk (E-W north, y=48)
-for(let x=-13;x<=10;x++)t(x,48,'street',"Chandler's Walk");
+// Chandler's Walk (E-W north, y=24)
+for(let x=-13;x<=10;x++)t(x,24,'street',"Chandler's Walk");
 // Short connector lanes
 for(let y=6;y<=15;y++)t(5,y,'street','Rope Lane');
 for(let y=15;y<=24;y++)t(-5,y,'street','Salt Lane');
-for(let y=6;y<=15;y++)t(15,y,'street','Smoker Lane');
-for(let y=15;y<=24;y++)t(20,y,'street','Pier Lane');
+for(let y=6;y<=15;y++)t(7,y,'street','Smoker Lane');
+for(let y=15;y<=24;y++)t(10,y,'street','Pier Lane');
 
 // ── ROAD ENTRIES (open ends, no gates) ──────────
 t(0,0,'road',"Fisher's Way");   // south entry
