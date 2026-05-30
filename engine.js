@@ -1052,20 +1052,9 @@ function getVisibleCellMeta(cx,cy){if(state.layer==='settlement'){const s=SETTLE
 function drawMapCanvas(){const canvas=document.getElementById('map-canvas');if(!canvas)return;const hEl=document.getElementById('map-drawer-header'),lEl=document.getElementById('map-legend');const hH=hEl?hEl.offsetHeight:44,lH=lEl?lEl.offsetHeight:32;const W=window.innerWidth,H=window.innerHeight-hH-lH;if(W<10||H<10)return;if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H;canvas.style.width=W+'px';canvas.style.height=H+'px';}
 const ctx=canvas.getContext('2d');ctx.clearRect(0,0,W,H);const cs=CELL_PX*mapView.scale;const{x:px,y:py}=state.pos;const ox=W/2-(px*cs)+mapView.x,oy=H/2-(py*cs)+mapView.y;const x0=Math.floor(-ox/cs)-2,y0=Math.floor(-oy/cs)-2,x1=Math.floor((W-ox)/cs)+2,y1=Math.floor((H-oy)/cs)+2;const lt=new Set();const ss=seenSet();
 // ── WORLD MAP IMAGE BACKGROUND ──────────────────────
-if(state.layer==='overworld'&&window.WORLD_MAP_IMAGE){
-  if(!window._worldMapImg){window._worldMapImg=new Image();window._worldMapImg.src=window.WORLD_MAP_IMAGE;window._worldMapImg.onload=()=>drawMapCanvas();}
-  if(window._worldMapImg.complete&&window._worldMapImg.naturalWidth>0){
-    const iX0=window.WORLD_MAP_IMG_X0||8,iY0=window.WORLD_MAP_IMG_Y0||38,iCW=window.WORLD_MAP_IMG_W||553,iCH=window.WORLD_MAP_IMG_H||974,gW=window.WORLD_MAP_GRID_W||4000,gH=window.WORLD_MAP_GRID_H||7100;
-    const ppsX=iCW/gW,ppsY=iCH/gH,cpiX=cs/ppsX,cpiY=cs/ppsY;
-    const iox=ox+(-iX0/ppsX)*cs,ioy=oy+(-iY0/ppsY)*cs;
-    const dW=window._worldMapImg.naturalWidth*cpiX,dH=window._worldMapImg.naturalHeight*cpiY;
-    ctx.globalAlpha=window.WORLD_MAP_IMG_ALPHA||0.55;
-    ctx.drawImage(window._worldMapImg,iox,ioy,dW,dH);
-    ctx.globalAlpha=1;
-  }
-}
+
 // ────────────────────────────────────────────────────
-for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){try{const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],seen=ss.has(`${cx},${cy}`),isCurrent=cx===px&&cy===py;const sx=ox+cx*cs,sy=oy+cy*cs;const isLinear=meta.type==='road'||meta.type==='river';const bgType=isLinear?'plains':meta.type;const tAlpha=(state.layer==='overworld'&&window.WORLD_MAP_IMAGE)?0.28:1;ctx.globalAlpha=tAlpha;ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs-1,cs-1);ctx.globalAlpha=1;
+for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){try{const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],seen=ss.has(`${cx},${cy}`),isCurrent=cx===px&&cy===py;const sx=ox+cx*cs,sy=oy+cy*cs;const isLinear=meta.type==='road'||meta.type==='river';const bgType=isLinear?'plains':meta.type;ctx.globalAlpha=1;ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs-1,cs-1);ctx.globalAlpha=1;
 if(isLinear){ctx.globalAlpha=0.9;const fn=meta.type==='river'?isRiverType:isRoadType;const conn=getConnectionsAt(cx,cy,fn);const cc=cs/2;ctx.strokeStyle=meta.type==='river'?'#5aaad4':'#c8a878';ctx.lineWidth=meta.type==='river'?cs*0.22:cs*0.16;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();const{n,s,e,w}=conn;const cnt=[n,s,e,w].filter(Boolean).length;if(cnt>0){if(n&&s&&!e&&!w){ctx.moveTo(sx+cc,sy);ctx.lineTo(sx+cc,sy+cs);}else if(e&&w&&!n&&!s){ctx.moveTo(sx,sy+cc);ctx.lineTo(sx+cs,sy+cc);}else if(n&&e&&!s&&!w){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(n&&w&&!s&&!e){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else if(s&&e&&!n&&!w){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(s&&w&&!n&&!e){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else{if(n||s){ctx.moveTo(sx+cc,n?sy:sy+cc);ctx.lineTo(sx+cc,s?sy+cs:sy+cc);}if(e||w){ctx.moveTo(w?sx:sx+cc,sy+cc);ctx.lineTo(e?sx+cs:sx+cc,sy+cc);}}ctx.stroke();}ctx.globalAlpha=1;}
 if(meta.type===T.DOOR||meta.type===T.GATE){ctx.globalAlpha=0.8;ctx.fillStyle='#e8b84b';ctx.fillRect(sx+cs*0.35,sy+cs*0.35,cs*0.3,cs*0.3);ctx.globalAlpha=1;}
 if(mapView.travelTarget&&mapView.travelTarget.x===cx&&mapView.travelTarget.y===cy){ctx.strokeStyle='#e8b84b';ctx.lineWidth=2;ctx.strokeRect(sx+1,sy+1,cs-3,cs-3);}
