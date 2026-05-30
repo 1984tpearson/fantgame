@@ -7,29 +7,22 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg: #1a1a1a;
-  --bg2: #242424;
-  --bg3: #2e2e2e;
-  --border: #3a3a3a;
-  --border2: #4a4a4a;
-  --ink: #e8e4dc;
-  --muted: #888;
-  --accent: #c8a96e;
-  --radius: 6px;
-  --radiuslg: 10px;
+  --bg: #1a1a1a; --bg2: #242424; --bg3: #2e2e2e;
+  --border: #3a3a3a; --border2: #4a4a4a;
+  --ink: #e8e4dc; --muted: #888; --accent: #c8a96e;
+  --radius: 6px; --radiuslg: 10px;
 }
 body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; padding: 2rem 1rem; }
 .container { max-width: 900px; margin: 0 auto; }
 h1 { font-size: 1.4rem; font-weight: 500; color: var(--accent); margin-bottom: 0.25rem; }
 .subtitle { font-size: 13px; color: var(--muted); margin-bottom: 2rem; }
-.key-row { display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap; }
-.key-row input { flex: 1; min-width: 200px; font-size: 13px; padding: 0 12px; height: 38px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--ink); }
-.key-row input:focus { outline: none; border-color: var(--accent); }
+.key-row { display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; }
+.key-row input[type="password"] { flex: 1; min-width: 180px; font-size: 13px; padding: 0 12px; height: 38px; border: 1px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--ink); }
+.key-row input[type="password"]:focus { outline: none; border-color: var(--accent); }
 .tabs { display: flex; border-bottom: 1px solid var(--border2); margin-bottom: 1.5rem; }
 .tab-btn { background: none; border: none; border-bottom: 2px solid transparent; padding: 10px 24px; font-size: 14px; font-weight: 500; color: var(--muted); cursor: pointer; margin-bottom: -1px; }
 .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-.panel { display: none; }
-.panel.active { display: block; }
+.panel { display: none; } .panel.active { display: block; }
 .section-label { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
 .fields-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
 .field { display: flex; flex-direction: column; gap: 4px; }
@@ -76,19 +69,17 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
 <div class="container">
   <h1>Image Generator</h1>
   <p class="subtitle">NPC portraits &amp; background scenes</p>
-
   <div class="key-row">
+    <input type="password" id="dezgo-key" placeholder="Dezgo API key" autocomplete="off" />
     <input type="password" id="github-token" placeholder="GitHub token" autocomplete="off" />
     <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap;">
       <input type="checkbox" id="remember-token" style="accent-color:var(--accent);width:14px;height:14px;" /> Remember token
     </label>
   </div>
-
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('npc')">&#128100; NPC</button>
     <button class="tab-btn" onclick="switchTab('bg')">&#127760; Background</button>
   </div>
-
   <div id="panel-npc" class="panel active">
     <div class="mode-toggle">
       <button class="mode-btn active" onclick="setMode('npc','fields')">Structured fields</button>
@@ -116,13 +107,10 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
     <div class="gen-row">
       <button class="gen-btn" id="npc-gen-btn" onclick="generate('npc')">Generate</button>
       <select class="count-select" id="npc-count">
-        <option value="1">1 image</option>
-        <option value="2">2 images</option>
-        <option value="4">4 images</option>
+        <option value="1">1 image</option><option value="2">2 images</option><option value="4">4 images</option>
       </select>
     </div>
   </div>
-
   <div id="panel-bg" class="panel">
     <div class="mode-toggle">
       <button class="mode-btn active" onclick="setMode('bg','fields')">Structured fields</button>
@@ -149,13 +137,10 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
     <div class="gen-row">
       <button class="gen-btn" id="bg-gen-btn" onclick="generate('bg')">Generate</button>
       <select class="count-select" id="bg-count">
-        <option value="1">1 image</option>
-        <option value="2">2 images</option>
-        <option value="4">4 images</option>
+        <option value="1">1 image</option><option value="2">2 images</option><option value="4">4 images</option>
       </select>
     </div>
   </div>
-
   <div id="results-section" style="display:none">
     <hr />
     <div class="results-header">
@@ -166,13 +151,10 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
     <div id="global-status"></div>
   </div>
 </div>
-
 <script>
-const IMAGE_PROXY_URL = 'https://keqzqhykfygplolcnxnn.supabase.co/functions/v1/image-proxy';
-const SUPABASE_ANON_KEY = 'sb_publishable_w0h8f1AIXQGty5X5nKrJtg_ThI1-a-j';
+const DEZGO_URL = 'https://api.dezgo.com/text2image';
 const GITHUB_OWNER = '1984tpearson';
 const GITHUB_REPO = 'fantgame';
-
 const NPC_SUFFIX = `Mediaeval+++, Fully body shot++, No background+++ (gritty Comic book Art style+, Thick black ink outlines, flat cell shading, painterly colouring)++`;
 const NPC_NEG = `Background-- Close up, Anime--, Photo Realistic, Smooth shading, texture, extra cloth--, loose fabric--, monochrome, sketch, tattoos, big mouth, big smile, sci-fi, superhero, muscles, muscular, extra limbs, badly drawn hands`;
 const BG_NEG = ``;
@@ -180,25 +162,16 @@ const BG_NEG = ``;
 let modes = { npc: 'fields', bg: 'fields' };
 let generatedImages = [];
 
-// Restore saved token on load
 window.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('gh_token');
-  if (saved) {
-    document.getElementById('github-token').value = saved;
-    document.getElementById('remember-token').checked = true;
-  }
-});
-// Save/clear token when checkbox or input changes
-document.addEventListener('DOMContentLoaded', () => {
+  if (saved) { document.getElementById('github-token').value = saved; document.getElementById('remember-token').checked = true; }
   const tokenInput = document.getElementById('github-token');
   const rememberBox = document.getElementById('remember-token');
   rememberBox.addEventListener('change', () => {
     if (rememberBox.checked) localStorage.setItem('gh_token', tokenInput.value);
     else localStorage.removeItem('gh_token');
   });
-  tokenInput.addEventListener('input', () => {
-    if (rememberBox.checked) localStorage.setItem('gh_token', tokenInput.value);
-  });
+  tokenInput.addEventListener('input', () => { if (rememberBox.checked) localStorage.setItem('gh_token', tokenInput.value); });
 });
 
 function switchTab(tab) {
@@ -246,6 +219,8 @@ function v(id) { return (document.getElementById(id)||{}).value||''; }
 });
 
 async function generate(tab) {
+  const dezgoKey = v('dezgo-key');
+  if (!dezgoKey) { alert('Enter your Dezgo API key first.'); return; }
   const isNpc = tab === 'npc';
   const mode = modes[tab];
   let prompt, baseName;
@@ -275,27 +250,21 @@ async function generate(tab) {
   const width = isNpc ? 768 : 1024;
   const height = isNpc ? 1024 : 768;
   const negPrompt = isNpc ? NPC_NEG : BG_NEG;
-
   const promises = Array.from({length: count}, async (_, i) => {
     try {
       const body = new FormData();
       body.append('prompt', prompt);
       body.append('model', 'envy_starlight_xl_01_lightning_1024px');
-      body.append('width', width); body.append('height', height);
+      body.append('width', String(width)); body.append('height', String(height));
       body.append('guidance', '2.0'); body.append('sampler', 'ddim');
       body.append('format', 'png'); body.append('transparent_background', 'false');
       if (negPrompt) body.append('negative_prompt', negPrompt);
-
-      const res = await fetch(IMAGE_PROXY_URL, {
+      const res = await fetch(DEZGO_URL, {
         method: 'POST',
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
+        headers: { 'X-Dezgo-Key': dezgoKey },
         body
       });
-      if (!res.ok) { const t = await res.text(); throw new Error(`Proxy error ${res.status}: ${t}`); }
-
+      if (!res.ok) { const t = await res.text(); throw new Error(`Dezgo error ${res.status}: ${t}`); }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const suffix = count > 1 ? `_${i+1}` : '';
@@ -342,7 +311,7 @@ async function saveToGitHub(idx) {
     if (!res.ok) { const e = await res.json(); throw new Error(e.message || `GitHub error ${res.status}`); }
     generatedImages[idx].saved = true;
     status.className = 'status-msg status-ok'; status.textContent = 'Saved to GitHub';
-    btn.textContent = '&#10003; Saved';
+    btn.textContent = '✓ Saved';
   } catch(err) {
     status.className = 'status-msg status-err'; status.textContent = err.message;
     btn.disabled = false; btn.innerHTML = '&#128190; GitHub';
