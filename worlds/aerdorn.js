@@ -134,7 +134,8 @@ function makeSimpleTown(id,name,wx,wy,walls,doors){
   const m={};const hw=Math.floor(walls/2);
   for(let x=-hw;x<=hw;x++){m[`${x},0`]={type:'wall',name:'Wall'};m[`${x},${walls}`]={type:'wall',name:'Wall'};}
   for(let y=0;y<=walls;y++){m[`-${hw},${y}`]={type:'wall',name:'Wall'};m[`${hw},${y}`]={type:'wall',name:'Wall'};}
-  m[`0,0`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:wx,y:wy+1}}};
+  const _fh=Math.floor(walls/4)+3;m[`0,0`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:wx,y:wy+_fh}}};
+  m[`0,${walls}`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:wx,y:wy-_fh}}};
   for(let y=1;y<walls;y++)m[`0,${y}`]={type:'street',name:'Main Street'};
   const mid=Math.floor(walls/2);
   for(let x=-(hw-1);x<=(hw-1);x++)m[`${x},${mid}`]={type:'street',name:'Cross Street'};
@@ -151,10 +152,10 @@ function makeSimpleTown(id,name,wx,wy,walls,doors){
   function sdef(x1,y1,x2,y2,t,n){for(let x=x1;x<=x2;x++)for(let y=y1;y<=y2;y++)m[`${x},${y}`]={type:t,name:n};}
   for(let x=-30;x<=30;x++){m[`${x},0`]={type:'wall',name:'South Wall'};m[`${x},60`]={type:'wall',name:'North Wall'};}
   for(let y=0;y<=60;y++){m[`-30,${y}`]={type:'wall',name:'West Wall'};m[`30,${y}`]={type:'wall',name:'East Wall'};}
-  m[`0,0`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:139,y:263}}};
-  m[`0,60`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:139,y:261}}};
-  m[`-30,30`]={type:'gate',name:'West Gate',exit:{layer:'overworld',pos:{x:138,y:262}}};
-  m[`30,30`]={type:'gate',name:'East Gate',exit:{layer:'overworld',pos:{x:140,y:262}}};
+  m[`0,0`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:139,y:267}}};
+  m[`0,60`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:139,y:257}}};
+  m[`-30,30`]={type:'gate',name:'West Gate',exit:{layer:'overworld',pos:{x:135,y:262}}};
+  m[`30,30`]={type:'gate',name:'East Gate',exit:{layer:'overworld',pos:{x:143,y:262}}};
   for(let y=1;y<=59;y++)m[`0,${y}`]={type:'street',name:"King's Road"};
   for(let x=-29;x<=29;x++)if(!m[`${x},30`]||m[`${x},30`].type!=='wall')m[`${x},30`]={type:'street',name:'Market Way'};
   sdef(-20,2,-2,14,'building','South Quarter');sdef(2,2,20,14,'docks','Docks Quarter');
@@ -174,8 +175,8 @@ function makeSimpleTown(id,name,wx,wy,walls,doors){
   function sdef(x1,y1,x2,y2,t,n){for(let x=x1;x<=x2;x++)for(let y=y1;y<=y2;y++)m[`${x},${y}`]={type:t,name:n};}
   for(let x=-18;x<=18;x++){m[`${x},0`]={type:'wall',name:'Wall'};m[`${x},36`]={type:'wall',name:'Wall'};}
   for(let y=0;y<=36;y++){m[`-18,${y}`]={type:'wall',name:'Wall'};m[`18,${y}`]={type:'wall',name:'Wall'};}
-  m[`0,0`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:260,y:149}}};
-  m[`0,36`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:260,y:147}}};
+  m[`0,0`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:260,y:152}}};
+  m[`0,36`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:260,y:144}}};
   for(let y=1;y<=35;y++)m[`0,${y}`]={type:'street',name:'High Street'};
   for(let x=-17;x<=17;x++)m[`${x},18`]={type:'street',name:'Cross Road'};
   sdef(-8,2,8,8,'market','Market Square');sdef(-15,2,-2,8,'building',"Weaver's Hall");
@@ -192,8 +193,8 @@ function makeSimpleTown(id,name,wx,wy,walls,doors){
   function sdef(x1,y1,x2,y2,t,n){for(let x=x1;x<=x2;x++)for(let y=y1;y<=y2;y++)m[`${x},${y}`]={type:t,name:n};}
   for(let x=-20;x<=20;x++){m[`${x},0`]={type:'wall',name:'Outer Wall'};m[`${x},40`]={type:'wall',name:'Outer Wall'};}
   for(let y=0;y<=40;y++){m[`-20,${y}`]={type:'wall',name:'Outer Wall'};m[`20,${y}`]={type:'wall',name:'Outer Wall'};}
-  m[`0,0`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:253,y:397}}};
-  m[`0,40`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:253,y:395}}};
+  m[`0,0`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:253,y:400}}};
+  m[`0,40`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:253,y:392}}};
   for(let y=1;y<=39;y++)m[`0,${y}`]={type:'street',name:'Castle Road'};
   sdef(-18,2,-2,18,'courtyard','Outer Bailey');sdef(2,2,18,18,'building','Barracks');
   sdef(-18,22,-2,38,'building','Great Hall');sdef(2,22,18,38,'building','Royal Quarters');
