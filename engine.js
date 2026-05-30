@@ -1009,9 +1009,9 @@ async function enterSettlement(id){const s=SETTLEMENTS[id];if(!s)return;
     if(Math.abs(dy)>=Math.abs(dx)){
       // dy>=0: came from south (higher y) -> enter south end (maxY-2)
       // dy<0: came from north (lower y) -> enter north end (minY+2)
-      entryPos=dy>=0?{x:midX,y:maxY-2}:{x:midX,y:minY+2};
+      entryPos=dy>=0?{x:midX,y:maxY-1}:{x:midX,y:minY+1};
     } else {
-      entryPos=dx>=0?{x:maxX-2,y:midY}:{x:minX+2,y:midY};
+      entryPos=dx>=0?{x:maxX-1,y:midY}:{x:minX+1,y:midY};
     }
   }
   state.layerHistory.push({layer:state.layer,settlementId:state.settlementId,interiorId:state.interiorId,pos:{...state.lastOverworldPos}});state.layer='settlement';state.settlementId=id;state.interiorId=null;state.pos=entryPos;addMessage(`You pass through the gates of ${s.name}.`,'transition');updateLayerBadge();_suppressTransitions=true;_inTransition=true;await enterCell(state.pos.x,state.pos.y);_inTransition=false;_suppressTransitions=false;await saveState();}
