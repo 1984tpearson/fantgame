@@ -602,8 +602,16 @@ function dispositionLabel(disp) {
 function getNpcsAtCurrentLocation() {
   const hour = (state.player.day % 1) * 24;
   const present = [];
+  // Clean up bodies older than 1 day
+  for (const [id, ns] of Object.entries(state.npcs)) {
+    if (ns.dead && (state.player.day - ns.deathDay) >= 1) {
+      ns.bodyGone = true;
+    }
+  }
   for (const [id, tmpl] of Object.entries(NPC_TEMPLATES)) {
     if (tmpl.dynamic) continue;
+    const ns = state.npcs[id];
+    if (ns?.dead && ns?.bodyGone) continue; // body removed
     for (const slot of tmpl.schedule) {
       if (slot.layer !== state.layer) continue;
       if (slot.settlementId && slot.settlementId !== state.settlementId) continue;
@@ -841,6 +849,17 @@ async function doLayerMove(dest) {
 function openNpcDrawer(npcId, forced = false) {
   const tmpl = NPC_TEMPLATES[npcId];
   if (!tmpl) return;
+  // Handle dead NPCs - show body instead
+  const ns = getNpcState(npcId);
+  if (ns.dead && !ns.bodyGone) {
+    const daysSince = (state.player.day - ns.deathDay).toFixed(1);
+    addMessage(`${tmpl.name} lies dead here. The body is cold.`, 'notice');
+    if (ns.lootable) {
+      addMessage(`You search the body but find nothing more of value.`, 'system');
+      ns.lootable = false;
+    }
+    return;
+  }
   // Route creature-type NPCs to the creature drawer
   if (tmpl.type === 'creature') { openCreatureDrawer(npcId, forced); return; }
   npcSession.npcId = npcId;
@@ -1688,7 +1707,7 @@ for(const[id,ns]of Object.entries(state.npcs)){if(ns.cellKey)npcCells.add(ns.cel
 // Render north (lower y) at top: iterate dy from -vr (north) to +vr (south)
 for(let dy=-vr;dy<=vr;dy++)for(let dx=-vr;dx<=vr;dx++){const cx=px+dx,cy=py+dy;const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],isCurrent=dx===0&&dy===0,seen=ss.has(`${cx},${cy}`),revealed=visited||isCurrent||seen;const isLinear=meta.type==='road'||meta.type==='river';const cell=document.createElement('div');cell.className=`mmc t-${isLinear?'plains':meta.type}`;if(isCurrent)cell.classList.add('current');if(revealed&&isLinear){const s=makeCellSVG(cx,cy,meta.type);if(s)cell.appendChild(s);}if(revealed&&(meta.type===T.DOOR||meta.type===T.GATE)){const dot=document.createElement('div');dot.style.cssText='position:absolute;inset:3px;background:rgba(232,184,75,0.7);border-radius:50%;';cell.appendChild(dot);}
 if(revealed&&meta.type===T.BUILDING&&meta.doors&&meta.doors.length){const ds=document.createElementNS('http://www.w3.org/2000/svg','svg');ds.setAttribute('viewBox','0 0 13 13');ds.setAttribute('style','position:absolute;inset:0;width:100%;height:100%;');meta.doors.forEach(d=>{const ln=document.createElementNS('http://www.w3.org/2000/svg','line');ln.setAttribute('stroke','#e8b84b');ln.setAttribute('stroke-width','2');ln.setAttribute('stroke-linecap','round');if(d==='north'){ln.setAttribute('x1','3');ln.setAttribute('y1','0.5');ln.setAttribute('x2','10');ln.setAttribute('y2','0.5');}else if(d==='south'){ln.setAttribute('x1','3');ln.setAttribute('y1','12.5');ln.setAttribute('x2','10');ln.setAttribute('y2','12.5');}else if(d==='west'){ln.setAttribute('x1','0.5');ln.setAttribute('y1','3');ln.setAttribute('x2','0.5');ln.setAttribute('y2','10');}else if(d==='east'){ln.setAttribute('x1','12.5');ln.setAttribute('y1','3');ln.setAttribute('x2','12.5');ln.setAttribute('y2','10');}ds.appendChild(ln);});cell.appendChild(ds);}
-if(revealed){const settlePosKey=`${cx},${cy}`;const hasNpc=npcCells.has(settlePosKey)||npcCells.has(key);if(hasNpc&&!isCurrent){const _isDynNpc=Object.entries(state.npcs).some(([id,ns])=>(ns.cellKey===key||ns.cellKey===settlePosKey)&&NPC_TEMPLATES[id]?.dynamic&&!Object.values(NPC_TEMPLATES[id].schedule||[]).length);const ndot=document.createElement('div');const _nc=_isDynNpc?'#888880':'#4ab8f0';ndot.style.cssText='position:absolute;width:5px;height:5px;border-radius:50%;background:'+_nc+';box-shadow:0 0 2px '+_nc+';top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;';cell.appendChild(ndot);}}
+if(revealed){const settlePosKey=`${cx},${cy}`;const hasNpc=npcCells.has(settlePosKey)||npcCells.has(key);if(hasNpc&&!isCurrent){const _npcEntry=Object.entries(state.npcs).find(([id,ns])=>ns.cellKey===key||ns.cellKey===settlePosKey);const _isDead=_npcEntry&&state.npcs[_npcEntry[0]]?.dead;const _isDynNpc=_npcEntry&&NPC_TEMPLATES[_npcEntry[0]]?.dynamic&&!Object.values(NPC_TEMPLATES[_npcEntry[0]].schedule||[]).length;const ndot=document.createElement('div');const _nc=_isDead?'#8b2020':_isDynNpc?'#888880':'#4ab8f0';ndot.style.cssText='position:absolute;width:5px;height:5px;border-radius:50%;background:'+_nc+';box-shadow:0 0 2px '+_nc+';top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;';cell.appendChild(ndot);}}
 mapEl.appendChild(cell);if(revealed)shown.add(meta.type);}if(legEl){legEl.innerHTML='';shown.forEach(t=>legEl.innerHTML+=`<div class="leg-item"><div class="leg-swatch t-${t}"></div>${terrainLabel(t)}</div>`);legEl.innerHTML+=`<div class="leg-item"><div style="width:7px;height:7px;border-radius:50%;background:#4ab8f0;flex-shrink:0;"></div>NPC</div><div class="leg-item"><div style="width:7px;height:7px;border-radius:50%;background:#888880;flex-shrink:0;"></div>Encountered</div>`;}}
 function renderMinimap(){renderMinimapInto(document.getElementById('minimap-desktop'),document.getElementById('legend-desktop'),7);if(document.getElementById('map-drawer').classList.contains('open'))drawMapCanvas();}
 function toggleMap(){const d=document.getElementById('map-drawer');const o=d.classList.toggle('open');if(o){mapView.x=0;mapView.y=0;cancelTravel();requestAnimationFrame(()=>requestAnimationFrame(()=>{initMapInteraction();drawMapCanvas();}));}}
@@ -1725,6 +1744,26 @@ function setCombatMode(on,enemy=null,actions=null){
       const ns=getNpcState(state.activeCombat.npcId);
       ns.hp=Math.max(0,state.activeCombat.hp);
       ns.memory.push(`Day ${Math.floor(state.player.day)}: Fought player, ${ns.hp<=0?'defeated':'survived'}.`);
+      if(ns.hp<=0){
+        ns.dead=true;
+        ns.deathDay=state.player.day;
+        ns.lootable=true;
+        // Open loot immediately
+        const tmpl=NPC_TEMPLATES[state.activeCombat.npcId];
+        if(tmpl){
+          addMessage(`${tmpl.name} is dead. You can search the body.`,'notice');
+          // Add any trader stock as lootable
+          if(tmpl.trader&&tmpl.trader.stock){
+            tmpl.trader.stock.slice(0,3).forEach(item=>{
+              if(item.name&&!item.name.toLowerCase().includes('bed')&&!item.name.toLowerCase().includes('night')){
+                state.inventory.push({name:item.name,valueCp:Math.round(item.basePriceCp*0.5)});
+              }
+            });
+            renderInventory();
+            addMessage(`You find some items on the body.`,'system');
+          }
+        }
+      }
     }
     state.activeCombat=null;
     updateEnemyHpBar();
