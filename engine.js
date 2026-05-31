@@ -350,12 +350,15 @@ async function regenPortrait(e) {
   if (url) {
     const img = document.getElementById('portrait-overlay-img');
     const placeholder = document.getElementById('portrait-overlay-placeholder');
-    const bustUrl = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
-    img.src = bustUrl;
-    img.style.display = 'block';
-    placeholder.style.display = 'none';
-    // Also update the drawer circle
-    if (_portraitOverlayDrawerId) applyNpcPortrait(bustUrl, _portraitOverlayDrawerId);
+    const bustUrl = url.split('?')[0] + '?_t=' + Date.now();
+    img.onload = null;
+    img.src = '';
+    setTimeout(() => {
+      img.src = bustUrl;
+      img.style.display = 'block';
+      placeholder.style.display = 'none';
+      if (_portraitOverlayDrawerId) applyNpcPortrait(bustUrl, _portraitOverlayDrawerId);
+    }, 50);
   }
 }
 
@@ -1412,7 +1415,8 @@ async function loadState() {
       state.skills = row.skills || {};
       state.worldState = { ...state.worldState, ...(row.world_state || {}) };
       state.blockedBy = row.blocked_by || null;
-      if (row.npcs) state.npcs = row.npcs;
+      if (row.meta?.npcs) state.npcs = row.meta.npcs;
+      else if (row.npcs) state.npcs = row.npcs;
       // Cells still from localStorage (large data)
       const raw = localStorage.getItem('aerdorn-state');
       if (raw) {
