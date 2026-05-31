@@ -614,7 +614,18 @@ function getNpcsAtCurrentLocation() {
           if (nx === state.pos.x && ny === state.pos.y) { present.push(id); break; }
         }
       } else if (state.layer === 'overworld') {
-        present.push(id); break;
+        // For overworld NPCs, only show if player is within 2 squares of their posKey coords
+        if (slot.posKey) {
+          const parts = slot.posKey.split(',');
+          if (parts.length === 2) {
+            const nx = parseInt(parts[0]), ny = parseInt(parts[1]);
+            if (Math.abs(nx - state.pos.x) <= 2 && Math.abs(ny - state.pos.y) <= 2) {
+              present.push(id); break;
+            }
+          }
+        } else {
+          present.push(id); break;
+        }
       }
     }
   }
@@ -1097,6 +1108,7 @@ PLAYER WALLET: ${formatWallet()}. Inventory: ${state.inventory.map(i=>i.name).jo
 ${hasTrader ? `You are a trader. Mention wares exist — UI shows them separately. Don't list prices in dialogue.` : ''}
 RULES:
 - Stay in character. Short, vivid responses. 1-3 sentences per turn.
+- NEVER mention coordinates, grid positions, axis references, or cell numbers.
 - React to disposition: hostile = curt/suspicious, neutral = businesslike, friendly = warm, devoted = caring.
 - Never break character or mention being an AI.
 - After your dialogue response, on a NEW LINE output only the JSON metadata (last line, nothing after):
@@ -1715,8 +1727,9 @@ function buildSystemPrompt(actionOnly=false){
 
 PLAYER NAME: ${playerName}
 
-WORLD: The Kingdom of Aerdorn, a large island. Aethel-Keep (capital NW ~1114,2092), Weaver's Deep (port N ~2076,1181), High-Crown Castle (royal seat centre ~2025,3171), Gladehome (E ~2488,1677), Sylvanis-Root (deep wilds ~2705,3309), Briar-Town (far E ~3212,3528), Frilar-Town (S fens ~2778,4447), Harvestfell (S coast ~1519,5154). Terrain: Verdant Heart (NW forest), Eldritch Wilds (dark E forest), Great Bog (central), Shadow Fens (SE), Azure Shore (S coast), Sunset Peaks (W spine), Wyvern's Spine (central ridge). Tone: gritty, vivid, grounded. Think early Tolkien with real danger.
+WORLD: The Kingdom of Aerdorn, a large island. Aethel-Keep (capital NW ~1114,2092), Weaver's Deep (port N ~2076,1181), High-Crown Castle (royal seat centre ~2025,3171), Gladehome (E ~2488,1677), Sylvanis-Root (deep wilds ~2705,3309), Briar-Town (far E ~3212,3528), East-Port (S fens ~2778,4447), Harvestfell (S coast ~1519,5154). Terrain: Verdant Heart (NW forest), Eldritch Wilds (dark E forest), Great Bog (central), Shadow Fens (SE), Azure Shore (S coast), Sunset Peaks (W spine), Wyvern's Spine (central ridge). Tone: gritty, vivid, grounded. Think early Tolkien with real danger.
 COORDINATE SYSTEM: Lower Y = north. Higher Y = south. Higher X = east. Lower X = west.
+NEVER include coordinates, grid positions, axis references (x-axis, y-axis), cell numbers, or any numerical position in narrative text shown to the player.
 
 ${layerContext()}
 
@@ -1754,7 +1767,7 @@ COMBAT RULES:
 - Track enemy condition narratively: describe when they're tiring, bleeding, near death. Player has no HP bar for enemies — keep them guessing.
 - Flee success depends on context: easy in open country, hard in tight spaces or against fast enemies.
 - Player can type anything in combat (throw item, use environment, call for help) — resolve creatively.
-NOTICE: ~1 in 5 squares. Omit if in doubt.
+NOTICE: Rare — only when something is genuinely surprising, hidden, or interactive (a strange figure lurking, a glimmer behind a bush, an unusual sound). Do NOT generate notice text on most squares. When in doubt, omit entirely.
 SKILLS: skillUpdates = {skill:delta}. Never reveal to player.
 NPC SPAWN RULES:
 - npcSpawn triggers when the player directs attention at a SPECIFIC individual not already in NPC_TEMPLATES. This includes: talking to, approaching, examining, or interacting with a named or described person or animal. Examples: "I approach the merchant", "I speak to the old woman", "I pet the dog", "I ask the guard a question", "I examine the beggar" — all trigger npcSpawn.
