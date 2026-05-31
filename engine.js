@@ -265,6 +265,75 @@ async function triggerNpcPortrait(npcId, drawerId) {
   if (url) applyNpcPortrait(url, drawerId);
 }
 
+// ── Portrait overlay ──────────────────────────────
+let _portraitOverlayNpcId = null;
+let _portraitOverlayDrawerId = null;
+
+function openPortraitOverlay(drawerId) {
+  const npcId = drawerId === 'creature' ? creatureSession.npcId : npcSession.npcId;
+  if (!npcId) return;
+  const tmpl = NPC_TEMPLATES[npcId];
+  if (!tmpl) return;
+  _portraitOverlayNpcId = npcId;
+  _portraitOverlayDrawerId = drawerId;
+
+  const overlay = document.getElementById('portrait-overlay');
+  const img = document.getElementById('portrait-overlay-img');
+  const placeholder = document.getElementById('portrait-overlay-placeholder');
+
+  if (tmpl.imageUrl) {
+    img.src = tmpl.imageUrl;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    img.src = '';
+    placeholder.style.display = 'flex';
+    placeholder.textContent = tmpl.emoji || '🐾';
+  }
+
+  document.getElementById('portrait-regen-btn').classList.remove('loading');
+  overlay.classList.add('open');
+}
+
+function closePortraitOverlay() {
+  document.getElementById('portrait-overlay').classList.remove('open');
+  _portraitOverlayNpcId = null;
+}
+
+function handlePortraitOverlayClick(e) {
+  if (e.target === document.getElementById('portrait-overlay')) closePortraitOverlay();
+}
+
+async function regenPortrait(e) {
+  e.stopPropagation();
+  if (!_portraitOverlayNpcId) return;
+  const tmpl = NPC_TEMPLATES[_portraitOverlayNpcId];
+  if (!tmpl) return;
+
+  const btn = document.getElementById('portrait-regen-btn');
+  btn.classList.add('loading');
+  btn.textContent = '✦ Generating…';
+
+  // Clear cached URL so generateNpcImage re-generates
+  delete tmpl.imageUrl;
+
+  const url = await generateNpcImage(_portraitOverlayNpcId);
+
+  btn.classList.remove('loading');
+  btn.textContent = '✦ Generate New';
+
+  if (url) {
+    const img = document.getElementById('portrait-overlay-img');
+    const placeholder = document.getElementById('portrait-overlay-placeholder');
+    img.src = url;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+    // Also update the drawer circle
+    if (_portraitOverlayDrawerId) applyNpcPortrait(url, _portraitOverlayDrawerId);
+  }
+}
+
 // Apply scene image as background of the scene area
 function applySceneBackground(imageUrl) {
   const sceneBox = document.getElementById('scene-box');
