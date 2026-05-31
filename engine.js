@@ -162,7 +162,7 @@ function buildNpcImageFilename(npcId, tmpl) {
 function buildNpcImagePrompt(tmpl) {
   const parts = [];
   // Always lead with gender to ensure correct image generation
-  const genderWord = tmpl.gender === 'male' ? 'male man' : tmpl.gender === 'female' ? 'female woman' : '';
+  const genderWord = tmpl.gender === 'male' ? 'male' : tmpl.gender === 'female' ? 'female' : '';
   // Use explicit appearance field if present — this is the primary visual descriptor
   if (tmpl.appearance) {
     parts.push(genderWord ? `${genderWord}, ${tmpl.appearance}` : tmpl.appearance);
@@ -1127,7 +1127,7 @@ npcAction options (null in most cases):
   playerRestrained=true: player unconscious or bound — no choice.
   Known interiorIds: ironhaven_inn_south, ironhaven_forge, ironhaven_alchemist, ironhaven_barracks.
 
-GUARD BEHAVIOUR: block on approach → unblock if convinced → combat if attacked OR if player tries to flee/push past → force_move (hostile=true) if arresting.
+GUARD BEHAVIOUR: block on approach → unblock if convinced → combat if attacked OR if player tries to flee/push past → force_move (hostile=true) ONLY after combat is resolved or player is subdued/unconscious. NEVER use force_move immediately — always give the player a chance to talk, bribe, or fight first.
 ESCORT: player asks to be guided → force_move (hostile=false) with natural narrativeNote.`;
 }
 
@@ -1770,8 +1770,8 @@ COMBAT RULES:
 
 SKILLS: skillUpdates = {skill:delta}. Never reveal to player.
 NPC SPAWN RULES:
-- npcSpawn triggers when the player directs attention at a SPECIFIC individual not already in NPC_TEMPLATES. This includes: talking to, approaching, examining, or interacting with a named or described person or animal. Examples: "I approach the merchant", "I speak to the old woman", "I pet the dog", "I ask the guard a question", "I examine the beggar" — all trigger npcSpawn.
-- Animals and creatures (dogs, horses, cats, rats etc.) that the player approaches or interacts with individually ALSO trigger npcSpawn with type:'creature' indicated in the role/emoji. Give them a name and brief personality.
+- MANDATORY: npcSpawn MUST be set whenever the player directs attention at a SPECIFIC individual. This includes ANY of: talking to, approaching, examining, greeting, or interacting with a named or described person or animal. If the player says "I approach X", "I talk to X", "I speak to X", "I ask X" — npcSpawn is REQUIRED. Never just narrate the interaction without spawning.
+- Animals and creatures (dogs, horses, cats, rats, birds etc.) that the player approaches or interacts with individually ALSO require npcSpawn with type:'creature' in the role. Give them a name and brief personality.
 - npcSpawn format: {"name":"...","role":"...","race":"...","age":N,"gender":"male|female","appearance":"physical description for portrait — height, build, face, hair, clothing","faction":"...","emoji":"...","traits":["...","..."],"personality":"...","initialDisposition":0,"trader":null}
 - If the player is moving through a crowd without engaging anyone specifically, npcSpawn = null.
 - NEVER spawn duplicate NPCs — if the player re-engages the same person, they should already be in the NPC list.

@@ -5,7 +5,7 @@ const CONFIG = {
   AI_PROXY_URL: 'https://keqzqhykfygplolcnxnn.supabase.co/functions/v1/ai-proxy',
   IMAGE_PROXY_URL: 'https://keqzqhykfygplolcnxnn.supabase.co/functions/v1/image-proxy',
 
-  TEXT_MODEL: 'sao10k/l3-lunaris-8b',
+  TEXT_MODEL: 'sao10k/l3.3-euryale-70b',
 
   IMAGE_MODEL: 'sdxl_1024px',
   IMAGE_WIDTH: 1024,
