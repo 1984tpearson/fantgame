@@ -1082,9 +1082,34 @@ async function generateNpcGreeting(npcId, forcedOpen = false) {
   const ns = getNpcState(npcId);
   const firstMeet = !ns.met;
   const memSummary = ns.memory.length ? ns.memory.slice(-3).join('; ') : 'no prior history';
-  // Mark as met immediately so repeat visits are handled correctly
   ns.met = true;
   saveState();
+
+  // Animals and creatures don't talk — describe behaviour instead
+  const tmpl = NPC_TEMPLATES[npcId];
+  const isAnimal = tmpl && /dog|cat|rat|horse|bird|wolf|fox|rabbit|pig|cow|sheep|goat|hen|chicken|crow|raven|snake|fish|bear|deer|boar|creature|beast|animal/i.test(tmpl.role + ' ' + tmpl.name);
+  if (isAnimal) {
+    const animalPrompt = firstMeet
+      ? `Describe in 1 sentence how a ${tmpl.role || 'animal'} called ${tmpl.name} reacts to a stranger approaching. Purely behavioural — no speech. e.g. "It eyes you warily, tail low, then sniffs the air in your direction."`
+      : `Describe in 1 sentence how ${tmpl.name} the ${tmpl.role || 'animal'} reacts to someone it has met before. Memory: ${memSummary}. Purely behavioural — no speech.`;
+    addNpcTyping();
+    try {
+      const res = await fetch(CONFIG.AI_PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': CONFIG.SUPABASE_ANON_KEY, 'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ model: CONFIG.TEXT_MODEL, max_tokens: 80, messages: [{ role:'user', content: animalPrompt }] })
+      });
+      const data = await res.json();
+      const rawFull3 = data.choices?.[0]?.message?.content || '...';
+      const raw = rawFull3.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      removeNpcTyping();
+      addNpcConvoLine(raw, 'npc');
+      npcSession.history = [{ role:'user', content: animalPrompt }, { role:'assistant', content: raw }];
+      ns.lastSeen = state.player.day;
+    } catch(e) { removeNpcTyping(); addNpcConvoLine('...', 'npc'); }
+    return;
+  }
+
   addNpcTyping();
   try {
     const res = await fetch(CONFIG.AI_PROXY_URL, {
