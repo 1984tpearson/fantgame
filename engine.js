@@ -1901,7 +1901,7 @@ async function maybeGenerateNotice(x, y, locationName, terrainType) {
     });
     const data = await res.json();
     const text = (data.choices?.[0]?.message?.content || '').trim();
-    if (text && text !== 'NONE' && text.toUpperCase() !== 'NONE') {
+    if (text && text !== 'NONE' && text.toUpperCase() !== 'NONE' && text.length > 15) {
       addZones('', '', '', text);
     }
   } catch(e) {
