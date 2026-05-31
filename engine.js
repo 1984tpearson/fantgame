@@ -183,11 +183,11 @@ async function generateNpcImage(npcId) {
     const prompt   = buildNpcImagePrompt(tmpl);
     const filename = buildNpcImageFilename(npcId, tmpl);
 
-    // Check Supabase storage first — avoids re-generating on every session
+    // Try the stored URL first — skip unreliable HEAD check, just attempt a GET
     if (CONFIG.ENABLE_SUPABASE) {
       const storedUrl = `${CONFIG.SUPABASE_URL}/storage/v1/object/public/scene-images/npcs/${filename}`;
-      const check = await fetch(storedUrl, { method: 'HEAD' }).catch(() => null);
-      if (check?.ok) {
+      const probe = await fetch(storedUrl, { method: 'GET', headers: { Range: 'bytes=0-0' } }).catch(() => null);
+      if (probe?.ok || probe?.status === 206) {
         tmpl.imageUrl = storedUrl;
         return storedUrl;
       }
