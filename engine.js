@@ -1165,11 +1165,11 @@ async function sendNpcMessage() {
     for (const line of lines) {
       const t = line.trim();
       if (t.startsWith('JSON:')) jsonLine = t.replace('JSON:','').trim();
-      else if (t.startsWith('{') && t.includes('dispositionDelta')) jsonLine = t; // inline JSON
+      else if (t.startsWith('{') && (t.includes('dispositionDelta') || t.includes('npcAction'))) jsonLine = t; // inline JSON
       else speechLines.push(line);
     }
     // Strip any remaining JSON blobs or backticks from speech
-    const speech = speechLines.join('\n').replace(/\{[^}]*"dispositionDelta"[^}]*\}/g,'').replace(/`/g,'').trim();
+    const speech = speechLines.join('\n').replace(/\{[^}]*"dispositionDelta"[^}]*\}/g,'').replace(/\{[^}]*"npcAction"[^}]*\}/g,'').replace(/\[type:[^\]]*\]/g,'').replace(/`/g,'').trim();
     addNpcConvoLine(speech, 'npc');
     npcSession.history.push({ role:'assistant', content: raw });
     if (npcSession.history.length > 20) npcSession.history = npcSession.history.slice(-20);
