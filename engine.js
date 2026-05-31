@@ -1110,6 +1110,7 @@ WORLD: The Kingdom of Aerdorn. Day ${Math.floor(state.player.day)}.
 PLAYER WALLET: ${formatWallet()}. Inventory: ${state.inventory.map(i=>i.name).join(', ')||'nothing notable'}.
 ${hasTrader ? `You are a trader. Mention wares exist — UI shows them separately. Don't list prices in dialogue.` : ''}
 RULES:
+- Player can interact with any item in their inventory in any way they can imagine. Always engage creatively and narrate the result — never refuse or ignore inventory interactions. If a player tries to use, modify, open, combine, or repurpose an item, make something happen.
 - Stay in character at ALL times. Never break the fourth wall. Never include parenthetical notes, meta-commentary, out-of-character explanations, or developer notes in responses. If something can't happen, narrate why in-world — never explain it as a system limitation.
 - React to disposition: hostile = curt/suspicious, neutral = businesslike, friendly = warm, devoted = caring.
 - Never break character or mention being an AI.
@@ -1734,6 +1735,7 @@ WORLD: The Kingdom of Aerdorn, a large island. Aethel-Keep (capital NW ~1114,209
 COORDINATE SYSTEM: Lower Y = north. Higher Y = south. Higher X = east. Lower X = west.
 NEVER include coordinates, grid positions, axis references, or cell numbers in narrative text shown to the player.
 NEVER include parenthetical notes, meta-commentary, out-of-character text, or developer notes in any response. Stay in character at all times. If something can't happen narratively, describe why in-world — never reference system limitations.
+INVENTORY INTERACTIONS: The player can interact with any inventory item in any way they imagine. Always engage creatively — never refuse or ignore. If they try to use, open, combine, fold, break, or repurpose an item, make something happen narratively.
 
 ${layerContext()}
 
@@ -2218,6 +2220,10 @@ async function handleInput() {
   if (meta.npcSpawn && meta.npcSpawn.name) {
     const newId = spawnNpc(meta.npcSpawn, cellKey(state.pos.x, state.pos.y));
     setTimeout(() => openNpcDrawer(newId), 300);
+    // Don't show situation text when NPC spawns — the greeting covers it
+    updateStats();
+    await saveState();
+    return;
   }
 
   const rawResponse = [situation?`SITUATION: ${situation}`:'', notice?`NOTICE: ${notice}`:''].filter(Boolean).join('\n');
