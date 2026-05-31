@@ -1075,7 +1075,8 @@ async function generateNpcGreeting(npcId, forcedOpen = false) {
     });
     const data = await res.json();
     removeNpcTyping();
-    const raw = data.choices?.[0]?.message?.content || '...';
+    const rawFull3 = data.choices?.[0]?.message?.content || '...';
+    const raw = rawFull3.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     const speech = raw.split('\n')
       .filter(l => !l.trim().startsWith('JSON:') && !l.trim().startsWith('{') && !l.trim().startsWith('['))
       .join('\n').replace(/\{[^}]*"dispositionDelta"[^}]*\}/g,'').replace(/\{[^}]*"npcAction"[^}]*\}/g,'').replace(/`/g,'').trim();
@@ -1157,7 +1158,8 @@ async function sendNpcMessage() {
     });
     const data = await res.json();
     removeNpcTyping();
-    const raw = data.choices?.[0]?.message?.content || '...';
+    const rawFull2 = data.choices?.[0]?.message?.content || '...';
+    const raw = rawFull2.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     const lines = raw.split('\n');
     let jsonLine = '';
     const speechLines = [];
@@ -1757,7 +1759,7 @@ SITUATION: <current activity, 1-2 sentences, omit if nothing>
 IMAGE_SUBJECT: <3-6 word visual subject. Include what lies to the north if notable, e.g. "cobblestone market street, castle towers north">
 JSON: {"locationName":"...","exits":{"n":true,"s":true,"e":true,"w":true},"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null}`}
 
-CURRENCY RULES: coinsAwarded/coinsLost: {"currency":"copper"|"silver"|"gold","amount":N}. Null if none. NEVER put coins in inventoryAdd.
+CURRENCY RULES: coinsAwarded/coinsLost: {"currency":"copper"|"silver"|"gold","amount":N}. Null if none. NEVER put coins in inventoryAdd. When loot is a coin purse, money pouch, or any currency container, use coinsAwarded to add the coins directly — do NOT add the purse as an inventory item.
 ITEM VALUES: inventoryAdd items must include: [{"name":"Iron Dagger","valueCp":150}]
 FACTION REP: factionRepChanges = {"faction_id": delta} (-20 to +20). Use sparingly.
 COMBAT RULES:
@@ -1804,7 +1806,8 @@ async function callAI(messages, actionOnly=false) {
     });
     const data = await res.json();
     removeTypingIndicator();
-    const raw = data.choices?.[0]?.message?.content || '';
+    const rawFull = data.choices?.[0]?.message?.content || '';
+    const raw = rawFull.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     let location='', situation='', notice='', imageSubject='', meta={};
     // Normalise markdown bold labels e.g. **LOCATION:** → LOCATION:
     const normalised = raw.replace(/\*\*([A-Z_]+):\*\*/g, '$1:').replace(/\*\*([A-Z_]+)\*\*:/g, '$1:');
@@ -1850,7 +1853,7 @@ const SLOT_LABELS={head:'Head',body:'Body',hands:'Hands',feet:'Feet',weapon:'Wea
 function guessSlot(name){const n=name.toLowerCase();if(/helm|hat|hood|cap|crown|circlet/.test(n))return'head';if(/sword|axe|dagger|knife|spear|staff|bow|mace|club|blade|wand|hammer/.test(n))return'weapon';if(/shield|buckler|tome|offhand/.test(n))return'offhand';if(/boot|shoe|sandal|greave/.test(n))return'feet';if(/glove|gauntlet|bracer/.test(n))return'hands';if(/ring|amulet|necklace|pendant|brooch|talisman/.test(n))return'accessory';if(/cloak|robe|coat|armour|armor|jacket|tunic|shirt|jerkin|vest|dress|mail|leather/.test(n))return'body';return null;}
 let _mobileTab='pack',_desktopTab='pack';
 function switchMobileTab(tab){_mobileTab=tab;document.getElementById('mpanel-pack').style.display=tab==='pack'?'':'none';document.getElementById('mpanel-equip').style.display=tab==='equip'?'':'none';document.getElementById('mtab-pack').style.opacity=tab==='pack'?'1':'0.4';document.getElementById('mtab-equip').style.opacity=tab==='equip'?'1':'0.4';document.getElementById('mtab-pack').style.borderBottomColor=tab==='pack'?'rgba(201,148,58,0.4)':'rgba(201,148,58,0.1)';document.getElementById('mtab-equip').style.borderBottomColor=tab==='equip'?'rgba(201,148,58,0.4)':'rgba(201,148,58,0.1)';if(tab==='equip')renderEquipped();}
-function switchDesktopTab(tab){_desktopTab=tab;document.getElementById('dpanel-pack').style.display=tab==='pack'?'':'none';document.getElementById('dpanel-equip').style.display=tab==='equip'?'':'none';document.getElementById('dtab-pack').style.opacity=tab==='pack'?'1':'0.45';document.getElementById('dtab-equip').style.opacity=tab==='equip'?'1':'0.45';document.getElementById('dtab-pack').style.borderBottomColor=tab==='pack'?'rgba(201,148,58,0.4)':'rgba(201,148,58,0.1)';document.getElementById('dtab-equip').style.borderBottomColor=tab==='equip'?'rgba(201,148,58,0.4)':'rgba(201,148,58,0.1)';if(tab==='equip')renderEquipped();}
+function switchDesktopTab(tab){_desktopTab=tab;document.getElementById('dpanel-pack').style.display=tab==='pack'?'block':'none';document.getElementById('dpanel-equip').style.display=tab==='equip'?'block':'none';document.getElementById('dtab-pack').style.opacity=tab==='pack'?'1':'0.45';document.getElementById('dtab-equip').style.opacity=tab==='equip'?'1':'0.45';document.getElementById('dtab-pack').style.borderBottomColor=tab==='pack'?'rgba(201,148,58,0.4)':'rgba(201,148,58,0.1)';document.getElementById('dtab-equip').style.borderBottomColor=tab==='equip'?'rgba(201,148,58,0.4)':'rgba(201,148,58,0.1)';if(tab==='equip')renderEquipped();}
 function togglePurse(){const d=document.getElementById('purse-drawer');const isO=d.style.display==='none'||!d.style.display;d.style.display=isO?'block':'none';if(isO)renderPurse();if(isO){document.getElementById('inv-drawer').classList.remove('open');document.getElementById('map-drawer').classList.remove('open');}}
 function renderPurse(){const el=document.getElementById('purse-contents');if(!el)return;const{gold,silver,copper,other}=state.wallet;const rows=[{label:'Gold',symbol:'⬡',amount:gold,color:'#e8b84b'},{label:'Silver',symbol:'◈',amount:silver,color:'#c0c0c0'},{label:'Copper',symbol:'◉',amount:copper,color:'#c87840'}];let html=rows.map(r=>`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);"><span style="font-size:1.1rem;color:${r.color};">${r.symbol}</span><span style="font-size:0.85rem;color:var(--stone-light);width:52px;">${r.label}</span><span style="font-size:1rem;color:var(--parchment);font-weight:300;">${r.amount}</span></div>`).join('');if(other&&other.length){html+=`<div style="font-size:0.65rem;color:var(--stone);letter-spacing:0.1em;padding:8px 0 4px;font-family:'Cinzel Decorative',serif;opacity:0.6;">— Other —</div>`;html+=other.map(s=>{const tv=formatCopper(s.amount*s.valueCpEach),ev=formatCopper(s.valueCpEach);return`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);"><span style="font-size:1rem;color:var(--stone-light);">◇</span><span style="flex:1;font-size:0.85rem;color:var(--parchment);">${s.name}</span><span style="font-size:1rem;color:var(--parchment);font-weight:300;margin-right:6px;">×${s.amount}</span><span style="font-size:0.68rem;color:var(--stone-light);text-align:right;">≈${tv}<br><span style="opacity:0.6;">${ev} each</span></span></div>`;}).join('');}el.innerHTML=html;}
 function toggleInv(){document.getElementById('inv-drawer').classList.toggle('open');document.getElementById('map-drawer').classList.remove('open');renderInventory();renderEquipped();}
