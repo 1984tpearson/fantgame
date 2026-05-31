@@ -2188,7 +2188,11 @@ async function handleInput() {
   if (npcTarget) { openNpcDrawer(npcTarget); return; }
 
   addMessage(text, 'player');
-  const messages = [...state.history, { role:'user', content: text }];
+  // If player is approaching/talking to someone not yet spawned, remind AI to spawn
+  const _spawnHint = /\b(approach|talk to|speak to|ask|greet|address|go to|walk up to|look at|examine|pet|stroke|touch)\b/i.test(text)
+    ? '\n[REMINDER: If the player is interacting with a specific individual not already in the NPC list, you MUST set npcSpawn in the JSON. This is mandatory.]'
+    : '';
+  const messages = [...state.history, { role:'user', content: text + _spawnHint }];
   const { location, situation, notice, imageSubject, meta } = await callAI(messages, true);
 
   if (meta.hpDelta) state.player.hp = Math.max(0, Math.min(state.player.maxHp, state.player.hp + meta.hpDelta));
