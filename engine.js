@@ -1109,8 +1109,7 @@ WORLD: The Kingdom of Aerdorn. Day ${Math.floor(state.player.day)}.
 PLAYER WALLET: ${formatWallet()}. Inventory: ${state.inventory.map(i=>i.name).join(', ')||'nothing notable'}.
 ${hasTrader ? `You are a trader. Mention wares exist — UI shows them separately. Don't list prices in dialogue.` : ''}
 RULES:
-- Stay in character. Short, vivid responses. 1-3 sentences per turn.
-- NEVER mention coordinates, grid positions, axis references, or cell numbers.
+- Stay in character at ALL times. Never break the fourth wall. Never include parenthetical notes, meta-commentary, out-of-character explanations, or developer notes in responses. If something can't happen, narrate why in-world — never explain it as a system limitation.
 - React to disposition: hostile = curt/suspicious, neutral = businesslike, friendly = warm, devoted = caring.
 - Never break character or mention being an AI.
 - After your dialogue response, on a NEW LINE output only the JSON metadata (last line, nothing after):
@@ -1731,7 +1730,8 @@ PLAYER NAME: ${playerName}
 
 WORLD: The Kingdom of Aerdorn, a large island. Aethel-Keep (capital NW ~1114,2092), Weaver's Deep (port N ~2076,1181), High-Crown Castle (royal seat centre ~2025,3171), Gladehome (E ~2488,1677), Sylvanis-Root (deep wilds ~2705,3309), Briar-Town (far E ~3212,3528), East-Port (SE coast ~346,556), Harvestfell (S coast ~190,644). Terrain: Verdant Heart (NW forest), Eldritch Wilds (dark E forest), Great Bog (central), Shadow Fens (SE), Azure Shore (S coast), Sunset Peaks (W spine), Wyvern's Spine (central ridge). Tone: gritty, vivid, grounded. Think early Tolkien with real danger.
 COORDINATE SYSTEM: Lower Y = north. Higher Y = south. Higher X = east. Lower X = west.
-NEVER include coordinates, grid positions, axis references (x-axis, y-axis), cell numbers, or any numerical position in narrative text shown to the player.
+NEVER include coordinates, grid positions, axis references, or cell numbers in narrative text shown to the player.
+NEVER include parenthetical notes, meta-commentary, out-of-character text, or developer notes in any response. Stay in character at all times. If something can't happen narratively, describe why in-world — never reference system limitations.
 
 ${layerContext()}
 
@@ -1992,7 +1992,7 @@ async function enterCell(x, y) {
   const _isFirstVisit = !existing.locationName;
   const _noticeChance = _isFirstVisit ? (1/6) : (1/15);
   if (Math.random() < _noticeChance) {
-    maybeGenerateNotice(x, y, state.cells[key].locationName, getCellMeta(x,y).type);
+    setTimeout(() => maybeGenerateNotice(x, y, state.cells[key].locationName, getCellMeta(x,y).type), 3000);
   }
 
   // Show NPC presence and handle forced intercepts
