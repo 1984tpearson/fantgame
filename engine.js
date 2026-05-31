@@ -1077,9 +1077,9 @@ async function generateNpcGreeting(npcId, forcedOpen = false) {
     removeNpcTyping();
     const raw = data.choices?.[0]?.message?.content || '...';
     const speech = raw.split('\n')
-      .filter(l => !l.trim().startsWith('JSON:') && !l.trim().startsWith('{'))
-      .join('\n').replace(/\{[^}]*"dispositionDelta"[^}]*\}/g,'').replace(/`/g,'').trim();
-    addNpcConvoLine(speech, 'npc');
+      .filter(l => !l.trim().startsWith('JSON:') && !l.trim().startsWith('{') && !l.trim().startsWith('['))
+      .join('\n').replace(/\{[^}]*"dispositionDelta"[^}]*\}/g,'').replace(/\{[^}]*"npcAction"[^}]*\}/g,'').replace(/`/g,'').trim();
+    addNpcConvoLine(speech || '...', 'npc');
     npcSession.history = [
       { role:'user', content: firstMeet ? 'First meeting greeting' : `Player returns. Memory: ${memSummary}` },
       { role:'assistant', content: raw }
@@ -1762,9 +1762,10 @@ ITEM VALUES: inventoryAdd items must include: [{"name":"Iron Dagger","valueCp":1
 FACTION REP: factionRepChanges = {"faction_id": delta} (-20 to +20). Use sparingly.
 COMBAT RULES:
 - hasCombat triggers ORGANICALLY from player actions: attacking an NPC or creature, provoking a hostile encounter, being ambushed (bandits, wild animals), doing something dangerous (kicking a beehive, startling a horse). Do NOT trigger combat for passive movement through areas.
-- When hasCombat=true: hpDelta reflects first-strike damage (negative = player took damage). combatActions should be 3-4 options including one flee option. Always include a free-text option reminding player they can also type anything.
-- Combat is turn-based via the SITUATION field each turn. Narrate blow-by-blow. Do NOT resolve entire fights in one response.
-- Track enemy condition narratively: describe when they're tiring, bleeding, near death. Player has no HP bar for enemies — keep them guessing.
+- When hasCombat=true: hpDelta reflects first-strike damage (negative = player took damage). combatActions should be 3-4 options including one flee option.
+- CRITICAL: Combat is STRICTLY turn-based. Each response covers ONE exchange of blows only. NEVER resolve an entire fight in a single response. NEVER kill or defeat the enemy in the same turn combat starts. The player must take multiple turns to win or lose. If the player attacks, describe that one strike and the enemy's reaction — then stop and wait for the next player action with hasCombat=true.
+- Track enemy condition narratively across turns: describe when they're tiring, bleeding, staggering, near death. Player has no HP bar for enemies — keep them guessing.
+- Only set hasCombat=false when the fight is definitively over after multiple turns — enemy flees, falls unconscious, or is killed. Not before.
 - Flee success depends on context: easy in open country, hard in tight spaces or against fast enemies.
 - Player can type anything in combat (throw item, use environment, call for help) — resolve creatively.
 
