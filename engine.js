@@ -160,15 +160,24 @@ function buildNpcImageFilename(npcId, tmpl) {
 }
 
 function buildNpcImagePrompt(tmpl) {
-  const age    = tmpl.age    ? `${tmpl.age} year old ` : '';
-  const race   = tmpl.race   || 'human';
-  const role   = tmpl.role   || 'villager';
-  const traits = (tmpl.traits || []).join(', ');
-  // Pull first sentence of personality for flavour, strip quotes/asterisks
-  const personality = (tmpl.personality || '').split(/[.!]/)[0].replace(/[*"]/g, '').trim();
-  const parts = [`${age}${race} ${role}`];
-  if (traits)       parts.push(traits);
-  if (personality)  parts.push(personality);
+  const parts = [];
+  // Use explicit appearance field if present — this is the primary visual descriptor
+  if (tmpl.appearance) {
+    parts.push(tmpl.appearance);
+  } else {
+    // Fallback for dynamic/spawned NPCs without appearance field
+    const age  = tmpl.age    ? `${tmpl.age} year old` : '';
+    const race = tmpl.race   || 'human';
+    const role = tmpl.role   || 'villager';
+    parts.push(`${age} ${race} ${role}`.trim());
+    // Only include traits that are visually descriptive, skip personality ones
+    const visualTraits = (tmpl.traits || []).filter(t =>
+      /tall|short|fat|thin|lean|stocky|muscular|gaunt|pale|dark|scarred|hooded|bearded|bald|old|young|weathered|worn|ragged|neat|elegant/.test(t)
+    );
+    if (visualTraits.length) parts.push(visualTraits.join(', '));
+  }
+  // Add role as context for clothing/setting
+  if (tmpl.appearance && tmpl.role) parts.push(tmpl.role);
   return parts.join(', ') + ', ' + CONFIG.NPC_IMAGE_STYLE_SUFFIX;
 }
 
@@ -1747,7 +1756,16 @@ COMBAT RULES:
 - Player can type anything in combat (throw item, use environment, call for help) — resolve creatively.
 NOTICE: ~1 in 5 squares. Omit if in doubt.
 SKILLS: skillUpdates = {skill:delta}. Never reveal to player.
-NPC SPAWN: npcSpawn: {"name":"...","role":"...","faction":"...","emoji":"...","personality":"...","initialDisposition":0,"trader":null} — only when player engages a specific individual not already an NPC. Null otherwise.`;
+NPC SPAWN RULES:
+- npcSpawn triggers when the player directs attention at a SPECIFIC individual not already in NPC_TEMPLATES. This includes: talking to, approaching, examining, or interacting with a named or described person or animal. Examples: "I approach the merchant", "I speak to the old woman", "I pet the dog", "I ask the guard a question", "I examine the beggar" — all trigger npcSpawn.
+- Animals and creatures (dogs, horses, cats, rats etc.) that the player approaches or interacts with individually ALSO trigger npcSpawn with type:'creature' indicated in the role/emoji. Give them a name and brief personality.
+- npcSpawn format: {"name":"...","role":"...","race":"...","age":N,"gender":"male|female","appearance":"physical description for portrait — height, build, face, hair, clothing","faction":"...","emoji":"...","traits":["...","..."],"personality":"...","initialDisposition":0,"trader":null}
+- If the player is moving through a crowd without engaging anyone specifically, npcSpawn = null.
+- NEVER spawn duplicate NPCs — if the player re-engages the same person, they should already be in the NPC list.
+ITEM INTEGRITY RULES:
+- NEVER add items to inventoryAdd that the player has not found, purchased, been given, or looted. If a player claims to pick up or take something that was never established as present, narrate failure: the item isn't there.
+- If a player says "I pick up a sword from the ground" and no sword was mentioned, respond with SITUATION describing there is no sword there. inventoryAdd must remain empty.
+- Items can only enter inventory through: explicit loot, purchase, gift, or narrative events you initiate.`;
 }
 
 async function callAI(messages, actionOnly=false) {
@@ -2079,6 +2097,11 @@ function spawnNpc(spawnData, cellKeyStr) {
     id, name: spawnData.name, role: spawnData.role || 'Stranger',
     faction: spawnData.faction || 'ironhaven_citizens', emoji: spawnData.emoji || '👤',
     personality: spawnData.personality || 'A person of few words.',
+    race: spawnData.race || 'human',
+    age: spawnData.age || null,
+    gender: spawnData.gender || null,
+    appearance: spawnData.appearance || null,
+    traits: spawnData.traits || [],
     schedule: [], trader: spawnData.trader || null, dynamic: true
   };
   state.npcs[id] = {
