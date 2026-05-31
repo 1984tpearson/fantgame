@@ -1746,14 +1746,12 @@ ${npcCtx}
 ${actionOnly?`ACTION MODE: Player acts. No location re-description. Omit LOCATION.
 RESPONSE FORMAT:
 SITUATION: <result, 1-2 sentences>
-NOTICE: <newly revealed, 1 sentence, omit if nothing>
 IMAGE_SUBJECT: <3-6 word visual subject for image generation. Include what lies to the north if notable, e.g. "lush forest path, distant city walls north", "mossy stone crossroads, mountain peaks beyond", omit if no significant visual change>
 JSON: {"locationName":null,"exits":null,"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null}`:
 `ENTRY MODE: Player just arrived.
 RESPONSE FORMAT:
 LOCATION: <place description, 1-2 sentences>
 SITUATION: <current activity, 1-2 sentences, omit if nothing>
-NOTICE: <interactable detail, 1 sentence, omit if nothing>
 IMAGE_SUBJECT: <3-6 word visual subject. Include what lies to the north if notable, e.g. "cobblestone market street, castle towers north">
 JSON: {"locationName":"...","exits":{"n":true,"s":true,"e":true,"w":true},"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null}`}
 
@@ -1767,7 +1765,7 @@ COMBAT RULES:
 - Track enemy condition narratively: describe when they're tiring, bleeding, near death. Player has no HP bar for enemies — keep them guessing.
 - Flee success depends on context: easy in open country, hard in tight spaces or against fast enemies.
 - Player can type anything in combat (throw item, use environment, call for help) — resolve creatively.
-NOTICE: VERY rarely used. Only when there is something specific, hidden, or actionable the player could meaningfully interact with — a concealed door, a body in the reeds, a suspicious figure watching from shadows. DO NOT use for general atmosphere, shop signs, crowd descriptions, or anything already covered by LOCATION or SITUATION. If unsure whether it qualifies, it does not. Leave NOTICE blank on the vast majority of squares.
+
 SKILLS: skillUpdates = {skill:delta}. Never reveal to player.
 NPC SPAWN RULES:
 - npcSpawn triggers when the player directs attention at a SPECIFIC individual not already in NPC_TEMPLATES. This includes: talking to, approaching, examining, or interacting with a named or described person or animal. Examples: "I approach the merchant", "I speak to the old woman", "I pet the dog", "I ask the guard a question", "I examine the beggar" — all trigger npcSpawn.
@@ -1832,9 +1830,7 @@ async function callAI(messages, actionOnly=false) {
     notice = stripMeta(notice);
     // Don't display literal "null" strings
     if (notice.toLowerCase() === 'null' || notice.toLowerCase() === 'none') notice = '';
-    // Only show notice if it suggests something genuinely interactive or hidden
-    const noticeKeywords = /hidden|concealed|abandoned|body|lurk|watch|glimmer|strange|unusual|secret|half-buried|discarded|tucked|crouching|slumped|peering|suspicious|peculiar|buried|crawl|crevice|shadowed|figure/i;
-    if (notice && !noticeKeywords.test(notice)) notice = '';
+
     if (situation.toLowerCase() === 'null' || situation.toLowerCase() === 'none') situation = '';
     return { location, situation, notice, imageSubject, meta };
   } catch(e) {
@@ -1869,6 +1865,41 @@ function buildCellPrompt(x,y){const meta=getCellMeta(x,y);const nb=getNeighbourM
 // ═══════════════════════════════════════════════════
 // CORE GAME LOGIC
 // ═══════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════
+// NOTICE — SEPARATE FOCUSED CALL
+// ═══════════════════════════════════════════════════
+async function maybeGenerateNotice(x, y, locationName, terrainType) {
+  try {
+    const res = await fetch(CONFIG.AI_PROXY_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': CONFIG.SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        model: CONFIG.TEXT_MODEL,
+        max_tokens: 80,
+        messages: [{
+          role: 'system',
+          content: 'You are a detail spotter for a gritty fantasy RPG. Respond with ONE sentence only — no preamble, no explanation. Describe a single specific hidden, unusual, or interactive detail the player might notice on close inspection. It must be something they could act on: a concealed object, a suspicious person, a hidden entrance, something out of place. NOT general atmosphere, NOT crowds, NOT signs or stalls. If nothing genuinely interesting fits this location, respond with exactly: NONE'
+        }, {
+          role: 'user',
+          content: `Location: ${locationName} (${terrainType}). What specific hidden or unusual detail might a careful observer notice?`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = (data.choices?.[0]?.message?.content || '').trim();
+    if (text && text !== 'NONE' && text.toUpperCase() !== 'NONE') {
+      addZones('', '', '', text);
+    }
+  } catch(e) {
+    // Silent fail — notice is optional
+  }
+}
+
 async function enterCell(x, y) {
   const transition = getCellTransition(x, y);
   if (transition) {
@@ -1951,7 +1982,14 @@ async function enterCell(x, y) {
     if (!cachedImageUrl) applySceneBackground(null);
   }
 
-  addZones(state.cells[key].locationName, location, situation, notice);
+  addZones(state.cells[key].locationName, location, situation, null);
+
+  // ── NOTICE: separate focused call, probabilistic ──────────────────
+  const _isFirstVisit = !existing.locationName;
+  const _noticeChance = _isFirstVisit ? (1/6) : (1/15);
+  if (Math.random() < _noticeChance) {
+    maybeGenerateNotice(x, y, state.cells[key].locationName, getCellMeta(x,y).type);
+  }
 
   // Show NPC presence and handle forced intercepts
   const presentNpcs = getNpcsAtCurrentLocation();
