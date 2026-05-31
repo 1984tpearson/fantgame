@@ -1767,7 +1767,7 @@ COMBAT RULES:
 - Track enemy condition narratively: describe when they're tiring, bleeding, near death. Player has no HP bar for enemies — keep them guessing.
 - Flee success depends on context: easy in open country, hard in tight spaces or against fast enemies.
 - Player can type anything in combat (throw item, use environment, call for help) — resolve creatively.
-NOTICE: Rare — only when something is genuinely surprising, hidden, or interactive (a strange figure lurking, a glimmer behind a bush, an unusual sound). Do NOT generate notice text on most squares. When in doubt, omit entirely.
+NOTICE: VERY rarely used. Only when there is something specific, hidden, or actionable the player could meaningfully interact with — a concealed door, a body in the reeds, a suspicious figure watching from shadows. DO NOT use for general atmosphere, shop signs, crowd descriptions, or anything already covered by LOCATION or SITUATION. If unsure whether it qualifies, it does not. Leave NOTICE blank on the vast majority of squares.
 SKILLS: skillUpdates = {skill:delta}. Never reveal to player.
 NPC SPAWN RULES:
 - npcSpawn triggers when the player directs attention at a SPECIFIC individual not already in NPC_TEMPLATES. This includes: talking to, approaching, examining, or interacting with a named or described person or animal. Examples: "I approach the merchant", "I speak to the old woman", "I pet the dog", "I ask the guard a question", "I examine the beggar" — all trigger npcSpawn.
