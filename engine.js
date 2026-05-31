@@ -1768,7 +1768,7 @@ ${npcCtx}
 
 ${actionOnly?`ACTION MODE: Player acts. No location re-description. Omit LOCATION.
 RESPONSE FORMAT:
-SITUATION: <result, 1-2 sentences>
+SITUATION: <result, 1-2 sentences. If the player tried to approach or talk to someone and npcSpawn is null, narrate their reaction — they ignore you, walk away, give a curt response, etc. Never leave an approach unanswered.>
 IMAGE_SUBJECT: <3-6 word visual subject for image generation. Include what lies to the north if notable, e.g. "lush forest path, distant city walls north", "mossy stone crossroads, mountain peaks beyond", omit if no significant visual change>
 JSON: {"locationName":null,"exits":null,"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null}`:
 `ENTRY MODE: Player just arrived.
