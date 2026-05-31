@@ -1,9 +1,9 @@
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
-f = open(r'C:\Users\1984t\OneDrive\Documents\GitHub\fantgame\index.html', encoding='utf-8').read()
-idx = f.find('#controls {')
+f = open(r'C:\Users\1984t\OneDrive\Documents\GitHub\fantgame\engine.js', encoding='utf-8').read()
+idx = f.find('for (const [id, ns] of Object.entries(state.npcs))')
+# find the one in getNpcsAtCurrentLocation
+idx2 = f.find('for (const [id, ns] of Object.entries(state.npcs))', idx+1)
 print(f[idx:idx+300])
-idx2 = f.find('@media (min-width: 700px)')
-# find controls in media query
-idx3 = f.find('#controls', idx2)
-print(f[idx3:idx3+200])
+print('---')
+print(f[idx2:idx2+300])
