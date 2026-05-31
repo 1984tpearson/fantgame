@@ -1832,6 +1832,9 @@ async function callAI(messages, actionOnly=false) {
     notice = stripMeta(notice);
     // Don't display literal "null" strings
     if (notice.toLowerCase() === 'null' || notice.toLowerCase() === 'none') notice = '';
+    // Only show notice if it suggests something genuinely interactive or hidden
+    const noticeKeywords = /hidden|concealed|abandoned|body|lurk|watch|glimmer|strange|unusual|secret|half-buried|discarded|tucked|crouching|slumped|peering|suspicious|peculiar|buried|crawl|crevice|shadowed|figure/i;
+    if (notice && !noticeKeywords.test(notice)) notice = '';
     if (situation.toLowerCase() === 'null' || situation.toLowerCase() === 'none') situation = '';
     return { location, situation, notice, imageSubject, meta };
   } catch(e) {
