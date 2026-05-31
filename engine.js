@@ -1727,7 +1727,7 @@ function buildSystemPrompt(actionOnly=false){
 
 PLAYER NAME: ${playerName}
 
-WORLD: The Kingdom of Aerdorn, a large island. Aethel-Keep (capital NW ~1114,2092), Weaver's Deep (port N ~2076,1181), High-Crown Castle (royal seat centre ~2025,3171), Gladehome (E ~2488,1677), Sylvanis-Root (deep wilds ~2705,3309), Briar-Town (far E ~3212,3528), East-Port (S fens ~2778,4447), Harvestfell (S coast ~1519,5154). Terrain: Verdant Heart (NW forest), Eldritch Wilds (dark E forest), Great Bog (central), Shadow Fens (SE), Azure Shore (S coast), Sunset Peaks (W spine), Wyvern's Spine (central ridge). Tone: gritty, vivid, grounded. Think early Tolkien with real danger.
+WORLD: The Kingdom of Aerdorn, a large island. Aethel-Keep (capital NW ~1114,2092), Weaver's Deep (port N ~2076,1181), High-Crown Castle (royal seat centre ~2025,3171), Gladehome (E ~2488,1677), Sylvanis-Root (deep wilds ~2705,3309), Briar-Town (far E ~3212,3528), East-Port (SE coast ~346,556), Harvestfell (S coast ~190,644). Terrain: Verdant Heart (NW forest), Eldritch Wilds (dark E forest), Great Bog (central), Shadow Fens (SE), Azure Shore (S coast), Sunset Peaks (W spine), Wyvern's Spine (central ridge). Tone: gritty, vivid, grounded. Think early Tolkien with real danger.
 COORDINATE SYSTEM: Lower Y = north. Higher Y = south. Higher X = east. Lower X = west.
 NEVER include coordinates, grid positions, axis references (x-axis, y-axis), cell numbers, or any numerical position in narrative text shown to the player.
 
