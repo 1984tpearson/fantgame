@@ -161,9 +161,11 @@ function buildNpcImageFilename(npcId, tmpl) {
 
 function buildNpcImagePrompt(tmpl) {
   const parts = [];
+  // Always lead with gender to ensure correct image generation
+  const genderWord = tmpl.gender === 'male' ? 'male man' : tmpl.gender === 'female' ? 'female woman' : '';
   // Use explicit appearance field if present — this is the primary visual descriptor
   if (tmpl.appearance) {
-    parts.push(tmpl.appearance);
+    parts.push(genderWord ? `${genderWord}, ${tmpl.appearance}` : tmpl.appearance);
   } else {
     // Fallback for dynamic/spawned NPCs without appearance field
     const age  = tmpl.age    ? `${tmpl.age} year old` : '';
@@ -1773,6 +1775,7 @@ NPC SPAWN RULES:
 - npcSpawn format: {"name":"...","role":"...","race":"...","age":N,"gender":"male|female","appearance":"physical description for portrait — height, build, face, hair, clothing","faction":"...","emoji":"...","traits":["...","..."],"personality":"...","initialDisposition":0,"trader":null}
 - If the player is moving through a crowd without engaging anyone specifically, npcSpawn = null.
 - NEVER spawn duplicate NPCs — if the player re-engages the same person, they should already be in the NPC list.
+- trader: only populate if the NPC was explicitly described as selling, trading, or running a stall/shop. A random pedestrian, passerby, or townsperson should always have trader:null even if their role sounds commercial.
 ITEM INTEGRITY RULES:
 - NEVER add items to inventoryAdd that the player has not found, purchased, been given, or looted. If a player claims to pick up or take something that was never established as present, narrate failure: the item isn't there.
 - If a player says "I pick up a sword from the ground" and no sword was mentioned, respond with SITUATION describing there is no sword there. inventoryAdd must remain empty.
