@@ -1761,8 +1761,8 @@ IMAGE_SUBJECT: <3-6 word visual subject for image generation. Include what lies 
 JSON: {"locationName":null,"exits":null,"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null}`:
 `ENTRY MODE: Player just arrived.
 RESPONSE FORMAT:
-LOCATION: <place description, 1-2 sentences>
-SITUATION: <current activity, 1-2 sentences, omit if nothing>
+LOCATION: <pure scene description only — place, architecture, smells, weather, atmosphere. Do NOT mention people, NPCs, or activity here. 1-2 sentences.>
+SITUATION: <what is happening — people, activity, movement, NPCs present, mood of the crowd. Omit if nothing notable. 1-2 sentences.>
 IMAGE_SUBJECT: <3-6 word visual subject. Include what lies to the north if notable, e.g. "cobblestone market street, castle towers north">
 JSON: {"locationName":"...","exits":{"n":true,"s":true,"e":true,"w":true},"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null}`}
 
