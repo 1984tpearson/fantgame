@@ -34,7 +34,7 @@ const DB = {
           'apikey': CONFIG.SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json',
-          'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
+          'Prefer': method === 'POST' ? 'return=minimal,resolution=merge-duplicates' : 'return=minimal'
         }
       };
       if (body) opts.body = JSON.stringify(body);
@@ -152,9 +152,10 @@ async function generateSceneImage(description, cellKeyStr) {
 // NPC / CREATURE PORTRAIT GENERATION
 // ═══════════════════════════════════════════════════
 function buildNpcImageFilename(npcId, tmpl) {
-  const race  = (tmpl.race  || 'human').toLowerCase().replace(/\s+/g, '_');
-  const role  = (tmpl.role  || 'npc').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
-  const trait = (tmpl.traits?.[0] || 'unknown').toLowerCase().replace(/\s+/g, '_');
+  const slug = s => (s||'unknown').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+  const race  = slug(tmpl.race  || 'human');
+  const role  = slug(tmpl.role  || 'npc');
+  const trait = slug(tmpl.traits?.[0] || 'unknown');
   return `npc_${race}_${role}_${trait}.png`;
 }
 
@@ -244,22 +245,17 @@ async function generateNpcImage(npcId) {
 }
 
 function applyNpcPortrait(imageUrl, drawerId) {
-  const avatarWrap = document.getElementById(drawerId + '-portrait-wrap');
-  const avatarEmoji = document.getElementById(drawerId + '-avatar-emoji');
-  const img = document.getElementById(drawerId + '-portrait-img');
-  if (!avatarWrap || !img) return;
+  const wrap  = document.getElementById(drawerId + '-portrait-wrap');
+  const img   = document.getElementById(drawerId + '-portrait-img');
+  const emoji = document.getElementById(drawerId + '-avatar-emoji');
+  if (!wrap || !img) return;
   if (!imageUrl) {
-    avatarWrap.classList.remove('has-portrait');
-    img.src = '';
-    img.style.display = 'none';
-    if (avatarEmoji) avatarEmoji.style.display = '';
+    wrap.classList.remove('has-portrait');
+    img.src = ''; img.style.display = 'none';
+    if (emoji) emoji.style.display = '';
     return;
   }
-  img.onload = () => {
-    avatarWrap.classList.add('has-portrait');
-    img.style.display = 'block';
-    if (avatarEmoji) avatarEmoji.style.display = 'none';
-  };
+  img.onload = () => { wrap.classList.add('has-portrait'); };
   img.src = imageUrl;
 }
 
