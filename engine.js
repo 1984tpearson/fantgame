@@ -251,11 +251,24 @@ function applyNpcPortrait(imageUrl, drawerId) {
   if (!wrap || !img) return;
   if (!imageUrl) {
     wrap.classList.remove('has-portrait');
-    img.src = ''; img.style.display = 'none';
+    img.src = '';
     if (emoji) emoji.style.display = '';
     return;
   }
-  img.onload = () => { wrap.classList.add('has-portrait'); };
+  // Set src first — browser won't load a display:none img in some cases
+  img.style.display = 'block';
+  img.style.opacity = '0';
+  img.onload = () => {
+    img.style.opacity = '1';
+    wrap.classList.add('has-portrait');
+    if (emoji) emoji.style.display = 'none';
+  };
+  img.onerror = () => {
+    // Image failed — hide and show emoji fallback
+    img.style.display = 'none';
+    wrap.classList.remove('has-portrait');
+    if (emoji) emoji.style.display = '';
+  };
   img.src = imageUrl;
 }
 
