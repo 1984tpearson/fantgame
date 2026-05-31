@@ -350,11 +350,12 @@ async function regenPortrait(e) {
   if (url) {
     const img = document.getElementById('portrait-overlay-img');
     const placeholder = document.getElementById('portrait-overlay-placeholder');
-    img.src = url;
+    const bustUrl = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+    img.src = bustUrl;
     img.style.display = 'block';
     placeholder.style.display = 'none';
     // Also update the drawer circle
-    if (_portraitOverlayDrawerId) applyNpcPortrait(url, _portraitOverlayDrawerId);
+    if (_portraitOverlayDrawerId) applyNpcPortrait(bustUrl, _portraitOverlayDrawerId);
   }
 }
 
