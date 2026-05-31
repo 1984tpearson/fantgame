@@ -183,7 +183,7 @@ function buildNpcImagePrompt(tmpl) {
   return parts.join(', ') + ', ' + CONFIG.NPC_IMAGE_STYLE_SUFFIX;
 }
 
-async function generateNpcImage(npcId) {
+async function generateNpcImage(npcId, forceRegen = false) {
   if (!CONFIG.ENABLE_NPC_IMAGES) return null;
   const tmpl = NPC_TEMPLATES[npcId];
   if (!tmpl) return null;
@@ -198,7 +198,7 @@ async function generateNpcImage(npcId) {
     if (CONFIG.ENABLE_SUPABASE) {
       const storedUrl = `${CONFIG.SUPABASE_URL}/storage/v1/object/public/scene-images/npcs/${filename}`;
       const probe = await fetch(storedUrl, { method: 'GET', headers: { Range: 'bytes=0-0' } }).catch(() => null);
-      if (probe?.ok || probe?.status === 206) {
+      if (!forceRegen && (probe?.ok || probe?.status === 206)) {
         tmpl.imageUrl = storedUrl;
         return storedUrl;
       }
@@ -342,7 +342,7 @@ async function regenPortrait(e) {
   // Clear cached URL so generateNpcImage re-generates
   delete tmpl.imageUrl;
 
-  const url = await generateNpcImage(_portraitOverlayNpcId);
+  const url = await generateNpcImage(_portraitOverlayNpcId, true);
 
   btn.classList.remove('loading');
   btn.textContent = '✦ Generate New';
