@@ -2311,7 +2311,7 @@ async function init() {
       ];
       state.inventory = [{ name:'Heel of Bread' }, ri[Math.floor(Math.random() * ri.length)]];
       addMessage(`Welcome to the Kingdom of Aerdorn.`, 'system');
-      await enterCell(1114, 2094);
+      await enterCell(346, 558);
     }
   } catch(e) {
     console.error('Init error:', e);
