@@ -1587,26 +1587,49 @@ function updateLayerBadge(){
 // CANVAS MAP
 // ═══════════════════════════════════════════════════
 const CELL_PX=32;
+
+// ── MAPFORGE TERRAIN TILE SYSTEM ─────────────────────
+// Maps engine terrain types to MapForge makeTerrain() type names
+const TERRAIN_TO_MF = {
+  plains:'grass', forest:'forest_floor', wilds:'forest_floor',
+  ocean:'water', river:'shallow_water', shore:'sand',
+  farmland:'farmland', road:'cobble', mountain:'rocky', peaks:'rocky',
+  swamp:'swamp', bog:'swamp', fens:'swamp',
+  snow:'snow', ruins:'rocky', castle:'rocky', keep:'rocky',
+  street:'cobble', building:'cobble', courtyard:'dirt', market:'cobble',
+  docks:'cobble', gate:'cobble', interior:'cave', wall:'rocky',
+  door:'cobble', city:'cobble', town:'cobble', village:'grass',
+};
+// Cache: key = "mfType_seed" -> offscreen canvas
+const _tileCache = new Map();
+function _getTile(engineType, cx, cy) {
+  if (!window.MapForge) return null;
+  const mfType = TERRAIN_TO_MF[engineType] || 'grass';
+  const seed = ((cx & 0xffff) << 16) | (cy & 0xffff);
+  const key = mfType + '_' + seed;
+  if (_tileCache.has(key)) return _tileCache.get(key);
+  // Get neighbour types for blending
+  const nb = {};
+  [['top',cx,cy-1],['bottom',cx,cy+1],['left',cx-1,cy],['right',cx+1,cy]].forEach(([dir,nx,ny])=>{
+    const nm = WORLD_META[`${nx},${ny}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(nx,ny):null);
+    if (nm) nb[dir] = TERRAIN_TO_MF[nm.type] || 'grass';
+  });
+  const grid = MapForge.makeTerrain(mfType, seed, nb);
+  const c = document.createElement('canvas');
+  MapForge.renderGridToCanvas(grid, c, 1);
+  _tileCache.set(key, c);
+  return c;
+}
+
 const TERRAIN_HEX={ocean:'#1a2d3a',plains:'#3a4a2a',forest:'#1e3a1e',mountain:'#4a4040',city:'#6a5030',town:'#5a4525',village:'#4a3a20',road:'#3a4a2a',farmland:'#4a4a20',river:'#3a4a2a',unknown:'#181410',street:'#4a3e30',building:'#5a3a20',door:'#7a5030',wall:'#3a3030',courtyard:'#3a4228',market:'#5a4a28',docks:'#2a3a4a',gate:'#6a5540',interior:'#3a2a18',swamp:'#2a3a28',bog:'#2a3828',wilds:'#162a16',fens:'#263428',shore:'#3a4a40',peaks:'#4a4448',castle:'#5a4838',keep:'#604830',ruins:'#3a3228'};
 let mapView={x:0,y:0,scale:1,travelTarget:null};
 function getVisibleCellMeta(cx,cy){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];if(!s)return{type:T.WALL,name:''};if(s.map[`${cx},${cy}`])return s.map[`${cx},${cy}`];if(!s._bounds){const ks=Object.keys(s.map);const xs=ks.map(k=>parseInt(k.split(',')[0])),ys=ks.map(k=>parseInt(k.split(',')[1]));s._bounds={minX:Math.min(...xs),maxX:Math.max(...xs),minY:Math.min(...ys),maxY:Math.max(...ys)};}const b=s._bounds;return(cx>=b.minX&&cx<=b.maxX&&cy>=b.minY&&cy<=b.maxY)?{type:T.COURTYARD,name:''}:{type:T.WALL,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${cx},${cy}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(cx,cy):null)||{type:T.PLAINS,name:''};}
 function drawMapCanvas(){const canvas=document.getElementById('map-canvas');if(!canvas)return;const hEl=document.getElementById('map-drawer-header'),lEl=document.getElementById('map-legend');const hH=hEl?hEl.offsetHeight:44,lH=lEl?lEl.offsetHeight:32;const W=window.innerWidth,H=window.innerHeight-hH-lH;if(W<10||H<10)return;if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H;canvas.style.width=W+'px';canvas.style.height=H+'px';}
 const ctx=canvas.getContext('2d');ctx.clearRect(0,0,W,H);const cs=CELL_PX*mapView.scale;const{x:px,y:py}=state.pos;const ox=W/2-(px*cs)+mapView.x,oy=H/2-(py*cs)+mapView.y;const x0=Math.floor(-ox/cs)-2,y0=Math.floor(-oy/cs)-2,x1=Math.floor((W-ox)/cs)+2,y1=Math.floor((H-oy)/cs)+2;const lt=new Set();const ss=seenSet();
-// ── WORLD MAP IMAGE BACKGROUND ──────────────────────
-if(state.layer==='overworld'&&window.WORLD_MAP_IMAGE){
-  if(!window._worldMapImg){window._worldMapImg=new Image();window._worldMapImg.src=window.WORLD_MAP_IMAGE;window._worldMapImg.onload=()=>drawMapCanvas();}
-  if(window._worldMapImg.complete&&window._worldMapImg.naturalWidth>0){
-    const iX0=window.WORLD_MAP_IMG_X0||8,iY0=window.WORLD_MAP_IMG_Y0||38,iCW=window.WORLD_MAP_IMG_W||553,iCH=window.WORLD_MAP_IMG_H||974,gW=window.WORLD_MAP_GRID_W||4000,gH=window.WORLD_MAP_GRID_H||7100;
-    const ppsX=iCW/gW,ppsY=iCH/gH,cpiX=cs/ppsX,cpiY=cs/ppsY;
-    const iox=ox+(-iX0/ppsX)*cs,ioy=oy+(-iY0/ppsY)*cs;
-    const dW=window._worldMapImg.naturalWidth*cpiX,dH=window._worldMapImg.naturalHeight*cpiY;
-    ctx.globalAlpha=window.WORLD_MAP_IMG_ALPHA||0.55;
-    ctx.drawImage(window._worldMapImg,iox,ioy,dW,dH);
-    ctx.globalAlpha=1;
-  }
-}
-// ────────────────────────────────────────────────────
-for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){try{const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],seen=ss.has(`${cx},${cy}`),isCurrent=cx===px&&cy===py;const sx=ox+cx*cs,sy=oy+cy*cs;const isLinear=meta.type==='road'||meta.type==='river';const bgType=isLinear?'plains':meta.type;const tAlpha=(state.layer==='overworld'&&window.WORLD_MAP_IMAGE)?0.28:1;ctx.globalAlpha=tAlpha;ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs-1,cs-1);ctx.globalAlpha=1;
+
+for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){try{const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],seen=ss.has(`${cx},${cy}`),isCurrent=cx===px&&cy===py;const sx=ox+cx*cs,sy=oy+cy*cs;const isLinear=meta.type==='road'||meta.type==='river';const bgType=isLinear?'plains':meta.type;
+// Draw pixel art tile if large enough, else flat colour fallback
+if(cs>=10){const tile=_getTile(bgType,cx,cy);if(tile){ctx.drawImage(tile,sx,sy,cs-1,cs-1);}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs-1,cs-1);}}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs-1,cs-1);}
 if(isLinear){ctx.globalAlpha=0.9;const fn=meta.type==='river'?isRiverType:isRoadType;const conn=getConnectionsAt(cx,cy,fn);const cc=cs/2;ctx.strokeStyle=meta.type==='river'?'#5aaad4':'#c8a878';ctx.lineWidth=meta.type==='river'?cs*0.22:cs*0.16;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();const{n,s,e,w}=conn;const cnt=[n,s,e,w].filter(Boolean).length;if(cnt>0){if(n&&s&&!e&&!w){ctx.moveTo(sx+cc,sy);ctx.lineTo(sx+cc,sy+cs);}else if(e&&w&&!n&&!s){ctx.moveTo(sx,sy+cc);ctx.lineTo(sx+cs,sy+cc);}else if(n&&e&&!s&&!w){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(n&&w&&!s&&!e){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else if(s&&e&&!n&&!w){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(s&&w&&!n&&!e){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else{if(n||s){ctx.moveTo(sx+cc,n?sy:sy+cc);ctx.lineTo(sx+cc,s?sy+cs:sy+cc);}if(e||w){ctx.moveTo(w?sx:sx+cc,sy+cc);ctx.lineTo(e?sx+cs:sx+cc,sy+cc);}}ctx.stroke();}ctx.globalAlpha=1;}
 if(meta.type===T.DOOR||meta.type===T.GATE){ctx.globalAlpha=0.8;ctx.fillStyle='#e8b84b';ctx.fillRect(sx+cs*0.35,sy+cs*0.35,cs*0.3,cs*0.3);ctx.globalAlpha=1;}
 if(meta.type===T.BUILDING&&meta.name&&cs>=18){ctx.globalAlpha=0.7;ctx.fillStyle='#e8c87a';ctx.font=`${Math.max(7,Math.min(9,cs*0.3))}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';const label=meta.name.length>10?meta.name.slice(0,9)+'\u2026':meta.name;ctx.fillText(label,sx+cs/2,sy+cs/2);ctx.globalAlpha=1;}
@@ -2450,6 +2473,19 @@ function resetGame() {
 }
 
 async function init() {
+  // ── Inject MapForge terrain tiles as minimap CSS backgrounds ──
+  if (window.MapForge) {
+    const style = document.createElement('style');
+    const rules = [];
+    Object.entries(TERRAIN_TO_MF).forEach(([engineType, mfType]) => {
+      const grid = MapForge.makeTerrain(mfType, engineType.charCodeAt(0) * 137, {});
+      const url = MapForge.gridToDataURL(grid, 1);
+      rules.push(`.t-${engineType}{background-image:url('${url}');background-size:cover;}`);
+    });
+    style.textContent = rules.join('');
+    document.head.appendChild(style);
+  }
+  // ─────────────────────────────────────────────────────────────
   setLoading(true, 'Loading world...');
   const lt = setTimeout(() => {
     setLoading(false);
