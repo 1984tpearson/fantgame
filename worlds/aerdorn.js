@@ -13,7 +13,7 @@
 const WORLD_ID   = 'aerdorn';
 const WORLD_NAME = 'The Kingdom of Aerdorn';
 
-window.WORLD_MAP_IMAGE     = 'map.jfif';
+window.WORLD_MAP_IMAGE     = '';
 window.WORLD_MAP_IMG_X0    = 8;
 window.WORLD_MAP_IMG_Y0    = 38;
 window.WORLD_MAP_IMG_W     = 553;
