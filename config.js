@@ -5,7 +5,7 @@ const CONFIG = {
   AI_PROXY_URL: 'https://keqzqhykfygplolcnxnn.supabase.co/functions/v1/ai-proxy',
   IMAGE_PROXY_URL: 'https://keqzqhykfygplolcnxnn.supabase.co/functions/v1/image-proxy',
 
-  TEXT_MODEL: '~anthropic/claude-haiku-latest',
+  TEXT_MODEL: 'anthropic/claude-3-haiku',
 
   IMAGE_MODEL: 'sdxl_1024px',
   IMAGE_WIDTH: 1024,
