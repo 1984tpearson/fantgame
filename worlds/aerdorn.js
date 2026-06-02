@@ -279,10 +279,10 @@ t(-5,12,'building','The Salt & Sail Inn',{interiorType:'inn',doors:['east']});
 t(-5,16,'building','Market Hall',{interiorType:'market_hall',doors:['east']});
 t(4,12,'building','Chandler & Rope',{interiorType:'shop',doors:['west']});
 t(4,16,'building','Spice Merchant',{interiorType:'shop',doors:['west']});
-t(-2,9,'building',"Fletcher's Stall",{interiorType:'shop',doors:['north']});
-t(2,9,'building','Grain Exchange',{interiorType:'shop',doors:['north']});
-t(-2,19,'building','Apothecary',{interiorType:'shop',doors:['south']});
-t(2,19,'building','Moneylender',{interiorType:'shop',doors:['south']});
+t(-2,9,'building',"Fletcher's Stall",{interiorType:'shop',doors:['north'],object:'stall'});
+t(2,9,'building','Grain Exchange',{interiorType:'shop',doors:['north'],object:'stall'});
+t(-2,19,'building','Apothecary',{interiorType:'shop',doors:['south'],object:'stall'});
+t(2,19,'building','Moneylender',{interiorType:'shop',doors:['south'],object:'stall'});
 
 // ── FISHERMEN'S QUARTER (NE) ─────────────────────
 rect(6,23,8,27,'building','Net Shed',{interiorType:'house'});
@@ -290,8 +290,8 @@ t(6,23,'building','Net Shed',{interiorType:'house',doors:['south']});
 rect(9,23,11,27,'building','Net Shed',{interiorType:'house'});
 t(9,23,'building','Net Shed',{interiorType:'house',doors:['south']});
 t(6,19,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
-t(7,19,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
-t(9,19,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
+t(7,19,'building',"Fisher's Cottage",{interiorType:'house',doors:['south'],object:'haystack'});
+t(9,19,'building',"Fisher's Cottage",{interiorType:'house',doors:['south'],object:'trough'});
 t(11,19,'building',"Fisher's Cottage",{interiorType:'house',doors:['west']});
 t(6,16,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
 t(7,16,'building',"Fisher's Cottage",{interiorType:'house',doors:['south']});
@@ -316,7 +316,7 @@ t(-13,19,'building','Merchant House',{interiorType:'house',doors:['east']});
 // ── RESIDENTIAL (SW) ─────────────────────────────
 t(-6,11,'building','Chapel of the Tides',{interiorType:'chapel'});
 t(-7,11,'building','Chapel of the Tides',{interiorType:'chapel'});
-t(-6,10,'building','Chapel of the Tides',{interiorType:'chapel',doors:['east']});
+t(-6,10,'building','Chapel of the Tides',{interiorType:'chapel',doors:['east'],object:'signpost'});
 t(-7,10,'building','Chapel of the Tides',{interiorType:'chapel'});
 t(-6,7,'building','House',{interiorType:'house',doors:['east']});
 t(-7,7,'building','House',{interiorType:'house',doors:['east']});
@@ -330,7 +330,7 @@ t(-11,3,'building','House',{interiorType:'house',doors:['north']});
 t(-13,3,'building','House',{interiorType:'house',doors:['north']});
 
 // ── TRADESMEN'S ROW (SE) ─────────────────────────
-t(6,11,'building','Blacksmith',{interiorType:'blacksmith',doors:['west']});
+t(6,11,'building','Blacksmith',{interiorType:'blacksmith',doors:['west'],object:'anvil'});
 t(7,11,'building','Blacksmith',{interiorType:'blacksmith'});
 t(6,10,'building','Blacksmith',{interiorType:'blacksmith'});
 t(7,10,'building','Blacksmith',{interiorType:'blacksmith'});
@@ -356,8 +356,13 @@ t(11,15,'building','Harbormaster',{interiorType:'harbormaster'});
 
 // ── COURTYARDS ──────────────────────────────────────────
 rect(-1,13,1,15,'courtyard','Town Crossing');
+t(0,14,'courtyard','Town Crossing',{object:'well'});
 rect(8,12,11,13,'courtyard','Dockside Yard');
+t(9,12,'courtyard','Dockside Yard',{object:'barrels'});
 rect(8,15,11,16,'courtyard','Dockside Yard');
+t(9,15,'courtyard','Dockside Yard',{object:'cart'});
+t(12,10,'docks','East-Port Harbour',{object:'barrels'});
+t(13,18,'docks','East-Port Harbour',{object:'cart'});
 
 SETTLEMENTS['frilar_town']={
   map:m,
