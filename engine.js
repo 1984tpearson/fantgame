@@ -1591,14 +1591,17 @@ const CELL_PX=32;
 // ── MAPFORGE TERRAIN TILE SYSTEM ─────────────────────
 // Maps engine terrain types to MapForge makeTerrain() type names
 const TERRAIN_TO_MF = {
+  // Overworld
   plains:'grass', forest:'forest_floor', wilds:'forest_floor',
   ocean:'water', river:'shallow_water', shore:'sand',
-  farmland:'farmland', road:'cobble', mountain:'rocky', peaks:'rocky',
+  farmland:'farmland', road:'dirt', mountain:'rocky', peaks:'rocky',
   swamp:'swamp', bog:'swamp', fens:'swamp',
   snow:'snow', ruins:'rocky', castle:'rocky', keep:'rocky',
-  street:'cobble', building:'cobble', courtyard:'dirt', market:'cobble',
-  docks:'cobble', gate:'cobble', interior:'cave', wall:'rocky',
-  door:'cobble', city:'cobble', town:'cobble', village:'grass',
+  city:'cobble', town:'grass', village:'grass',
+  // Settlement
+  street:'dirt', building:'farmland', courtyard:'grass',
+  market:'sand', docks:'cobble', gate:'cobble',
+  interior:'cave', wall:'rocky', door:'dirt',
 };
 // Cache: key = "mfType_seed" -> offscreen canvas
 const _tileCache = new Map();
