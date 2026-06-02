@@ -1611,16 +1611,51 @@ function _getTile(engineType, cx, cy) {
   const seed = ((cx & 0xffff) << 16) | (cy & 0xffff);
   const key = mfType + '_' + seed;
   if (_tileCache.has(key)) return _tileCache.get(key);
-  // Get neighbour types for blending
+  // Only blend neighbours on overworld — settlement/interior neighbours are unreliable
   const nb = {};
-  [['top',cx,cy-1],['bottom',cx,cy+1],['left',cx-1,cy],['right',cx+1,cy]].forEach(([dir,nx,ny])=>{
-    const nm = WORLD_META[`${nx},${ny}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(nx,ny):null);
-    if (nm) nb[dir] = TERRAIN_TO_MF[nm.type] || 'grass';
-  });
+  if (state.layer === 'overworld') {
+    [['top',cx,cy-1],['bottom',cx,cy+1],['left',cx-1,cy],['right',cx+1,cy]].forEach(([dir,nx,ny])=>{
+      const nm = WORLD_META[`${nx},${ny}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(nx,ny):null);
+      if (nm) nb[dir] = TERRAIN_TO_MF[nm.type] || 'grass';
+    });
+  }
   const grid = MapForge.makeTerrain(mfType, seed, nb);
   const c = document.createElement('canvas');
   MapForge.renderGridToCanvas(grid, c, 1);
   _tileCache.set(key, c);
+  return c;
+}
+
+// Building/object sprite cache
+const _objCache = new Map();
+// Maps interiorType/name to roof style id
+const _BUILDING_STYLE = {
+  house:'brown', chapel:'limestone', church:'limestone', tavern:'dkbrown',
+  inn:'dkbrown', shop:'terra', market:'amber', blacksmith:'darkslate',
+  tannery:'aged', barn:'thatch', warehouse:'darkslate', docks:'slate',
+  castle:'blueslate', keep:'blueslate', tower:'slate', ruins:'blackened',
+  default:'brown',
+};
+function _getObjectTile(meta, cx, cy) {
+  if (!window.MapForge) return null;
+  if (meta.type !== 'building') return null;
+  const seed = (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
+  const styleId = _BUILDING_STYLE[meta.interiorType] || _BUILDING_STYLE[meta.name?.toLowerCase()] || _BUILDING_STYLE.default;
+  const key = 'obj_' + styleId + '_' + seed;
+  if (_objCache.has(key)) return _objCache.get(key);
+  const style = MapForge.ROOF_STYLES.find(s => s.id === styleId) || MapForge.ROOF_STYLES[0];
+  const W = 20, H = 20;
+  // Pick roof shape from seed
+  const shapes = ['hip','ridge','pyramid','gambrel'];
+  const shape = shapes[seed % shapes.length];
+  const isThatch = style.isThatch;
+  const chimneys = MapForge.autoChimneys(W, H, seed % 3 === 0 ? 1 : 0);
+  const grid = isThatch
+    ? MapForge.makeThatchRoof(W, H, shape, chimneys, seed)
+    : MapForge.makeRoofByShape(W, H, shape, 'default', style.RL, style.RM, style.RD, style.RS, chimneys, seed);
+  const c = document.createElement('canvas');
+  MapForge.renderGridToCanvas(grid, c, 1);
+  _objCache.set(key, c);
   return c;
 }
 
@@ -1633,6 +1668,8 @@ const ctx=canvas.getContext('2d');ctx.clearRect(0,0,W,H);const cs=CELL_PX*mapVie
 for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){try{const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],seen=ss.has(`${cx},${cy}`),isCurrent=cx===px&&cy===py;const sx=ox+cx*cs,sy=oy+cy*cs;const isLinear=meta.type==='road'||meta.type==='river';const bgType=isLinear?'plains':meta.type;
 // Draw pixel art tile if large enough, else flat colour fallback
 ctx.shadowBlur=0;if(cs>=10){const tile=_getTile(bgType,cx,cy);if(tile){ctx.drawImage(tile,sx,sy,cs,cs);}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs,cs);}}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs,cs);}
+// Object sprites (buildings etc) on top of terrain
+if(cs>=10){const obj=_getObjectTile(meta,cx,cy);if(obj) ctx.drawImage(obj,sx,sy,cs,cs);}
 if(isLinear){ctx.globalAlpha=0.9;const fn=meta.type==='river'?isRiverType:isRoadType;const conn=getConnectionsAt(cx,cy,fn);const cc=cs/2;ctx.strokeStyle=meta.type==='river'?'#5aaad4':'#c8a878';ctx.lineWidth=meta.type==='river'?cs*0.22:cs*0.16;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();const{n,s,e,w}=conn;const cnt=[n,s,e,w].filter(Boolean).length;if(cnt>0){if(n&&s&&!e&&!w){ctx.moveTo(sx+cc,sy);ctx.lineTo(sx+cc,sy+cs);}else if(e&&w&&!n&&!s){ctx.moveTo(sx,sy+cc);ctx.lineTo(sx+cs,sy+cc);}else if(n&&e&&!s&&!w){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(n&&w&&!s&&!e){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else if(s&&e&&!n&&!w){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(s&&w&&!n&&!e){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else{if(n||s){ctx.moveTo(sx+cc,n?sy:sy+cc);ctx.lineTo(sx+cc,s?sy+cs:sy+cc);}if(e||w){ctx.moveTo(w?sx:sx+cc,sy+cc);ctx.lineTo(e?sx+cs:sx+cc,sy+cc);}}ctx.stroke();}ctx.globalAlpha=1;}
 if(meta.type===T.DOOR||meta.type===T.GATE){ctx.globalAlpha=0.8;ctx.fillStyle='#e8b84b';ctx.fillRect(sx+cs*0.35,sy+cs*0.35,cs*0.3,cs*0.3);ctx.globalAlpha=1;}
 if(meta.type===T.BUILDING&&meta.name&&cs>=18){ctx.globalAlpha=0.7;ctx.fillStyle='#e8c87a';ctx.font=`${Math.max(7,Math.min(9,cs*0.3))}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';const label=meta.name.length>10?meta.name.slice(0,9)+'\u2026':meta.name;ctx.fillText(label,sx+cs/2,sy+cs/2);ctx.globalAlpha=1;}
@@ -1756,7 +1793,16 @@ for(const[id,tmpl]of Object.entries(NPC_TEMPLATES)){
 for(const[id,ns]of Object.entries(state.npcs)){if(ns.cellKey)npcCells.add(ns.cellKey);}
 
 // Render north (lower y) at top: iterate dy from -vr (north) to +vr (south)
-for(let dy=-vr;dy<=vr;dy++)for(let dx=-vr;dx<=vr;dx++){const cx=px+dx,cy=py+dy;const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],isCurrent=dx===0&&dy===0,seen=ss.has(`${cx},${cy}`),revealed=visited||isCurrent||seen;const isLinear=meta.type==='road'||meta.type==='river';const cell=document.createElement('div');cell.className=`mmc t-${isLinear?'plains':meta.type}`;if(isCurrent)cell.classList.add('current');if(revealed&&isLinear){const s=makeCellSVG(cx,cy,meta.type);if(s)cell.appendChild(s);}if(revealed&&(meta.type===T.DOOR||meta.type===T.GATE)){const dot=document.createElement('div');dot.style.cssText='position:absolute;inset:3px;background:rgba(232,184,75,0.7);border-radius:50%;';cell.appendChild(dot);}
+for(let dy=-vr;dy<=vr;dy++)for(let dx=-vr;dx<=vr;dx++){const cx=px+dx,cy=py+dy;const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],isCurrent=dx===0&&dy===0,seen=ss.has(`${cx},${cy}`),revealed=visited||isCurrent||seen;const isLinear=meta.type==='road'||meta.type==='river';const cell=document.createElement('div');cell.className=`mmc t-${isLinear?'plains':meta.type}`;
+// Per-cell pixel art texture + building sprite
+if(window.MapForge&&revealed){
+  const bgType=isLinear?'plains':meta.type;
+  const tile=_getTile(bgType,cx,cy);
+  const obj=_getObjectTile(meta,cx,cy);
+  if(obj){cell.style.backgroundImage=`url('${obj.toDataURL()}')`;cell.style.backgroundSize='cover';}
+  else if(tile){cell.style.backgroundImage=`url('${tile.toDataURL()}')`;cell.style.backgroundSize='cover';}
+}
+if(isCurrent)cell.classList.add('current');if(revealed&&isLinear){const s=makeCellSVG(cx,cy,meta.type);if(s)cell.appendChild(s);}if(revealed&&(meta.type===T.DOOR||meta.type===T.GATE)){const dot=document.createElement('div');dot.style.cssText='position:absolute;inset:3px;background:rgba(232,184,75,0.7);border-radius:50%;';cell.appendChild(dot);}
 if(revealed&&meta.type===T.BUILDING&&meta.doors&&meta.doors.length){const ds=document.createElementNS('http://www.w3.org/2000/svg','svg');ds.setAttribute('viewBox','0 0 13 13');ds.setAttribute('style','position:absolute;inset:0;width:100%;height:100%;');meta.doors.forEach(d=>{const ln=document.createElementNS('http://www.w3.org/2000/svg','line');ln.setAttribute('stroke','#e8b84b');ln.setAttribute('stroke-width','2');ln.setAttribute('stroke-linecap','round');if(d==='north'){ln.setAttribute('x1','3');ln.setAttribute('y1','0.5');ln.setAttribute('x2','10');ln.setAttribute('y2','0.5');}else if(d==='south'){ln.setAttribute('x1','3');ln.setAttribute('y1','12.5');ln.setAttribute('x2','10');ln.setAttribute('y2','12.5');}else if(d==='west'){ln.setAttribute('x1','0.5');ln.setAttribute('y1','3');ln.setAttribute('x2','0.5');ln.setAttribute('y2','10');}else if(d==='east'){ln.setAttribute('x1','12.5');ln.setAttribute('y1','3');ln.setAttribute('x2','12.5');ln.setAttribute('y2','10');}ds.appendChild(ln);});cell.appendChild(ds);}
 if(revealed){const settlePosKey=`${cx},${cy}`;const hasNpc=npcCells.has(settlePosKey)||npcCells.has(key);if(hasNpc&&!isCurrent){const _npcEntry=Object.entries(state.npcs).find(([id,ns])=>ns.cellKey===key||ns.cellKey===settlePosKey);const _isDead=_npcEntry&&state.npcs[_npcEntry[0]]?.dead;const _isDynNpc=_npcEntry&&NPC_TEMPLATES[_npcEntry[0]]?.dynamic&&!Object.values(NPC_TEMPLATES[_npcEntry[0]].schedule||[]).length;const ndot=document.createElement('div');const _nc=_isDead?'#8b2020':_isDynNpc?'#888880':'#4ab8f0';ndot.style.cssText='position:absolute;width:5px;height:5px;border-radius:50%;background:'+_nc+';box-shadow:0 0 2px '+_nc+';top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;';cell.appendChild(ndot);}}
 mapEl.appendChild(cell);if(revealed)shown.add(meta.type);}if(legEl){legEl.innerHTML='';shown.forEach(t=>legEl.innerHTML+=`<div class="leg-item"><div class="leg-swatch t-${t}"></div>${terrainLabel(t)}</div>`);legEl.innerHTML+=`<div class="leg-item"><div style="width:7px;height:7px;border-radius:50%;background:#4ab8f0;flex-shrink:0;"></div>NPC</div><div class="leg-item"><div style="width:7px;height:7px;border-radius:50%;background:#888880;flex-shrink:0;"></div>Encountered</div>`;}}
