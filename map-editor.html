@@ -135,96 +135,90 @@ button.save-btn:hover { border-color: #8ac060; color: #b0e070; }
 //   water mud forest_floor lava ice corrupt rocky cave shallow_water
 const TERRAIN_TO_MF = {
   // Settlement
-  street:'dirt',          // dirt path
-  road:'cobble',          // cobblestone road
-  building:'farmland',    // brown earth (roof drawn on top)
-  courtyard:'grass',      // open grass areas
-  market:'sand',          // sandy market ground
-  docks:'cobble',         // stone docks
-  gate:'cobble',
-  wall:'rocky',           // stone wall
-  door:'dirt',
-  interior:'cave',        // dark cave floor (building interior)
-  floor:'dirt',           // plank floor — closest is dirt
-  yard:'grass',
-  mud:'mud',
+  street:'dirt', road:'cobble', building:'farmland', courtyard:'grass',
+  market:'sand', docks:'cobble', gate:'cobble', wall:'rocky', door:'dirt',
+  interior:'cave', floor:'dirt', yard:'grass', mud:'mud',
+  // Floor boards — special keys handled in getTileCanvas
+  floor_h:'floor_h', floor_v:'floor_v', floor_hbone:'floor_herringbone',
+  floor_diag:'floor_diagonal', floor_parq:'floor_parquet', floor_stone:'floor_stone',
   // Overworld
-  plains:'grass',
-  forest:'forest_floor',
-  wilds:'forest_floor',
-  ocean:'water',
-  river:'shallow_water',
-  shore:'sand',
-  farmland:'farmland',
-  mountain:'rocky',
-  peaks:'rocky',
-  swamp:'swamp',
-  bog:'swamp',
-  fens:'swamp',
-  snow:'snow',
-  lava:'lava',
-  ice:'ice',
-  corrupt:'corrupt',
-  // Settlements on overworld (rendered with their own tile)
-  city:'cobble',
-  town:'grass',
-  village:'grass',
-  ruins:'rocky',
-  castle:'rocky',
-  keep:'rocky',
+  plains:'grass', forest:'forest_floor', wilds:'forest_floor', ocean:'water',
+  river:'shallow_water', shore:'sand', farmland:'farmland', mountain:'rocky',
+  peaks:'rocky', swamp:'swamp', bog:'swamp', fens:'swamp', snow:'snow',
+  lava:'lava', ice:'ice', corrupt:'corrupt', cracked:'cracked',
+  city:'cobble', town:'grass', village:'grass', ruins:'rocky', castle:'rocky', keep:'rocky', road_ow:'cobble',
 };
 
-// Settlement terrain palette — id is what gets written to aerdorn.js
-// label shows what it looks like in the editor
+// Terrain palettes
+// id = aerdorn.js type string, mf = mapforge render function key
+// Tile rendering uses getTileCanvas(id) which looks up TERRAIN_TO_MF[id]
+
 const SETTLE_TERRAIN = [
-  {id:'street',   l:'Street (dirt)',    mf:'dirt'},
-  {id:'road',     l:'Road (cobble)',    mf:'cobble'},
-  {id:'courtyard',l:'Courtyard (grass)',mf:'grass'},
-  {id:'building', l:'Building',        mf:'farmland'},
-  {id:'market',   l:'Market (sand)',   mf:'sand'},
-  {id:'docks',    l:'Docks (cobble)',  mf:'cobble'},
-  {id:'wall',     l:'Wall (stone)',    mf:'rocky'},
-  {id:'gate',     l:'Gate (stone)',    mf:'cobble'},
-  {id:'door',     l:'Door (dirt)',     mf:'dirt'},
-  {id:'interior', l:'Interior (cave)', mf:'cave'},
-  {id:'floor',    l:'Floor (dirt)',    mf:'dirt'},
-  {id:'yard',     l:'Yard (grass)',    mf:'grass'},
-  {id:'mud',      l:'Mud',            mf:'mud'},
+  // Ground / open
+  {id:'courtyard',  l:'Courtyard (grass)',    mf:'grass'},
+  {id:'street',     l:'Street (dirt)',         mf:'dirt'},
+  {id:'road',       l:'Road (cobble)',         mf:'cobble'},
+  {id:'market',     l:'Market (sand)',         mf:'sand'},
+  {id:'mud',        l:'Mud',                  mf:'mud'},
+  {id:'docks',      l:'Docks (cobble)',        mf:'cobble'},
+  // Buildings
+  {id:'building',   l:'Building (farmland)',   mf:'farmland'},
+  {id:'wall',       l:'Wall (stone)',          mf:'rocky'},
+  {id:'gate',       l:'Gate (cobble)',         mf:'cobble'},
+  {id:'door',       l:'Door (dirt)',           mf:'dirt'},
+  // Interiors / floors
+  {id:'interior',   l:'Interior (cave)',       mf:'cave'},
+  {id:'floor',      l:'Floor (dirt)',          mf:'dirt'},
+  {id:'floor_h',    l:'Planks H',              mf:'floor_h'},
+  {id:'floor_v',    l:'Planks V',              mf:'floor_v'},
+  {id:'floor_hbone',l:'Herringbone',           mf:'floor_herringbone'},
+  {id:'floor_diag', l:'Diagonal',              mf:'floor_diagonal'},
+  {id:'floor_parq', l:'Parquet',               mf:'floor_parquet'},
+  {id:'floor_stone',l:'Stone Tile',            mf:'floor_stone'},
+  {id:'yard',       l:'Yard (grass)',          mf:'grass'},
 ];
 
 const OW_TERRAIN = [
-  {id:'plains',   l:'Plains',     mf:'grass'},
-  {id:'forest',   l:'Forest',     mf:'forest_floor'},
-  {id:'wilds',    l:'Wilds',      mf:'forest_floor'},
-  {id:'ocean',    l:'Ocean',      mf:'water'},
-  {id:'river',    l:'River',      mf:'shallow_water'},
-  {id:'shore',    l:'Shore',      mf:'sand'},
-  {id:'farmland', l:'Farmland',   mf:'farmland'},
-  {id:'mountain', l:'Mountain',   mf:'rocky'},
-  {id:'peaks',    l:'Peaks',      mf:'rocky'},
-  {id:'swamp',    l:'Swamp',      mf:'swamp'},
-  {id:'bog',      l:'Bog',        mf:'swamp'},
-  {id:'fens',     l:'Fens',       mf:'swamp'},
-  {id:'snow',     l:'Snow',       mf:'snow'},
-  {id:'lava',     l:'Lava',       mf:'lava'},
-  {id:'ice',      l:'Ice',        mf:'ice'},
-  {id:'corrupt',  l:'Corrupted',  mf:'corrupt'},
-  {id:'city',     l:'City',       mf:'cobble'},
-  {id:'town',     l:'Town',       mf:'grass'},
-  {id:'village',  l:'Village',    mf:'grass'},
-  {id:'road',     l:'Road',       mf:'cobble'},
-  {id:'ruins',    l:'Ruins',      mf:'rocky'},
-  {id:'castle',   l:'Castle',     mf:'rocky'},
+  {id:'plains',     l:'Plains',               mf:'grass'},
+  {id:'forest',     l:'Forest',               mf:'forest_floor'},
+  {id:'wilds',      l:'Wilds',                mf:'forest_floor'},
+  {id:'farmland',   l:'Farmland',             mf:'farmland'},
+  {id:'swamp',      l:'Swamp',                mf:'swamp'},
+  {id:'bog',        l:'Bog',                  mf:'swamp'},
+  {id:'fens',       l:'Fens',                 mf:'swamp'},
+  {id:'ocean',      l:'Ocean',                mf:'water'},
+  {id:'river',      l:'River',                mf:'shallow_water'},
+  {id:'shore',      l:'Shore',                mf:'sand'},
+  {id:'mountain',   l:'Mountain',             mf:'rocky'},
+  {id:'peaks',      l:'Peaks',                mf:'rocky'},
+  {id:'snow',       l:'Snow',                 mf:'snow'},
+  {id:'lava',       l:'Lava',                 mf:'lava'},
+  {id:'ice',        l:'Ice',                  mf:'ice'},
+  {id:'corrupt',    l:'Corrupted',            mf:'corrupt'},
+  {id:'mud',        l:'Mud',                  mf:'mud'},
+  {id:'cracked',    l:'Cracked Earth',        mf:'cracked'},
+  // Settlements
+  {id:'city',       l:'City',                 mf:'cobble'},
+  {id:'town',       l:'Town',                 mf:'grass'},
+  {id:'village',    l:'Village',              mf:'grass'},
+  {id:'castle',     l:'Castle',               mf:'rocky'},
+  {id:'ruins',      l:'Ruins',                mf:'rocky'},
+  {id:'road',       l:'Road',                 mf:'cobble'},
 ];
 
 const INT_TERRAIN = [
-  {id:'interior', l:'Cave Floor',     mf:'cave'},
-  {id:'floor',    l:'Dirt Floor',     mf:'dirt'},
-  {id:'wall',     l:'Stone Wall',     mf:'rocky'},
-  {id:'door',     l:'Door',          mf:'dirt'},
-  {id:'courtyard',l:'Yard (grass)',   mf:'grass'},
-  {id:'street',   l:'Street (dirt)',  mf:'dirt'},
-  {id:'mud',      l:'Mud',           mf:'mud'},
+  {id:'interior',   l:'Cave Floor',           mf:'cave'},
+  {id:'floor',      l:'Dirt Floor',           mf:'dirt'},
+  {id:'floor_h',    l:'Planks H',             mf:'floor_h'},
+  {id:'floor_v',    l:'Planks V',             mf:'floor_v'},
+  {id:'floor_hbone',l:'Herringbone',          mf:'floor_herringbone'},
+  {id:'floor_diag', l:'Diagonal',             mf:'floor_diagonal'},
+  {id:'floor_parq', l:'Parquet',              mf:'floor_parquet'},
+  {id:'floor_stone',l:'Stone Tile',           mf:'floor_stone'},
+  {id:'wall',       l:'Wall (stone)',         mf:'rocky'},
+  {id:'door',       l:'Door',                mf:'dirt'},
+  {id:'courtyard',  l:'Yard (grass)',         mf:'grass'},
+  {id:'mud',        l:'Mud',                 mf:'mud'},
 ];
 
 // ── Object catalogue ───────────────────────────────────────────
@@ -477,14 +471,23 @@ function inBounds(x,y){return x>=bounds.minX&&x<=bounds.maxX&&y>=bounds.minY&&y<
 
 // ── Sprite rendering ───────────────────────────────────────────
 function getTileCanvas(type, x, y) {
-  const mf = TERRAIN_TO_MF[type]||'grass';
   const seed = ((x&0xffff)<<16)|(y&0xffff);
+  // Floorboard types
+  const floorMap = {floor_h:'h',floor_v:'v',floor_hbone:'herringbone',floor_diag:'diagonal',floor_parq:'parquet',floor_stone:'stone'};
+  if(floorMap[type]){
+    const key='floor_'+floorMap[type]+'_'+seed;
+    if(tileCache.has(key))return tileCache.get(key);
+    try{const grid=MF.makeFloorboard(floorMap[type],seed);const c=document.createElement('canvas');MF.renderGridToCanvas(grid,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
+  }
+  if(type==='cracked'){
+    const key='cracked_'+seed;
+    if(tileCache.has(key))return tileCache.get(key);
+    try{const grid=MF.makeCrackedEarth(seed);const c=document.createElement('canvas');MF.renderGridToCanvas(grid,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
+  }
+  const mf = TERRAIN_TO_MF[type]||'grass';
   const key = mf+'_'+seed;
   if(tileCache.has(key))return tileCache.get(key);
-  const grid = MF.makeTerrain(mf,seed,{});
-  const c = document.createElement('canvas');
-  MF.renderGridToCanvas(grid,c,1);
-  tileCache.set(key,c); return c;
+  try{const grid=MF.makeTerrain(mf,seed,{});const c=document.createElement('canvas');MF.renderGridToCanvas(grid,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
 }
 
 function getObjCanvas(objId, seed) {
