@@ -8,17 +8,14 @@
 body { background: #0a0804; color: #c4b590; font-family: Georgia, serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 #topbar { background: #161008; border-bottom: 1px solid #3a2a10; padding: 5px 10px; display: flex; gap: 7px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
 #topbar h1 { font-size: 13px; color: #e8c870; letter-spacing: 2px; white-space: nowrap; }
-select, input[type=text] { background: #0f0c06; border: 1px solid #3a2a10; color: #c4b590; padding: 3px 6px; font-size: 11px; border-radius: 3px; font-family: Georgia, serif; }
+select, input[type=text], input[type=number] { background: #0f0c06; border: 1px solid #3a2a10; color: #c4b590; padding: 3px 6px; font-size: 11px; border-radius: 3px; font-family: Georgia, serif; }
 button { background: #1a1208; border: 1px solid #3a2a10; color: #a08050; padding: 3px 8px; font-size: 11px; border-radius: 3px; cursor: pointer; font-family: Georgia, serif; white-space: nowrap; }
 button:hover { background: #2a1e08; border-color: #6a4820; }
 button.active { background: #3a2808; border-color: #e8c870; color: #e8c870; }
 button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-color: #5a8028; color: #90c050; }
-button.save-btn:hover { border-color: #8ac060; color: #b0e070; }
 .sep { width: 1px; height: 18px; background: #2a1e10; margin: 0 2px; flex-shrink: 0; }
 #main { display: flex; flex: 1; overflow: hidden; }
-
-/* LEFT PANEL */
-#left-panel { width: 175px; min-width: 175px; background: #0f0c08; border-right: 1px solid #2a1e10; display: flex; flex-direction: column; overflow: hidden; }
+#left-panel { width: 190px; min-width: 190px; background: #0f0c08; border-right: 1px solid #2a1e10; display: flex; flex-direction: column; overflow: hidden; }
 .psec { border-bottom: 1px solid #2a1e10; padding: 6px; flex-shrink: 0; }
 .plabel { font-size: 10px; letter-spacing: 2px; color: #5a4820; margin-bottom: 4px; }
 .pscroll { overflow-y: auto; }
@@ -28,20 +25,36 @@ button.save-btn:hover { border-color: #8ac060; color: #b0e070; }
 .pitem.sel { background: #2a1a08; border-color: #e8c870; color: #e8c870; }
 .swatch { width: 16px; height: 16px; border-radius: 2px; border: 1px solid #3a2a10; flex-shrink: 0; overflow: hidden; }
 .swatch canvas { display: block; width: 16px !important; height: 16px !important; image-rendering: pixelated; }
-.cat-label { font-size: 10px; color: #4a3818; padding: 4px 4px 1px; letter-spacing: 1px; border-top: 1px solid #1a1208; margin-top: 2px; }
-
-/* CANVAS */
+/* Left panel tabs */
+#lp-tabs { display: flex; border-bottom: 1px solid #2a1e10; flex-shrink: 0; }
+#lp-tabs button { flex: 1; border-radius: 0; border: none; border-right: 1px solid #2a1e10; font-size: 10px; padding: 5px 2px; }
+#lp-tabs button:last-child { border-right: none; }
+#lp-tabs button.active { background: #2a1a08; color: #e8c870; }
+.lp-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.lp-panel.visible { display: flex; }
+/* Building panel */
+.bprop { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; font-size: 11px; }
+.bprop label { color: #6a5030; min-width: 60px; font-size: 10px; }
+.bprop select, .bprop input { flex: 1; }
+.roof-grid { display: flex; flex-wrap: wrap; gap: 3px; padding: 4px; }
+.roof-swatch { width: 28px; height: 28px; border-radius: 3px; cursor: pointer; border: 2px solid #2a1e10; overflow: hidden; image-rendering: pixelated; }
+.roof-swatch.sel { border-color: #e8c870; }
+.roof-swatch canvas { display: block; width: 28px; height: 28px; image-rendering: pixelated; }
+#bldg-preview-wrap { padding: 6px; border-bottom: 1px solid #2a1e10; }
+#bldg-preview { image-rendering: pixelated; display: block; }
+/* Canvas */
 #canvas-wrap { flex: 1; overflow: auto; background: #080602; display: flex; align-items: flex-start; justify-content: flex-start; padding: 8px; }
 #grid-canvas { image-rendering: pixelated; cursor: crosshair; display: block; }
-
-/* RIGHT PANEL */
-#right-panel { width: 200px; min-width: 200px; background: #0f0c08; border-left: 1px solid #2a1e10; display: flex; flex-direction: column; overflow-y: auto; }
-.cprop { display: flex; flex-direction: column; gap: 2px; margin-bottom: 6px; }
+/* Right panel */
+#right-panel { width: 205px; min-width: 205px; background: #0f0c08; border-left: 1px solid #2a1e10; display: flex; flex-direction: column; overflow-y: auto; }
+.cprop { display: flex; flex-direction: column; gap: 2px; margin-bottom: 5px; }
 .cprop label { font-size: 10px; color: #6a5030; }
 .cprop input, .cprop select { width: 100%; }
-#cell-coords { font-size: 11px; color: #8a7050; margin-bottom: 6px; min-height: 14px; }
+#cell-coords { font-size: 11px; color: #8a7050; margin-bottom: 5px; min-height: 14px; }
 #export-box { background: #0a0806; border: 1px solid #2a1e10; border-radius: 3px; padding: 5px; font-size: 10px; font-family: monospace; color: #90a878; white-space: pre; overflow-x: auto; min-height: 40px; max-height: 160px; overflow-y: auto; }
 #export-box:empty::before { content: '// No changes yet'; color: #3a2a10; }
+/* Part cell hatch overlay */
+.part-hatch { position: absolute; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -58,46 +71,85 @@ button.save-btn:hover { border-color: #8ac060; color: #b0e070; }
   <div class="sep"></div>
   <label style="font-size:10px;color:#6a5030">Zoom:</label>
   <select id="zoom-select">
-    <option value="2">2x</option>
-    <option value="4">4x</option>
-    <option value="6">6x</option>
-    <option value="8">8x</option>
-    <option value="12">12x</option>
-    <option value="16">16x</option>
-    <option value="24" selected>24x</option>
-    <option value="32">32x</option>
-    <option value="48">48x</option>
+    <option value="2">2x</option><option value="4">4x</option><option value="6">6x</option>
+    <option value="8">8x</option><option value="12">12x</option><option value="16">16x</option>
+    <option value="24" selected>24x</option><option value="32">32x</option><option value="48">48x</option>
   </select>
   <div class="sep"></div>
   <button id="tool-paint" class="active" data-tool="paint">&#9999; Paint</button>
-  <button id="tool-fill"  data-tool="fill">&#9632; Fill</button>
+  <button id="tool-fill" data-tool="fill">&#9632; Fill</button>
   <button id="tool-erase" data-tool="erase">&#10005; Erase</button>
-  <button id="tool-pick"  data-tool="pick">&#9677; Pick</button>
+  <button id="tool-pick" data-tool="pick">&#9677; Pick</button>
   <div class="sep"></div>
   <button id="btn-undo">&#8617; Undo</button>
   <div class="sep"></div>
-  <button id="btn-save" class="save-btn">&#128190; Save to Game</button>
+  <button id="btn-save" class="save-btn">&#128190; Save</button>
   <button id="btn-copy-diff">&#128203; Diff</button>
   <button id="btn-export-full">&#8595; Full JS</button>
   <span id="status-msg" style="font-size:11px;color:#5a7840;margin-left:4px;"></span>
 </div>
 <div id="main">
-
-  <!-- LEFT: terrain + object palettes -->
+  <!-- LEFT PANEL -->
   <div id="left-panel">
-    <div class="psec" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
-      <div class="plabel" id="terrain-label">TERRAIN</div>
-      <div class="pscroll" style="flex:0 0 auto;max-height:45%;"><div class="pgrid" id="terrain-palette"></div></div>
-      <div class="plabel" style="margin-top:6px;flex-shrink:0;">OBJECT</div>
-      <div style="display:flex;gap:2px;flex-wrap:wrap;margin-bottom:3px;flex-shrink:0;" id="obj-cat-tabs"></div>
+    <div id="lp-tabs">
+      <button class="active" data-lp="terrain">Terrain</button>
+      <button data-lp="object">Object</button>
+      <button data-lp="building">Building</button>
+    </div>
+    <!-- TERRAIN TAB -->
+    <div id="lp-terrain" class="lp-panel visible" style="flex-direction:column;">
+      <div class="psec" style="flex-shrink:0;">
+        <div class="plabel" id="terrain-label">TERRAIN</div>
+      </div>
+      <div class="pscroll" style="flex:1;"><div class="pgrid" id="terrain-palette"></div></div>
+      <div id="variant-wrap" style="border-top:1px solid #2a1e10;padding:5px;flex-shrink:0;">
+        <div class="plabel">VARIANT</div>
+        <div id="variant-picker" style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px;"></div>
+      </div>
+    </div>
+    <!-- OBJECT TAB -->
+    <div id="lp-object" class="lp-panel" style="flex-direction:column;">
+      <div class="psec" style="flex-shrink:0;">
+        <div style="display:flex;gap:2px;flex-wrap:wrap;" id="obj-cat-tabs"></div>
+      </div>
       <div class="pscroll" style="flex:1;"><div class="pgrid" id="obj-palette"></div></div>
+    </div>
+    <!-- BUILDING TAB -->
+    <div id="lp-building" class="lp-panel" style="flex-direction:column;overflow-y:auto;">
+      <div id="bldg-preview-wrap">
+        <div class="plabel">PREVIEW</div>
+        <canvas id="bldg-preview" width="80" height="80" style="width:80px;height:80px;margin-top:4px;"></canvas>
+      </div>
+      <div class="psec">
+        <div class="plabel">SIZE</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px;" id="bldg-size-btns"></div>
+      </div>
+      <div class="psec">
+        <div class="plabel">ROOF SHAPE</div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:2px;" id="bldg-shape-btns"></div>
+      </div>
+      <div class="psec">
+        <div class="plabel">ROOF STYLE</div>
+        <div class="roof-grid" id="bldg-roof-grid"></div>
+      </div>
+      <div class="psec">
+        <div class="plabel">DETAILS</div>
+        <div class="bprop"><label>Interior</label><input id="bldg-interior" type="text" placeholder="inn / shop / house…"></div>
+        <div class="bprop"><label>Name</label><input id="bldg-name" type="text" placeholder="The Rusty Anchor"></div>
+        <div class="bprop"><label>Chimneys</label>
+          <select id="bldg-chimneys"><option value="0">0</option><option value="1" selected>1</option><option value="2">2</option></select>
+        </div>
+        <button id="btn-place-bldg" style="width:100%;margin-top:4px;background:linear-gradient(180deg,#3a2808,#1a1208);border-color:#6a4820;color:#e8c870;">
+          &#127968; Place Building
+        </button>
+      </div>
     </div>
   </div>
 
   <!-- CANVAS -->
   <div id="canvas-wrap"><canvas id="grid-canvas"></canvas></div>
 
-  <!-- RIGHT: inspector + export -->
+  <!-- RIGHT PANEL -->
   <div id="right-panel">
     <div class="psec">
       <div class="plabel">CELL</div>
@@ -107,12 +159,16 @@ button.save-btn:hover { border-color: #8ac060; color: #b0e070; }
       <div class="cprop"><label>interiorType</label><input id="prop-interiorType" type="text"></div>
       <div class="cprop"><label>doors (comma-sep)</label><input id="prop-doors" type="text" placeholder="north,east..."></div>
       <div class="cprop"><label>object</label><input id="prop-object" type="text"></div>
-      <button id="btn-apply" style="width:100%;margin-top:3px;">&#10004; Apply</button>
-      <div style="margin-top:8px;font-size:10px;color:#5a4820;line-height:1.6;">
-        <b style="color:#8a7050">Terrain</b> changes the cell type.<br>
-        <b style="color:#8a7050">Object</b> overlays a sprite on top.<br>
-        Selecting an object alone won't change terrain.
+      <div class="cprop" id="row-rotation" style="display:none;">
+        <label>rotation</label>
+        <div style="display:flex;gap:3px;">
+          <button class="rot-btn active" data-rot="0">0°</button>
+          <button class="rot-btn" data-rot="90">90°</button>
+          <button class="rot-btn" data-rot="180">180°</button>
+          <button class="rot-btn" data-rot="270">270°</button>
+        </div>
       </div>
+      <button id="btn-apply" style="width:100%;margin-top:3px;">&#10004; Apply</button>
     </div>
     <div class="psec" style="flex:1;padding-bottom:10px;">
       <div class="plabel">EXPORT DIFF</div>
@@ -130,338 +186,339 @@ button.save-btn:hover { border-color: #8ac060; color: #b0e070; }
 <script>
 'use strict';
 
-// ── Terrain→MapForge type map ──────────────────────────────────
-// Valid MF terrain types: grass sand swamp farmland dirt cobble snow
-//   water mud forest_floor lava ice corrupt rocky cave shallow_water
+// ═══════════════════════════════════════════════════════════════
+// TERRAIN MAPS
+// ═══════════════════════════════════════════════════════════════
 const TERRAIN_TO_MF = {
-  // Settlement
   street:'dirt', road:'cobble', building:'farmland', courtyard:'grass',
   market:'sand', docks:'cobble', gate:'cobble', wall:'rocky', door:'dirt',
   interior:'cave', floor:'dirt', yard:'grass', mud:'mud',
-  // Floor boards — special keys handled in getTileCanvas
   floor_h:'floor_h', floor_v:'floor_v', floor_hbone:'floor_herringbone',
   floor_diag:'floor_diagonal', floor_parq:'floor_parquet', floor_stone:'floor_stone',
-  // Overworld
   plains:'grass', forest:'forest_floor', wilds:'forest_floor', ocean:'water',
   river:'shallow_water', shore:'sand', farmland:'farmland', mountain:'rocky',
   peaks:'rocky', swamp:'swamp', bog:'swamp', fens:'swamp', snow:'snow',
   lava:'lava', ice:'ice', corrupt:'corrupt', cracked:'cracked',
-  city:'cobble', town:'grass', village:'grass', ruins:'rocky', castle:'rocky', keep:'rocky', road_ow:'cobble',
+  city:'cobble', town:'grass', village:'grass', ruins:'rocky', castle:'rocky', keep:'rocky',
+};
+const SETTLE_TERRAIN = [
+  {id:'courtyard',l:'Courtyard (grass)',mf:'grass'},{id:'street',l:'Street (dirt)',mf:'dirt'},
+  {id:'road',l:'Road (cobble)',mf:'cobble'},{id:'market',l:'Market (sand)',mf:'sand'},
+  {id:'mud',l:'Mud',mf:'mud'},{id:'docks',l:'Docks (cobble)',mf:'cobble'},
+  {id:'building',l:'Building',mf:'farmland'},{id:'wall',l:'Wall (stone)',mf:'rocky'},
+  {id:'gate',l:'Gate',mf:'cobble'},{id:'door',l:'Door',mf:'dirt'},
+  {id:'interior',l:'Interior (cave)',mf:'cave'},{id:'floor',l:'Floor (dirt)',mf:'dirt'},
+  {id:'floor_h',l:'Planks H',mf:'floor_h'},{id:'floor_v',l:'Planks V',mf:'floor_v'},
+  {id:'floor_hbone',l:'Herringbone',mf:'floor_herringbone'},{id:'floor_diag',l:'Diagonal',mf:'floor_diagonal'},
+  {id:'floor_parq',l:'Parquet',mf:'floor_parquet'},{id:'floor_stone',l:'Stone Tile',mf:'floor_stone'},
+  {id:'yard',l:'Yard (grass)',mf:'grass'},
+];
+const OW_TERRAIN = [
+  {id:'plains',l:'Plains',mf:'grass'},{id:'forest',l:'Forest',mf:'forest_floor'},
+  {id:'wilds',l:'Wilds',mf:'forest_floor'},{id:'farmland',l:'Farmland',mf:'farmland'},
+  {id:'swamp',l:'Swamp',mf:'swamp'},{id:'bog',l:'Bog',mf:'swamp'},{id:'fens',l:'Fens',mf:'swamp'},
+  {id:'ocean',l:'Ocean',mf:'water'},{id:'river',l:'River',mf:'shallow_water'},
+  {id:'shore',l:'Shore',mf:'sand'},{id:'mountain',l:'Mountain',mf:'rocky'},
+  {id:'peaks',l:'Peaks',mf:'rocky'},{id:'snow',l:'Snow',mf:'snow'},
+  {id:'lava',l:'Lava',mf:'lava'},{id:'ice',l:'Ice',mf:'ice'},
+  {id:'corrupt',l:'Corrupted',mf:'corrupt'},{id:'mud',l:'Mud',mf:'mud'},
+  {id:'cracked',l:'Cracked Earth',mf:'cracked'},
+  {id:'city',l:'City',mf:'cobble'},{id:'town',l:'Town',mf:'grass'},
+  {id:'village',l:'Village',mf:'grass'},{id:'castle',l:'Castle',mf:'rocky'},
+  {id:'ruins',l:'Ruins',mf:'rocky'},{id:'road',l:'Road',mf:'cobble'},
+];
+const INT_TERRAIN = [
+  {id:'interior',l:'Cave Floor',mf:'cave'},{id:'floor',l:'Dirt Floor',mf:'dirt'},
+  {id:'floor_h',l:'Planks H',mf:'floor_h'},{id:'floor_v',l:'Planks V',mf:'floor_v'},
+  {id:'floor_hbone',l:'Herringbone',mf:'floor_herringbone'},{id:'floor_diag',l:'Diagonal',mf:'floor_diagonal'},
+  {id:'floor_parq',l:'Parquet',mf:'floor_parquet'},{id:'floor_stone',l:'Stone Tile',mf:'floor_stone'},
+  {id:'wall',l:'Wall (stone)',mf:'rocky'},{id:'door',l:'Door',mf:'dirt'},
+  {id:'courtyard',l:'Yard (grass)',mf:'grass'},{id:'mud',l:'Mud',mf:'mud'},
+];
+
+// ═══════════════════════════════════════════════════════════════
+// OBJECT DEFINITIONS — single source of truth
+// w,h in pixels (native MapForge resolution, 20px = 1 cell)
+// snap: where to anchor within the cell
+//   'center' = centred in cell
+//   'south'  = bottom edge flush with cell bottom
+//   'north'  = top edge flush with cell top
+// ═══════════════════════════════════════════════════════════════
+const OBJECT_DEFS = {
+  // Extras
+  well:         {l:'Well',           w:16, h:16, snap:'center', fn:s=>MF.makeWell(16,16,s)},
+  haystack:     {l:'Haystack',       w:18, h:14, snap:'center', fn:s=>MF.makeHaystack(18,14,s)},
+  campfire:     {l:'Campfire',       w:16, h:16, snap:'center', fn:s=>MF.makeCampfire(s)},
+  signpost:     {l:'Signpost',       w:14, h:18, snap:'center', fn:s=>MF.makeSignpost(s)},
+  anvil:        {l:'Forge/Anvil',    w:16, h:14, snap:'south',  fn:s=>MF.makeAnvil(s)},
+  logpile:      {l:'Log Pile',       w:20, h:18, snap:'south',  fn:s=>MF.makeLogPile(s)},
+  barrels:      {l:'Barrels',        w:18, h:16, snap:'south',  fn:s=>MF.makeBarrelCluster(s)},
+  noticeboard:  {l:'Noticeboard',    w:16, h:16, snap:'south',  fn:s=>MF.makeNoticeboard(s)},
+  trough:       {l:'Trough',         w:18, h:10, snap:'south',  fn:s=>MF.makeTrough(s)},
+  stall:        {l:'Market Stall',   w:24, h:20, snap:'south',  fn:s=>MF.makeMarketStall(s)},
+  cart:         {l:'Cart',           w:22, h:18, snap:'center', fn:s=>MF.makeCart(s)},
+  chest:        {l:'Chest',          w:14, h:12, snap:'south',  fn:s=>MF.makeChest(s)},
+  campsite:     {l:'Campsite',       w:24, h:20, snap:'center', fn:s=>MF.makeCampsite(s)},
+  altar:        {l:'Altar',          w:20, h:20, snap:'center', fn:s=>MF.makeAltar(s)},
+  stockade:     {l:'Stockade Fence', w:20, h:12, snap:'south',  fn:s=>MF.makeStockadeFence(s)},
+  stocks:       {l:'Stocks',         w:20, h:14, snap:'center', fn:s=>MF.makeStocks(s)},
+  torch:        {l:'Torch',          w:10, h:10, snap:'south',  fn:s=>MF.makeTorch(s)},
+  dungeon_bars: {l:'Dungeon Bars',   w:20, h:16, snap:'south',  fn:s=>MF.makeDungeonBars(s)},
+  catapult:     {l:'Catapult',       w:24, h:20, snap:'center', fn:s=>MF.makeCatapult(s)},
+  boat:         {l:'Boat',           w:28, h:14, snap:'center', fn:s=>MF.makeBoat(s)},
+  bridge:       {l:'Bridge',         w:20, h:20, snap:'center', fn:s=>MF.makeBridge(s)},
+  magic_circle: {l:'Magic Circle',   w:20, h:20, snap:'center', fn:s=>MF.makeMagicCircle(s)},
+  shrine:       {l:'Shrine',         w:16, h:16, snap:'center', fn:s=>MF.makeShrine(s)},
+  gold_pile:    {l:'Gold Pile',      w:16, h:12, snap:'center', fn:s=>MF.makeGoldPile(s)},
+  tent:         {l:'Tent',           w:24, h:20, snap:'center', fn:s=>MF.makeTent(s)},
+  trapdoor:     {l:'Trapdoor',       w:14, h:14, snap:'center', fn:s=>MF.makeTrapdoor(s)},
+  graveyard:    {l:'Graveyard',      w:40, h:40, snap:'center', fn:s=>MF.makeGraveyard(40,40,s)},
+  coop:         {l:'Chicken Coop',   w:20, h:18, snap:'south',  fn:s=>MF.makeChickenCoop(s)},
+  garden:       {l:'Garden',         w:20, h:20, snap:'center', fn:s=>MF.makeGarden(s)},
+  // Gore
+  skeleton:     {l:'Skeleton',       w:12, h:18, snap:'center', fn:s=>MF.makeSkeleton(s)},
+  dead_body:    {l:'Dead Body',      w:16, h:20, snap:'center', fn:s=>MF.makeDeadBody(s)},
+  dirt_hole:    {l:'Dirt Hole',      w:16, h:14, snap:'center', fn:s=>MF.makeDirtHole(s)},
+  blood:        {l:'Blood Spatter',  w:16, h:16, snap:'center', fn:s=>MF.makeBloodSpatter(s)},
+  bones:        {l:'Bones Pile',     w:16, h:14, snap:'center', fn:s=>MF.makeBonesPile(s)},
+  // Nature
+  bush:         {l:'Bush (sm)',      w:16, h:16, snap:'center', fn:s=>MF.makeBushField('sm',s)},
+  bush_lg:      {l:'Bush (lg)',      w:24, h:24, snap:'center', fn:s=>MF.makeBushField('lg',s)},
+  thicket:      {l:'Thicket',        w:24, h:24, snap:'center', fn:s=>MF.makeThicket(s)},
+  tree_oak:     {l:'Oak',            w:20, h:20, snap:'center', fn:s=>MF.makeTopDownTree(20,20,'oak',s)},
+  tree_oak_lg:  {l:'Oak (lg)',       w:32, h:32, snap:'center', fn:s=>MF.makeTopDownTree(32,32,'oak',s)},
+  tree_pine:    {l:'Pine',           w:20, h:20, snap:'center', fn:s=>MF.makeTopDownTree(20,20,'pine',s)},
+  tree_pine_lg: {l:'Pine (lg)',      w:32, h:32, snap:'center', fn:s=>MF.makeTopDownTree(32,32,'pine',s)},
+  tree_palm:    {l:'Palm',           w:24, h:24, snap:'center', fn:s=>MF.makeTopDownTree(24,24,'palm',s)},
+  tree_dead:    {l:'Dead Tree',      w:24, h:24, snap:'center', fn:s=>MF.makeTopDownTree(24,24,'dead',s)},
+  rock:         {l:'Rock',           w:12, h:10, snap:'center', fn:s=>MF.makeRock(12,10,'small',s)},
+  boulder:      {l:'Boulder',        w:20, h:18, snap:'center', fn:s=>MF.makeRock(20,18,'boulder',s)},
+  mossy_rock:   {l:'Mossy Rock',     w:18, h:16, snap:'center', fn:s=>MF.makeRock(18,16,'mossy',s)},
+  pond:         {l:'Pond (sm)',       w:24, h:20, snap:'center', fn:s=>MF.makePond(24,20,s)},
+  pond_lg:      {l:'Pond (lg)',       w:40, h:32, snap:'center', fn:s=>MF.makePond(40,32,s)},
+  mushroom:     {l:'Mushroom',        w:10, h:10, snap:'center', fn:s=>MF.makeMushroom('sm',s)},
+  mushroom_lg:  {l:'Mushroom (lg)',   w:16, h:16, snap:'center', fn:s=>MF.makeMushroom('lg',s)},
+  log:          {l:'Fallen Log',      w:24, h:10, snap:'center', fn:s=>MF.makeFallenLog(s)},
+  flowers:      {l:'Flowers',         w:16, h:16, snap:'center', fn:s=>MF.makeFlowerPatch(s)},
+  fern:         {l:'Fern',            w:14, h:14, snap:'center', fn:s=>MF.makePlant('fern',s)},
+  reeds:        {l:'Reeds',           w:12, h:16, snap:'center', fn:s=>MF.makePlant('reeds',s)},
+  lily:         {l:'Lily Pad',        w:14, h:14, snap:'center', fn:s=>MF.makePlant('lily',s)},
+  vine:         {l:'Vine',            w:16, h:16, snap:'center', fn:s=>MF.makePlant('vine',s)},
+  cactus:       {l:'Cactus',          w:12, h:18, snap:'center', fn:s=>MF.makePlant('cactus',s)},
+  giant_roots:  {l:'Giant Roots',     w:20, h:20, snap:'center', fn:s=>MF.makeGiantRoots(s)},
+  crop_wheat:   {l:'Wheat',           w:20, h:20, snap:'center', fn:s=>MF.makeCropRow('wheat',2,s)},
+  crop_corn:    {l:'Corn',            w:20, h:20, snap:'center', fn:s=>MF.makeCropRow('corn',2,s)},
+  crop_veg:     {l:'Vegetables',      w:20, h:20, snap:'center', fn:s=>MF.makeCropRow('vegetables',2,s)},
+  // Paths (20x20, overlay only)
+  path_h:       {l:'Path ━',  w:20, h:20, snap:'center', fn:s=>MF.makePath('h','dirt',s)},
+  path_v:       {l:'Path ┃',  w:20, h:20, snap:'center', fn:s=>MF.makePath('v','dirt',s)},
+  path_cross:   {l:'Path ╋',  w:20, h:20, snap:'center', fn:s=>MF.makePath('cross','dirt',s)},
+  path_cse:     {l:'Path ┏',  w:20, h:20, snap:'center', fn:s=>MF.makePath('corner_se','dirt',s)},
+  path_csw:     {l:'Path ┓',  w:20, h:20, snap:'center', fn:s=>MF.makePath('corner_sw','dirt',s)},
+  path_cne:     {l:'Path ┗',  w:20, h:20, snap:'center', fn:s=>MF.makePath('corner_ne','dirt',s)},
+  path_cnw:     {l:'Path ┛',  w:20, h:20, snap:'center', fn:s=>MF.makePath('corner_nw','dirt',s)},
+  path_ts:      {l:'Path ┳',  w:20, h:20, snap:'center', fn:s=>MF.makePath('t_south','dirt',s)},
+  path_tn:      {l:'Path ┻',  w:20, h:20, snap:'center', fn:s=>MF.makePath('t_north','dirt',s)},
+  path_te:      {l:'Path ┣',  w:20, h:20, snap:'center', fn:s=>MF.makePath('t_east','dirt',s)},
+  path_tw:      {l:'Path ┫',  w:20, h:20, snap:'center', fn:s=>MF.makePath('t_west','dirt',s)},
+  track_h:      {l:'Track ━', w:20, h:20, snap:'center', fn:s=>MF.makeCartTrack('h','dirt',s)},
+  track_v:      {l:'Track ┃', w:20, h:20, snap:'center', fn:s=>MF.makeCartTrack('v','dirt',s)},
+  track_cross:  {l:'Track ╋', w:20, h:20, snap:'center', fn:s=>MF.makeCartTrack('cross','dirt',s)},
+  track_cse:    {l:'Track ┏', w:20, h:20, snap:'center', fn:s=>MF.makeCartTrack('corner_se','dirt',s)},
+  track_csw:    {l:'Track ┓', w:20, h:20, snap:'center', fn:s=>MF.makeCartTrack('corner_sw','dirt',s)},
+  track_cne:    {l:'Track ┗', w:20, h:20, snap:'center', fn:s=>MF.makeCartTrack('corner_ne','dirt',s)},
+  track_cnw:    {l:'Track ┛', w:20, h:20, snap:'center', fn:s=>MF.makeCartTrack('corner_nw','dirt',s)},
+  // Structures
+  wall_h:       {l:'Stone Wall ━',  w:20, h:20, snap:'center', fn:s=>MF.makeStoneWall('h',s)},
+  wall_v:       {l:'Stone Wall ┃',  w:20, h:20, snap:'center', fn:s=>MF.makeStoneWall('v',s)},
+  wall_cse:     {l:'Stone Wall ┏',  w:20, h:20, snap:'center', fn:s=>MF.makeStoneWall('corner_se',s)},
+  fence_h:      {l:'Wood Fence ━',  w:20, h:20, snap:'center', fn:s=>MF.makeWoodenFence('h','post',s)},
+  fence_v:      {l:'Wood Fence ┃',  w:20, h:20, snap:'center', fn:s=>MF.makeWoodenFence('v','post',s)},
+  hedge_h:      {l:'Hedge ━',       w:20, h:20, snap:'center', fn:s=>MF.makeHedge('h',s)},
+  hedge_v:      {l:'Hedge ┃',       w:20, h:20, snap:'center', fn:s=>MF.makeHedge('v',s)},
+  hedge_cse:    {l:'Hedge ┏',       w:20, h:20, snap:'center', fn:s=>MF.makeHedge('corner_se',s)},
+  gate_h:       {l:'Gate ━',        w:40, h:20, snap:'center', fn:s=>MF.makeGate(s)},
+  dungeon:      {l:'Dungeon Entry',  w:16, h:16, snap:'center', fn:s=>MF.makeDungeonEntrance(s)},
+  ruins_obj:    {l:'Ruins',          w:20, h:20, snap:'center', fn:s=>MF.makeRuins(s)},
+  watchtower:   {l:'Watchtower',     w:20, h:20, snap:'center', fn:s=>MF.makeWatchtower(s)},
+  windmill:     {l:'Windmill',       w:40, h:40, snap:'center', fn:s=>MF.makeWindmill(s)},
+  gallows:      {l:'Gallows',        w:20, h:20, snap:'center', fn:s=>MF.makeGallows(s)},
+  castle_wall_h:  {l:'Castle Wall ━', w:20, h:20, snap:'center', fn:s=>MF.makeCastleWall('straight_h',s)},
+  castle_wall_v:  {l:'Castle Wall ┃', w:20, h:20, snap:'center', fn:s=>MF.makeCastleWall('straight_v',s)},
+  castle_wall_cse:{l:'Castle Wall ┏', w:20, h:20, snap:'center', fn:s=>MF.makeCastleWall('corner_se',s)},
+  castle_wall_csw:{l:'Castle Wall ┓', w:20, h:20, snap:'center', fn:s=>MF.makeCastleWall('corner_sw',s)},
+  castle_wall_cne:{l:'Castle Wall ┗', w:20, h:20, snap:'center', fn:s=>MF.makeCastleWall('corner_ne',s)},
+  castle_wall_cnw:{l:'Castle Wall ┛', w:20, h:20, snap:'center', fn:s=>MF.makeCastleWall('corner_nw',s)},
+  // Furniture
+  bed_s:        {l:'Bed (single)',   w:14, h:24, snap:'south', fn:s=>MF.makeBed('single',s)},
+  bed_d:        {l:'Bed (double)',   w:20, h:24, snap:'south', fn:s=>MF.makeBed('double',s)},
+  table_r:      {l:'Table (round)',  w:16, h:16, snap:'center', fn:s=>MF.makeTable('round',s)},
+  table_l:      {l:'Table (long)',   w:24, h:16, snap:'center', fn:s=>MF.makeTable('long',s)},
+  chair:        {l:'Chair',          w:12, h:14, snap:'south', fn:s=>MF.makeChair('chair',s)},
+  throne:       {l:'Throne',         w:18, h:20, snap:'south', fn:s=>MF.makeChair('throne',s)},
+  bookshelf:    {l:'Bookshelf',      w:20, h:8,  snap:'south', fn:s=>MF.makeBookshelf(s)},
+  drawers:      {l:'Drawers',        w:16, h:10, snap:'south', fn:s=>MF.makeDrawers(s)},
+  cauldron:     {l:'Cauldron',       w:14, h:14, snap:'center', fn:s=>MF.makeCauldron(s)},
+  weaponrack:   {l:'Weapon Rack',    w:20, h:20, snap:'south', fn:s=>MF.makeWeaponRack(s)},
+  desk:         {l:'Desk',           w:20, h:14, snap:'south', fn:s=>MF.makeDesk(s)},
+  stool:        {l:'Stool',          w:10, h:10, snap:'center', fn:s=>MF.makeStool(s)},
+  wardrobe:     {l:'Wardrobe',       w:18, h:12, snap:'south', fn:s=>MF.makeWardrobe(s)},
+  stairs:       {l:'Stairs',         w:16, h:20, snap:'south', fn:s=>MF.makeStairs(s)},
+  basin:        {l:'Stone Basin',    w:16, h:12, snap:'south', fn:s=>MF.makeBasin(s)},
+  fireplace:    {l:'Fireplace',      w:20, h:16, snap:'south', fn:s=>MF.makeFireplace(s)},
 };
 
-// Terrain palettes
-// id = aerdorn.js type string, mf = mapforge render function key
-// Tile rendering uses getTileCanvas(id) which looks up TERRAIN_TO_MF[id]
-
-const SETTLE_TERRAIN = [
-  // Ground / open
-  {id:'courtyard',  l:'Courtyard (grass)',    mf:'grass'},
-  {id:'street',     l:'Street (dirt)',         mf:'dirt'},
-  {id:'road',       l:'Road (cobble)',         mf:'cobble'},
-  {id:'market',     l:'Market (sand)',         mf:'sand'},
-  {id:'mud',        l:'Mud',                  mf:'mud'},
-  {id:'docks',      l:'Docks (cobble)',        mf:'cobble'},
-  // Buildings
-  {id:'building',   l:'Building (farmland)',   mf:'farmland'},
-  {id:'wall',       l:'Wall (stone)',          mf:'rocky'},
-  {id:'gate',       l:'Gate (cobble)',         mf:'cobble'},
-  {id:'door',       l:'Door (dirt)',           mf:'dirt'},
-  // Interiors / floors
-  {id:'interior',   l:'Interior (cave)',       mf:'cave'},
-  {id:'floor',      l:'Floor (dirt)',          mf:'dirt'},
-  {id:'floor_h',    l:'Planks H',              mf:'floor_h'},
-  {id:'floor_v',    l:'Planks V',              mf:'floor_v'},
-  {id:'floor_hbone',l:'Herringbone',           mf:'floor_herringbone'},
-  {id:'floor_diag', l:'Diagonal',              mf:'floor_diagonal'},
-  {id:'floor_parq', l:'Parquet',               mf:'floor_parquet'},
-  {id:'floor_stone',l:'Stone Tile',            mf:'floor_stone'},
-  {id:'yard',       l:'Yard (grass)',          mf:'grass'},
-];
-
-const OW_TERRAIN = [
-  {id:'plains',     l:'Plains',               mf:'grass'},
-  {id:'forest',     l:'Forest',               mf:'forest_floor'},
-  {id:'wilds',      l:'Wilds',                mf:'forest_floor'},
-  {id:'farmland',   l:'Farmland',             mf:'farmland'},
-  {id:'swamp',      l:'Swamp',                mf:'swamp'},
-  {id:'bog',        l:'Bog',                  mf:'swamp'},
-  {id:'fens',       l:'Fens',                 mf:'swamp'},
-  {id:'ocean',      l:'Ocean',                mf:'water'},
-  {id:'river',      l:'River',                mf:'shallow_water'},
-  {id:'shore',      l:'Shore',                mf:'sand'},
-  {id:'mountain',   l:'Mountain',             mf:'rocky'},
-  {id:'peaks',      l:'Peaks',                mf:'rocky'},
-  {id:'snow',       l:'Snow',                 mf:'snow'},
-  {id:'lava',       l:'Lava',                 mf:'lava'},
-  {id:'ice',        l:'Ice',                  mf:'ice'},
-  {id:'corrupt',    l:'Corrupted',            mf:'corrupt'},
-  {id:'mud',        l:'Mud',                  mf:'mud'},
-  {id:'cracked',    l:'Cracked Earth',        mf:'cracked'},
-  // Settlements
-  {id:'city',       l:'City',                 mf:'cobble'},
-  {id:'town',       l:'Town',                 mf:'grass'},
-  {id:'village',    l:'Village',              mf:'grass'},
-  {id:'castle',     l:'Castle',               mf:'rocky'},
-  {id:'ruins',      l:'Ruins',                mf:'rocky'},
-  {id:'road',       l:'Road',                 mf:'cobble'},
-];
-
-const INT_TERRAIN = [
-  {id:'interior',   l:'Cave Floor',           mf:'cave'},
-  {id:'floor',      l:'Dirt Floor',           mf:'dirt'},
-  {id:'floor_h',    l:'Planks H',             mf:'floor_h'},
-  {id:'floor_v',    l:'Planks V',             mf:'floor_v'},
-  {id:'floor_hbone',l:'Herringbone',          mf:'floor_herringbone'},
-  {id:'floor_diag', l:'Diagonal',             mf:'floor_diagonal'},
-  {id:'floor_parq', l:'Parquet',              mf:'floor_parquet'},
-  {id:'floor_stone',l:'Stone Tile',           mf:'floor_stone'},
-  {id:'wall',       l:'Wall (stone)',         mf:'rocky'},
-  {id:'door',       l:'Door',                mf:'dirt'},
-  {id:'courtyard',  l:'Yard (grass)',         mf:'grass'},
-  {id:'mud',        l:'Mud',                 mf:'mud'},
-];
-
-// ── Object catalogue ───────────────────────────────────────────
+// Object palette categories referencing OBJECT_DEFS ids
 const OBJ_CATS = [
-  {id:'extras', label:'Extras', items:[
-    {id:'well',        l:'Well',           fn:s=>MF.makeWell(20,20,s)},
-    {id:'haystack',    l:'Haystack',       fn:s=>MF.makeHaystack(20,20,s)},
-    {id:'campfire',    l:'Campfire',       fn:s=>MF.makeCampfire(s)},
-    {id:'signpost',    l:'Signpost',       fn:s=>MF.makeSignpost(s)},
-    {id:'anvil',       l:'Forge/Anvil',    fn:s=>MF.makeAnvil(s)},
-    {id:'logpile',     l:'Log Pile',       fn:s=>MF.makeLogPile(s)},
-    {id:'barrels',     l:'Barrels',        fn:s=>MF.makeBarrelCluster(s)},
-    {id:'noticeboard', l:'Noticeboard',    fn:s=>MF.makeNoticeboard(s)},
-    {id:'trough',      l:'Trough',         fn:s=>MF.makeTrough(s)},
-    {id:'stall',       l:'Market Stall',   fn:s=>MF.makeMarketStall(s)},
-    {id:'cart',        l:'Cart',           fn:s=>MF.makeCart(s)},
-    {id:'chest',       l:'Chest',          fn:s=>MF.makeChest(s)},
-    {id:'campsite',    l:'Campsite',       fn:s=>MF.makeCampsite(s)},
-    {id:'altar',       l:'Altar',          fn:s=>MF.makeAltar(s)},
-    {id:'stockade',    l:'Stockade Fence', fn:s=>MF.makeStockadeFence(s)},
-    {id:'stocks',      l:'Stocks',         fn:s=>MF.makeStocks(s)},
-    {id:'torch',       l:'Torch',          fn:s=>MF.makeTorch(s)},
-    {id:'dungeon_bars',l:'Dungeon Bars',   fn:s=>MF.makeDungeonBars(s)},
-    {id:'catapult',    l:'Catapult',       fn:s=>MF.makeCatapult(s)},
-    {id:'boat',        l:'Boat',           fn:s=>MF.makeBoat(s)},
-    {id:'bridge',      l:'Bridge',         fn:s=>MF.makeBridge(s)},
-    {id:'magic_circle',l:'Magic Circle',   fn:s=>MF.makeMagicCircle(s)},
-    {id:'shrine',      l:'Shrine',         fn:s=>MF.makeShrine(s)},
-    {id:'gold_pile',   l:'Gold Pile',      fn:s=>MF.makeGoldPile(s)},
-    {id:'tent',        l:'Tent',           fn:s=>MF.makeTent(s)},
-    {id:'trapdoor',    l:'Trapdoor',       fn:s=>MF.makeTrapdoor(s)},
-    {id:'graveyard',   l:'Graveyard',      fn:s=>MF.makeGraveyard(40,40,s)},
-    {id:'coop',        l:'Chicken Coop',   fn:s=>MF.makeChickenCoop(s)},
-    {id:'garden',      l:'Garden',         fn:s=>MF.makeGarden(s)},
-  ]},
-  {id:'gore', label:'Gore', items:[
-    {id:'skeleton',   l:'Skeleton',       fn:s=>MF.makeSkeleton(s)},
-    {id:'dead_body',  l:'Dead Body',      fn:s=>MF.makeDeadBody(s)},
-    {id:'dirt_hole',  l:'Dirt Hole',      fn:s=>MF.makeDirtHole(s)},
-    {id:'blood',      l:'Blood Spatter',  fn:s=>MF.makeBloodSpatter(s)},
-    {id:'bones',      l:'Bones Pile',     fn:s=>MF.makeBonesPile(s)},
-  ]},
-  {id:'nature', label:'Nature', items:[
-    {id:'bush',       l:'Bush (sm)',       fn:s=>MF.makeBushField('sm',s)},
-    {id:'bush_lg',    l:'Bush (lg)',       fn:s=>MF.makeBushField('lg',s)},
-    {id:'thicket',    l:'Thicket',        fn:s=>MF.makeThicket(s)},
-    {id:'tree_oak',   l:'Oak',            fn:s=>MF.makeTopDownTree(20,20,'oak',s)},
-    {id:'tree_pine',  l:'Pine',           fn:s=>MF.makeTopDownTree(20,20,'pine',s)},
-    {id:'tree_palm',  l:'Palm',           fn:s=>MF.makeTopDownTree(20,20,'palm',s)},
-    {id:'tree_dead',  l:'Dead Tree',      fn:s=>MF.makeTopDownTree(20,20,'dead',s)},
-    {id:'rock',       l:'Rock',           fn:s=>MF.makeRock(16,14,'small',s)},
-    {id:'boulder',    l:'Boulder',        fn:s=>MF.makeRock(20,18,'boulder',s)},
-    {id:'pond',       l:'Pond',           fn:s=>MF.makePond(20,18,s)},
-    {id:'mushroom',   l:'Mushroom',       fn:s=>MF.makeMushroom('sm',s)},
-    {id:'log',        l:'Fallen Log',     fn:s=>MF.makeFallenLog(s)},
-    {id:'flowers',    l:'Flowers',        fn:s=>MF.makeFlowerPatch(s)},
-    {id:'fern',       l:'Fern',           fn:s=>MF.makePlant('fern',s)},
-    {id:'reeds',      l:'Reeds',          fn:s=>MF.makePlant('reeds',s)},
-    {id:'lily',       l:'Lily Pad',       fn:s=>MF.makePlant('lily',s)},
-    {id:'giant_roots',l:'Giant Roots',    fn:s=>MF.makeGiantRoots(s)},
-    {id:'crop_wheat', l:'Wheat',          fn:s=>MF.makeCropRow('wheat',2,s)},
-    {id:'crop_corn',  l:'Corn',           fn:s=>MF.makeCropRow('corn',2,s)},
-    {id:'crop_veg',   l:'Vegetables',     fn:s=>MF.makeCropRow('vegetables',2,s)},
-  ]},
-  {id:'paths', label:'Paths', items:[
-    {id:'path_h',        l:'Path ━',    fn:s=>MF.makePath('h','dirt',s)},
-    {id:'path_v',        l:'Path ┃',    fn:s=>MF.makePath('v','dirt',s)},
-    {id:'path_cross',    l:'Path ╋',    fn:s=>MF.makePath('cross','dirt',s)},
-    {id:'path_cse',      l:'Path ┏',    fn:s=>MF.makePath('corner_se','dirt',s)},
-    {id:'path_csw',      l:'Path ┓',    fn:s=>MF.makePath('corner_sw','dirt',s)},
-    {id:'path_cne',      l:'Path ┗',    fn:s=>MF.makePath('corner_ne','dirt',s)},
-    {id:'path_cnw',      l:'Path ┛',    fn:s=>MF.makePath('corner_nw','dirt',s)},
-    {id:'path_ts',       l:'Path ┳',    fn:s=>MF.makePath('t_south','dirt',s)},
-    {id:'path_tn',       l:'Path ┻',    fn:s=>MF.makePath('t_north','dirt',s)},
-    {id:'path_te',       l:'Path ┣',    fn:s=>MF.makePath('t_east','dirt',s)},
-    {id:'path_tw',       l:'Path ┫',    fn:s=>MF.makePath('t_west','dirt',s)},
-    {id:'track_h',       l:'Track ━',   fn:s=>MF.makeCartTrack('h','dirt',s)},
-    {id:'track_v',       l:'Track ┃',   fn:s=>MF.makeCartTrack('v','dirt',s)},
-    {id:'track_cross',   l:'Track ╋',   fn:s=>MF.makeCartTrack('cross','dirt',s)},
-    {id:'track_cse',     l:'Track ┏',   fn:s=>MF.makeCartTrack('corner_se','dirt',s)},
-    {id:'track_csw',     l:'Track ┓',   fn:s=>MF.makeCartTrack('corner_sw','dirt',s)},
-    {id:'track_cne',     l:'Track ┗',   fn:s=>MF.makeCartTrack('corner_ne','dirt',s)},
-    {id:'track_cnw',     l:'Track ┛',   fn:s=>MF.makeCartTrack('corner_nw','dirt',s)},
-  ]},
-  {id:'struct', label:'Struct.', items:[
-    {id:'wall_h',     l:'Stone Wall ━', fn:s=>MF.makeStoneWall('h',s)},
-    {id:'wall_v',     l:'Stone Wall ┃', fn:s=>MF.makeStoneWall('v',s)},
-    {id:'wall_cse',   l:'Stone Wall ┏', fn:s=>MF.makeStoneWall('corner_se',s)},
-    {id:'fence_h',    l:'Wood Fence ━', fn:s=>MF.makeWoodenFence('h','post',s)},
-    {id:'fence_v',    l:'Wood Fence ┃', fn:s=>MF.makeWoodenFence('v','post',s)},
-    {id:'hedge_h',    l:'Hedge ━',      fn:s=>MF.makeHedge('h',s)},
-    {id:'hedge_v',    l:'Hedge ┃',      fn:s=>MF.makeHedge('v',s)},
-    {id:'hedge_cse',  l:'Hedge ┏',      fn:s=>MF.makeHedge('corner_se',s)},
-    {id:'gate_h',     l:'Gate ━',       fn:s=>MF.makeGate('h',s)},
-    {id:'dungeon',    l:'Dungeon Entry', fn:s=>MF.makeDungeonEntrance(s)},
-    {id:'ruins_obj',  l:'Ruins',        fn:s=>MF.makeRuins(s)},
-    {id:'watchtower', l:'Watchtower',   fn:s=>MF.makeWatchtower(s)},
-    {id:'windmill',   l:'Windmill',     fn:s=>MF.makeWindmill(s)},
-    {id:'gallows',    l:'Gallows',      fn:s=>MF.makeGallows(s)},
-    {id:'castle_wall_h',  l:'Castle Wall ━', fn:s=>MF.makeCastleWall('straight_h',s)},
-    {id:'castle_wall_v',  l:'Castle Wall ┃', fn:s=>MF.makeCastleWall('straight_v',s)},
-    {id:'castle_wall_cse',l:'Castle Wall ┏', fn:s=>MF.makeCastleWall('corner_se',s)},
-  ]},
-  {id:'furn', label:'Furn.', items:[
-    {id:'bed_s',      l:'Bed (single)',  fn:s=>MF.makeBed('single',s)},
-    {id:'bed_d',      l:'Bed (double)',  fn:s=>MF.makeBed('double',s)},
-    {id:'table_r',    l:'Table (round)', fn:s=>MF.makeTable('round',s)},
-    {id:'table_l',    l:'Table (long)',  fn:s=>MF.makeTable('long',s)},
-    {id:'chair',      l:'Chair',         fn:s=>MF.makeChair('chair',s)},
-    {id:'throne',     l:'Throne',        fn:s=>MF.makeChair('throne',s)},
-    {id:'bookshelf',  l:'Bookshelf',     fn:s=>MF.makeBookshelf(s)},
-    {id:'drawers',    l:'Drawers',       fn:s=>MF.makeDrawers(s)},
-    {id:'cauldron',   l:'Cauldron',      fn:s=>MF.makeCauldron(s)},
-    {id:'weaponrack', l:'Weapon Rack',   fn:s=>MF.makeWeaponRack(s)},
-    {id:'desk',       l:'Desk',          fn:s=>MF.makeDesk(s)},
-    {id:'stool',      l:'Stool',         fn:s=>MF.makeStool(s)},
-    {id:'wardrobe',   l:'Wardrobe',      fn:s=>MF.makeWardrobe(s)},
-    {id:'stairs',     l:'Stairs',        fn:s=>MF.makeStairs(s)},
-    {id:'basin',      l:'Stone Basin',   fn:s=>MF.makeBasin(s)},
-    {id:'fireplace',  l:'Fireplace',     fn:s=>MF.makeFireplace(s)},
-  ]},
+  {id:'extras',  label:'Extras',  ids:['well','haystack','campfire','signpost','anvil','logpile','barrels','noticeboard','trough','stall','cart','chest','campsite','altar','stockade','stocks','torch','dungeon_bars','catapult','boat','bridge','magic_circle','shrine','gold_pile','tent','trapdoor','graveyard','coop','garden']},
+  {id:'gore',    label:'Gore',    ids:['skeleton','dead_body','dirt_hole','blood','bones']},
+  {id:'nature',  label:'Nature',  ids:['bush','bush_lg','thicket','tree_oak','tree_oak_lg','tree_pine','tree_pine_lg','tree_palm','tree_dead','rock','boulder','mossy_rock','pond','pond_lg','mushroom','mushroom_lg','log','flowers','fern','reeds','lily','vine','cactus','giant_roots','crop_wheat','crop_corn','crop_veg']},
+  {id:'paths',   label:'Paths',   ids:['path_h','path_v','path_cross','path_cse','path_csw','path_cne','path_cnw','path_ts','path_tn','path_te','path_tw','track_h','track_v','track_cross','track_cse','track_csw','track_cne','track_cnw']},
+  {id:'struct',  label:'Struct.', ids:['wall_h','wall_v','wall_cse','fence_h','fence_v','hedge_h','hedge_v','hedge_cse','gate_h','dungeon','ruins_obj','watchtower','windmill','gallows','castle_wall_h','castle_wall_v','castle_wall_cse','castle_wall_csw','castle_wall_cne','castle_wall_cnw']},
+  {id:'furn',    label:'Furn.',   ids:['bed_s','bed_d','table_r','table_l','chair','throne','bookshelf','drawers','cauldron','weaponrack','desk','stool','wardrobe','stairs','basin','fireplace']},
 ];
 
-const BLDG_STYLE = {inn:'brown',shop:'terra',house:'dkbrown',chapel:'slate',market_hall:'amber',blacksmith:'darkslate',bathhouse:'blueslate',harbormaster:'darkslate',default:'brown'};
-let MF; // set in init() to window.MapForge
+// Building config
+const BLDG_SIZES = ['1x1','2x2','2x3','3x2','3x3','2x4','4x2','4x4','3x4','4x3'];
+const BLDG_SHAPES = ['hip','ridge','pyramid','mansard','gambrel','conical'];
 
-// ── State ──────────────────────────────────────────────────────
+let bldgConfig = {
+  w: 2, h: 2,
+  shape: 'hip',
+  styleId: 'brown',
+  interiorType: 'house',
+  name: '',
+  chimneys: 1,
+};
+
+let MF; // set in init()
+
+// ═══════════════════════════════════════════════════════════════
+// EDITOR STATE
+// ═══════════════════════════════════════════════════════════════
 let editorMode = 'settlement';
 let settlementId = 'frilar_town';
 let interiorId = 'blank';
-let map = {};           // full cell map — ALL cells in bounds (defined + bg)
-let definedMap = {};    // only explicitly-set cells (for diff/export)
-let originalMap = {};   // snapshot at load time
+let map = {};
+let definedMap = {};
+let originalMap = {};
 let undoStack = [];
 let selectedCell = null;
 let currentTool = 'paint';
-let currentTerrainId = 'street';  // what the terrain palette has selected
-let currentVariant = 0;           // 0–7, picked from variant strip
-let currentObjId = null;          // null=no change, ''=clear, string=set
-let paintTerrain = true;          // whether a paint stroke changes terrain
+let currentTerrainId = 'street';
+let currentVariant = 0;
+let currentObjId = null;   // null=no change, ''=clear, string=object id
+let paintTerrain = true;
 let currentObjCat = 'extras';
+let currentLpTab = 'terrain';
 let tileSize = 24;
 let isMouseDown = false;
 
-// Overworld: full island bounds from aerdorn.js
 const OW_BOUNDS = {minX:0, maxX:499, minY:118, maxY:887};
-
 const tileCache = new Map();
 const objCache  = new Map();
 
-// ── Key parsing ────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
 function parseKey(k) {
   const ci = k.lastIndexOf(',');
   return [parseInt(k.slice(0,ci),10), parseInt(k.slice(ci+1),10)];
 }
 
-// ── Infer background terrain for any cell ─────────────────────
-function inferBg(x, y) {
-  if (editorMode === 'overworld') {
-    const meta = window.WORLD_DATA.meta[`${x},${y}`];
-    if (meta) return meta;
-    if (window.WORLD_DATA.inferTerrain) return window.WORLD_DATA.inferTerrain(x,y);
-    return {type:'plains',name:''};
-  }
-  if (editorMode === 'settlement') return {type:'courtyard',name:''};
-  return {type:'interior',name:''};
+function variantSeed(type, v) {
+  let h = v * 7919;
+  for(let i=0;i<type.length;i++) h = (h*31 + type.charCodeAt(i)) & 0x7fffffff;
+  return h || 1;
 }
 
-// ── Build full display map (defined + background for every cell in bounds) ──
-function buildDisplayMap(minX,maxX,minY,maxY) {
-  const dm = {};
-  for (let x=minX; x<=maxX; x++) {
-    for (let y=minY; y<=maxY; y++) {
-      const k = `${x},${y}`;
-      dm[k] = definedMap[k] ? Object.assign({},definedMap[k]) : inferBg(x,y);
+// Cells spanned by an anchor object given rotation
+// rotation 0/180: w cols east, h rows north (y increases north in our convention)
+// rotation 90/270: swap w/h
+function getSpanCells(ax, ay, objW, objH, rotation) {
+  const cells = [];
+  // Convert pixel size to cell count (ceiling)
+  let cw = Math.ceil(objW / 20);
+  let ch = Math.ceil(objH / 20);
+  if (rotation === 90 || rotation === 270) { const tmp=cw; cw=ch; ch=tmp; }
+  // Anchor is bottom-left of the sprite footprint (south=low y, north=high y)
+  // Cells extend east (+x) and north (+y) from anchor
+  for (let dx=0; dx<cw; dx++) {
+    for (let dy=0; dy<ch; dy++) {
+      if (dx===0 && dy===0) continue; // skip anchor
+      cells.push({x: ax+dx, y: ay+dy});
     }
+  }
+  return cells;
+}
+
+function getObjDef(id) { return OBJECT_DEFS[id] || null; }
+
+// ═══════════════════════════════════════════════════════════════
+// MAP LOADING
+// ═══════════════════════════════════════════════════════════════
+function inferBg(x, y) {
+  if (editorMode === 'overworld') {
+    const m = window.WORLD_DATA.meta && window.WORLD_DATA.meta[`${x},${y}`];
+    if (m) return m;
+    return window.WORLD_DATA.inferTerrain ? window.WORLD_DATA.inferTerrain(x,y) : {type:'plains',name:''};
+  }
+  if (editorMode === 'settlement') return {type:'courtyard', name:''};
+  return {type:'interior', name:''};
+}
+
+function buildDisplayMap(x0,x1,y0,y1) {
+  const dm = {};
+  for (let x=x0;x<=x1;x++) for (let y=y0;y<=y1;y++) {
+    const k=`${x},${y}`;
+    dm[k] = definedMap[k] ? Object.assign({},definedMap[k]) : inferBg(x,y);
   }
   return dm;
 }
 
-// ── Load layer ─────────────────────────────────────────────────
+const INTERIOR_STORE = {};
+
 function loadLayer() {
   undoStack=[]; selectedCell=null; tileCache.clear(); objCache.clear();
-  definedMap = {};
-  originalMap = {};
-
+  definedMap={}; originalMap={};
   if (editorMode === 'settlement') {
     const s = window.WORLD_DATA && window.WORLD_DATA.settlements[settlementId];
     if (!s) { statusMsg('Unknown settlement'); return; }
-    for (const [k,v] of Object.entries(s.map)) {
-      definedMap[k] = Object.assign({},v);
-      originalMap[k] = Object.assign({},v);
-    }
-    console.log('[Editor] Settlement', settlementId, 'defined keys:', Object.keys(definedMap).length);
-
+    for (const [k,v] of Object.entries(s.map)) { definedMap[k]=Object.assign({},v); originalMap[k]=Object.assign({},v); }
+    console.log('[Editor] Settlement', settlementId, 'keys:', Object.keys(definedMap).length);
   } else if (editorMode === 'overworld') {
-    // Load all defined overworld cells
-    for (const [k,v] of Object.entries(window.WORLD_DATA.meta || {})) {
-      definedMap[k] = Object.assign({},v);
-      originalMap[k] = Object.assign({},v);
-    }
-    console.log('[Editor] Overworld defined keys:', Object.keys(definedMap).length);
-
+    for (const [k,v] of Object.entries(window.WORLD_DATA.meta||{})) { definedMap[k]=Object.assign({},v); originalMap[k]=Object.assign({},v); }
+    console.log('[Editor] OW keys:', Object.keys(definedMap).length);
   } else {
-    // Interior
     const stored = INTERIOR_STORE[interiorId];
     if (stored) {
-      for (const [k,v] of Object.entries(stored)) {
-        definedMap[k]=Object.assign({},v); originalMap[k]=Object.assign({},v);
-      }
+      for (const [k,v] of Object.entries(stored)) { definedMap[k]=Object.assign({},v); originalMap[k]=Object.assign({},v); }
     } else {
-      // Blank 14x12
       for (let x=0;x<=13;x++) for (let y=0;y<=11;y++) {
-        const v = (x===0||x===13||y===0||y===11) ? {type:'wall',name:'Wall'} : {type:'interior',name:'Floor'};
+        const v=(x===0||x===13||y===0||y===11)?{type:'wall',name:'Wall'}:{type:'interior',name:'Floor'};
         definedMap[`${x},${y}`]=Object.assign({},v); originalMap[`${x},${y}`]=Object.assign({},v);
       }
       definedMap['6,0']={type:'door',name:'Entrance'}; originalMap['6,0']={type:'door',name:'Entrance'};
     }
   }
-
   computeBounds();
   map = buildDisplayMap(bounds.minX, bounds.maxX, bounds.minY, bounds.maxY);
   renderAll(); clearInspector(); updateExport();
 }
 
-const INTERIOR_STORE = {};
-
-// ── Bounds ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// BOUNDS
+// ═══════════════════════════════════════════════════════════════
 let bounds = {minX:0,maxX:0,minY:0,maxY:0};
 function computeBounds() {
-  if (editorMode === 'overworld') {
-    bounds = Object.assign({},OW_BOUNDS);
-    return;
-  }
+  if (editorMode==='overworld') { bounds=Object.assign({},OW_BOUNDS); return; }
   let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity;
   for (const k of Object.keys(definedMap)) {
-    const [x,y]=parseKey(k);
-    if(isNaN(x)||isNaN(y))continue;
+    const [x,y]=parseKey(k); if(isNaN(x))continue;
     if(x<mnX)mnX=x;if(x>mxX)mxX=x;if(y<mnY)mnY=y;if(y>mxY)mxY=y;
   }
   if(!isFinite(mnX)){bounds={minX:0,maxX:10,minY:0,maxY:10};return;}
-  const pad=2;
-  bounds={minX:mnX-pad,maxX:mxX+pad,minY:mnY-pad,maxY:mxY+pad};
+  bounds={minX:mnX-2,maxX:mxX+2,minY:mnY-2,maxY:mxY+2};
   console.log('[Editor] Bounds',bounds,'grid',gridW(),'x',gridH());
 }
 function gridW(){return bounds.maxX-bounds.minX+1;}
@@ -470,106 +527,164 @@ function cellToCanvas(x,y){return{px:(x-bounds.minX)*tileSize,py:(gridH()-1-(y-b
 function canvasToCell(px,py){return{x:Math.floor(px/tileSize)+bounds.minX,y:(gridH()-1-Math.floor(py/tileSize))+bounds.minY};}
 function inBounds(x,y){return x>=bounds.minX&&x<=bounds.maxX&&y>=bounds.minY&&y<=bounds.maxY;}
 
-// ── Sprite rendering ───────────────────────────────────────────
-// Variant seeds: each variant index maps to a fixed seed offset
-// so all cells painted with variant N look identical
-function variantSeed(type, variant) {
-  // Use a stable hash of type+variant so different types don't share seeds
-  let h = variant * 7919;
-  for(let i=0;i<type.length;i++) h = (h * 31 + type.charCodeAt(i)) & 0x7fffffff;
-  return h || 1;
-}
-
-// Get tile canvas — uses meta.variant if provided, otherwise falls back to (x,y) seed
+// ═══════════════════════════════════════════════════════════════
+// TILE / SPRITE RENDERING
+// ═══════════════════════════════════════════════════════════════
 function getTileCanvas(type, x, y, variant) {
-  const seed = variant !== undefined && variant !== null
-    ? variantSeed(type, variant)
-    : (((x&0xffff)<<16)|(y&0xffff)) >>> 0;
-
+  const seed = (variant != null) ? variantSeed(type, variant) : (((x&0xffff)<<16)|(y&0xffff))>>>0;
   const floorMap = {floor_h:'h',floor_v:'v',floor_hbone:'herringbone',floor_diag:'diagonal',floor_parq:'parquet',floor_stone:'stone'};
-  if(floorMap[type]){
-    const key='floor_'+floorMap[type]+'_'+seed;
-    if(tileCache.has(key))return tileCache.get(key);
-    try{const grid=MF.makeFloorboard(floorMap[type],seed);const c=document.createElement('canvas');MF.renderGridToCanvas(grid,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
+  if (floorMap[type]) {
+    const key='fl_'+floorMap[type]+'_'+seed; if(tileCache.has(key))return tileCache.get(key);
+    try{const g=MF.makeFloorboard(floorMap[type],seed);const c=document.createElement('canvas');MF.renderGridToCanvas(g,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
   }
-  if(type==='cracked'){
-    const key='cracked_'+seed;
-    if(tileCache.has(key))return tileCache.get(key);
-    try{const grid=MF.makeCrackedEarth(seed);const c=document.createElement('canvas');MF.renderGridToCanvas(grid,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
+  if (type==='cracked') {
+    const key='crk_'+seed; if(tileCache.has(key))return tileCache.get(key);
+    try{const g=MF.makeCrackedEarth(seed);const c=document.createElement('canvas');MF.renderGridToCanvas(g,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
   }
-  const mf = TERRAIN_TO_MF[type]||'grass';
-  const key = mf+'_'+seed;
-  if(tileCache.has(key))return tileCache.get(key);
-  try{const grid=MF.makeTerrain(mf,seed,{});const c=document.createElement('canvas');MF.renderGridToCanvas(grid,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
+  const mf=TERRAIN_TO_MF[type]||'grass';
+  const key=mf+'_'+seed; if(tileCache.has(key))return tileCache.get(key);
+  try{const g=MF.makeTerrain(mf,seed,{});const c=document.createElement('canvas');MF.renderGridToCanvas(g,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
 }
 
-function getObjCanvas(objId, seed) {
-  const item = OBJ_CATS.flatMap(c=>c.items).find(i=>i.id===objId);
-  if(!item||!item.fn)return null;
-  const key = objId+'_'+seed;
-  if(objCache.has(key))return objCache.get(key);
-  let grid;
-  try{ grid=item.fn(seed); }catch(e){return null;}
-  if(!grid)return null;
-  const c=document.createElement('canvas');
-  MF.renderGridToCanvas(grid,c,1);
+function getObjSpriteCanvas(objId, seed) {
+  const def = OBJECT_DEFS[objId]; if(!def||!def.fn)return null;
+  const key=objId+'_'+seed; if(objCache.has(key))return objCache.get(key);
+  let g; try{g=def.fn(seed);}catch(e){return null;}
+  if(!g)return null;
+  const c=document.createElement('canvas'); MF.renderGridToCanvas(g,c,1);
   objCache.set(key,c); return c;
 }
 
-function getBldgCanvas(meta, seed) {
-  if(!MF.ROOF_STYLES||!MF.ROOF_STYLES.length)return null;
-  const styleId = BLDG_STYLE[meta.interiorType]||BLDG_STYLE.default;
-  const key = 'roof_'+styleId+'_'+seed;
+// Generate building roof canvas at w*20 x h*20 pixels
+function getBldgSprite(cellW, cellH, shape, styleId, chimneys, seed) {
+  if(!MF.ROOF_STYLES)return null;
+  const pw=cellW*20, ph=cellH*20;
+  const key=`bldg_${pw}x${ph}_${shape}_${styleId}_${seed}`;
   if(objCache.has(key))return objCache.get(key);
-  const style = MF.ROOF_STYLES.find(s=>s.id===styleId)||MF.ROOF_STYLES[0];
+  const style=MF.ROOF_STYLES.find(s=>s.id===styleId)||MF.ROOF_STYLES[0];
   if(!style)return null;
-  const shapes=['hip','ridge','pyramid','gambrel'];
-  const shape=shapes[seed%shapes.length];
-  let grid=null;
+  let g=null;
   try{
-    const chimneys=MF.autoChimneys?MF.autoChimneys(20,20,seed%3===0?1:0):[];
-    grid=style.isThatch?MF.makeThatchRoof(20,20,shape,chimneys,seed):MF.makeRoofByShape(20,20,shape,style,chimneys,seed);
+    const ch=MF.autoChimneys?MF.autoChimneys(pw,ph,chimneys):[];
+    g=style.isThatch?MF.makeThatchRoof(pw,ph,shape,ch,seed):MF.makeRoofByShape(pw,ph,shape,style,ch,seed);
   }catch(e){return null;}
-  if(!grid)return null;
-  const c=document.createElement('canvas');
-  MF.renderGridToCanvas(grid,c,1);
+  if(!g)return null;
+  const c=document.createElement('canvas'); MF.renderGridToCanvas(g,c,1);
   objCache.set(key,c); return c;
 }
 
-// ── Canvas ─────────────────────────────────────────────────────
-const canvas=document.getElementById('grid-canvas');
-const ctx=canvas.getContext('2d');
-const ALL_T=[...SETTLE_TERRAIN,...OW_TERRAIN,...INT_TERRAIN];
+// Draw a sprite onto the main canvas with rotation and snap offset
+// The sprite src canvas is nativeW x nativeH pixels
+// It's rendered into a tileSize*cellW x tileSize*cellH area starting at (px,py)
+function drawSprite(srcCanvas, px, py, nativeW, nativeH, cellW, cellH, snap, rotation) {
+  if(!srcCanvas)return;
+  const dstW = cellW * tileSize;
+  const dstH = cellH * tileSize;
+  // Scaled sprite size in destination pixels
+  const sprW = (nativeW / 20) * tileSize;
+  const sprH = (nativeH / 20) * tileSize;
+
+  // After rotation, effective sprite dimensions
+  const rotW = (rotation===90||rotation===270) ? sprH : sprW;
+  const rotH = (rotation===90||rotation===270) ? sprW : sprH;
+
+  // Snap offset within the destination area
+  let offX, offY;
+  if (snap==='south') {
+    offX = (dstW - rotW) / 2;
+    offY = dstH - rotH;
+  } else if (snap==='north') {
+    offX = (dstW - rotW) / 2;
+    offY = 0;
+  } else { // center
+    offX = (dstW - rotW) / 2;
+    offY = (dstH - rotH) / 2;
+  }
+
+  ctx.save();
+  // Clip to the destination cell(s) area so sprites don't leak outside
+  ctx.beginPath();
+  ctx.rect(px, py, dstW, dstH);
+  ctx.clip();
+  ctx.translate(px + offX + rotW/2, py + offY + rotH/2);
+  if(rotation) ctx.rotate(rotation * Math.PI / 180);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(srcCanvas, -sprW/2, -sprH/2, sprW, sprH);
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CANVAS RENDERING
+// ═══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('grid-canvas');
+const ctx = canvas.getContext('2d');
 
 function renderAll() {
-  canvas.width=gridW()*tileSize; canvas.height=gridH()*tileSize;
-  ctx.fillStyle='#050402'; ctx.fillRect(0,0,canvas.width,canvas.height);
-  for(const[k,meta]of Object.entries(map)){
-    const[x,y]=parseKey(k); if(!isNaN(x))_drawCell(x,y,meta);
+  canvas.width = gridW()*tileSize; canvas.height = gridH()*tileSize;
+  ctx.fillStyle = '#050402'; ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Pass 1: terrain for all cells
+  for (const [k,meta] of Object.entries(map)) {
+    const [x,y]=parseKey(k); if(isNaN(x))continue;
+    const {px,py}=cellToCanvas(x,y);
+    const tc=getTileCanvas(meta.type,x,y,meta.variant);
+    if(tc) ctx.drawImage(tc,px,py,tileSize,tileSize);
+    else { ctx.fillStyle='#1a1408'; ctx.fillRect(px,py,tileSize,tileSize); }
+    // OW settlement dot
+    if(editorMode==='overworld'&&(meta.type==='town'||meta.type==='city'||meta.type==='village'||meta.type==='castle')){
+      ctx.fillStyle='#e8c870cc';const sz=Math.max(2,tileSize/4);ctx.fillRect(px+tileSize/2-sz/2,py+tileSize/2-sz/2,sz,sz);
+    }
   }
-  if(selectedCell)_drawSel(selectedCell.x,selectedCell.y);
+
+  // Pass 2: objects — only draw on anchor cells (skip _part cells)
+  for (const [k,meta] of Object.entries(map)) {
+    if (meta.object==='_part') continue; // span cell — skip
+    const [x,y]=parseKey(k); if(isNaN(x))continue;
+    const {px,py}=cellToCanvas(x,y);
+    const seed=(((x&0xffff)<<16)|(y&0xffff))>>>0;
+
+    if (meta.object && meta.object !== '_part') {
+      const def=getObjDef(meta.object);
+      if(def){
+        const cw=Math.ceil(def.w/20), ch=Math.ceil(def.h/20);
+        const rot=meta.rotation||0;
+        const sc=getObjSpriteCanvas(meta.object,seed);
+        drawSprite(sc,px,py,def.w,def.h,cw,ch,def.snap,rot);
+      }
+    } else if (meta.type==='building' && meta.bldgW) {
+      // Full building roof
+      const sc=getBldgSprite(meta.bldgW,meta.bldgH,meta.roofShape||'hip',meta.roofStyle||'brown',meta.chimneys||1,seed);
+      if(sc) ctx.drawImage(sc,px,py,meta.bldgW*tileSize,meta.bldgH*tileSize);
+    } else if (meta.type==='building') {
+      // Legacy single-cell building
+      const sc=getBldgSprite(1,1,meta.roofShape||'hip',meta.roofStyle||(({inn:'brown',shop:'terra',house:'dkbrown',chapel:'slate',blacksmith:'darkslate',default:'brown'})[meta.interiorType]||'brown'),1,seed);
+      if(sc) ctx.drawImage(sc,px,py,tileSize,tileSize);
+    }
+  }
+
+  // Pass 3: _part cell hatch overlays
+  for (const [k,meta] of Object.entries(map)) {
+    if (meta.object !== '_part') continue;
+    const [x,y]=parseKey(k); if(isNaN(x))continue;
+    const {px,py}=cellToCanvas(x,y);
+    if(tileSize>=8){
+      ctx.save();
+      ctx.globalAlpha=0.3;
+      ctx.strokeStyle='#e8c870';ctx.lineWidth=1;
+      for(let d=-tileSize;d<tileSize*2;d+=6){ctx.beginPath();ctx.moveTo(px+d,py);ctx.lineTo(px+d+tileSize,py+tileSize);ctx.stroke();}
+      ctx.globalAlpha=1;
+      ctx.restore();
+    }
+  }
+
+  if(selectedCell) _drawSel(selectedCell.x,selectedCell.y);
 }
 
-function _drawCell(x,y,meta){
-  const{px,py}=cellToCanvas(x,y);
+function _drawCellTerrain(x,y,meta) {
+  const {px,py}=cellToCanvas(x,y);
   const tc=getTileCanvas(meta.type,x,y,meta.variant);
-  if(tc)ctx.drawImage(tc,px,py,tileSize,tileSize);
-  else{ctx.fillStyle='#1a1408';ctx.fillRect(px,py,tileSize,tileSize);}
-
-  // Object overlay (transparent — only non-null pixels drawn)
-  if(tileSize>=8){
-    const seed=(((x&0xffff)<<16)|(y&0xffff))>>>0;
-    let oc=null;
-    if(meta.object)oc=getObjCanvas(meta.object,seed);
-    else if(meta.type==='building')oc=getBldgCanvas(meta,seed);
-    if(oc)ctx.drawImage(oc,px,py,tileSize,tileSize);
-  }
-
-  // Settlement/city dot on overworld
-  if(editorMode==='overworld'&&(meta.type==='town'||meta.type==='city'||meta.type==='village'||meta.type==='castle')){
-    ctx.fillStyle='#e8c870cc';const sz=Math.max(2,tileSize/4);
-    ctx.fillRect(px+tileSize/2-sz/2,py+tileSize/2-sz/2,sz,sz);
-  }
+  if(tc) ctx.drawImage(tc,px,py,tileSize,tileSize);
+  else { ctx.fillStyle='#1a1408'; ctx.fillRect(px,py,tileSize,tileSize); }
 }
 
 function _drawSel(x,y){
@@ -578,71 +693,139 @@ function _drawSel(x,y){
 }
 
 function redrawCell(x,y){
+  // For multi-cell objects we need to redraw all affected cells
+  const meta=map[`${x},${y}`];
+  if(meta&&meta.object==='_part'&&meta.anchor){
+    const [ax,ay]=parseKey(meta.anchor); redrawAnchorGroup(ax,ay); return;
+  }
+  if(meta&&meta.bldgW){redrawAnchorGroup(x,y);return;}
+  // Single cell
   const{px,py}=cellToCanvas(x,y);
   ctx.fillStyle='#050402';ctx.fillRect(px,py,tileSize,tileSize);
-  const meta=map[`${x},${y}`];if(meta)_drawCell(x,y,meta);
+  if(meta)_drawCellTerrain(x,y,meta);
+  // Redraw object pass for this cell only
+  if(meta&&meta.object&&meta.object!=='_part'){
+    const seed=(((x&0xffff)<<16)|(y&0xffff))>>>0;
+    const def=getObjDef(meta.object);
+    if(def){const sc=getObjSpriteCanvas(meta.object,seed);drawSprite(sc,px,py,def.w,def.h,Math.ceil(def.w/20),Math.ceil(def.h/20),def.snap,meta.rotation||0);}
+  } else if(meta&&meta.type==='building'){
+    const seed=(((x&0xffff)<<16)|(y&0xffff))>>>0;
+    const sc=getBldgSprite(1,1,meta.roofShape||'hip',meta.roofStyle||'brown',1,seed);
+    if(sc)ctx.drawImage(sc,px,py,tileSize,tileSize);
+  }
   if(selectedCell&&selectedCell.x===x&&selectedCell.y===y)_drawSel(x,y);
 }
 
-// ── Edit ops ───────────────────────────────────────────────────
+function redrawAnchorGroup(ax,ay){
+  // Clear and redraw all cells covered by this anchor
+  const meta=map[`${ax},${ay}`];
+  if(!meta)return;
+  const cellW=meta.bldgW||1, cellH=meta.bldgH||1;
+  for(let dx=0;dx<cellW;dx++) for(let dy=0;dy<cellH;dy++){
+    const{px,py}=cellToCanvas(ax+dx,ay+dy);
+    ctx.fillStyle='#050402';ctx.fillRect(px,py,tileSize,tileSize);
+    const cm=map[`${ax+dx},${ay+dy}`];
+    if(cm)_drawCellTerrain(ax+dx,ay+dy,cm);
+  }
+  // Draw roof
+  const{px,py}=cellToCanvas(ax,ay);
+  const seed=(((ax&0xffff)<<16)|(ay&0xffff))>>>0;
+  const sc=getBldgSprite(cellW,cellH,meta.roofShape||'hip',meta.roofStyle||'brown',meta.chimneys||1,seed);
+  if(sc)ctx.drawImage(sc,px,py,cellW*tileSize,cellH*tileSize);
+  if(selectedCell&&selectedCell.x===ax&&selectedCell.y===ay)_drawSel(ax,ay);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EDIT OPERATIONS
+// ═══════════════════════════════════════════════════════════════
 function pushUndo(x,y){
   const k=`${x},${y}`;
-  // Save both the display map entry and whether it was in definedMap
-  undoStack.push({k, dispPrev:map[k]?Object.assign({},map[k]):null, defPrev:definedMap[k]?Object.assign({},definedMap[k]):null});
+  undoStack.push({k,dispPrev:map[k]?Object.assign({},map[k]):null,defPrev:definedMap[k]?Object.assign({},definedMap[k]):null});
   if(undoStack.length>400)undoStack.shift();
 }
 
 function applyPaint(x,y){
   if(!inBounds(x,y))return;
+  // Clicking a _part cell — redirect to anchor
+  const existing_meta=map[`${x},${y}`];
+  if(existing_meta&&existing_meta.object==='_part'&&existing_meta.anchor){
+    if(currentTool==='erase'){eraseAnchorGroup(...parseKey(existing_meta.anchor));return;}
+    if(currentTool==='pick'){selectCell(...parseKey(existing_meta.anchor));return;}
+    return; // don't paint over span cells
+  }
   const k=`${x},${y}`;
-
   if(currentTool==='erase'){
     if(!definedMap[k])return;
-    pushUndo(x,y);
-    delete definedMap[k];
-    map[k]=inferBg(x,y); // revert to background
+    // If it has span cells, erase those too
+    const dm=definedMap[k];
+    if(dm&&dm.bldgW)eraseAnchorGroup(x,y);
+    else{pushUndo(x,y);delete definedMap[k];map[k]=inferBg(x,y);redrawCell(x,y);}
   } else {
-    // Get current cell state — defined or background
-    const existing = definedMap[k] ? Object.assign({},definedMap[k]) : Object.assign({},inferBg(x,y));
-
-    // Only update terrain if paintTerrain is true (terrain palette was used last)
-    if(paintTerrain){ existing.type = currentTerrainId; existing.variant = currentVariant; }
-
-    // Object handling
-    if(currentObjId==='')delete existing.object;
-    else if(currentObjId!==null)existing.object=currentObjId;
-
-    pushUndo(x,y);
-    definedMap[k]=existing;
-    map[k]=existing;
+    const ex=definedMap[k]?Object.assign({},definedMap[k]):Object.assign({},inferBg(x,y));
+    if(paintTerrain){ex.type=currentTerrainId;ex.variant=currentVariant;}
+    if(currentObjId==='')delete ex.object;
+    else if(currentObjId!==null)ex.object=currentObjId;
+    pushUndo(x,y);definedMap[k]=ex;map[k]=ex;
+    redrawCell(x,y);
   }
-  redrawCell(x,y);
   updateExport();
+}
+
+function eraseAnchorGroup(ax,ay){
+  const meta=definedMap[`${ax},${ay}`];if(!meta)return;
+  const cw=meta.bldgW||1,ch=meta.bldgH||1;
+  for(let dx=0;dx<cw;dx++) for(let dy=0;dy<ch;dy++){
+    const x=ax+dx,y=ay+dy,k=`${x},${y}`;
+    pushUndo(x,y);delete definedMap[k];map[k]=inferBg(x,y);
+  }
+  redrawAnchorGroup(ax,ay);
+  updateExport();
+}
+
+function placeBuilding(ax,ay){
+  const{w,h,shape,styleId,interiorType,name,chimneys}=bldgConfig;
+  // Check all target cells are in bounds
+  for(let dx=0;dx<w;dx++) for(let dy=0;dy<h;dy++) if(!inBounds(ax+dx,ay+dy))return;
+  // Erase any existing building at these cells
+  for(let dx=0;dx<w;dx++) for(let dy=0;dy<h;dy++){
+    const k=`${ax+dx},${ay+dy}`;
+    const ex=definedMap[k];
+    if(ex&&ex.object==='_part'&&ex.anchor)eraseAnchorGroup(...parseKey(ex.anchor));
+    else if(ex&&ex.bldgW)eraseAnchorGroup(ax+dx,ay+dy);
+  }
+  // Write anchor
+  const anchorK=`${ax},${ay}`;
+  const anchorMeta={type:'building',name:name||'',interiorType:interiorType||'house',
+    roofStyle:styleId,roofShape:shape,chimneys,bldgW:w,bldgH:h};
+  pushUndo(ax,ay);definedMap[anchorK]=anchorMeta;map[anchorK]=Object.assign({},anchorMeta);
+  // Write span cells
+  for(let dx=0;dx<w;dx++) for(let dy=0;dy<h;dy++){
+    if(dx===0&&dy===0)continue;
+    const k=`${ax+dx},${ay+dy}`;
+    const partMeta={type:'building',object:'_part',anchor:`${ax},${ay}`};
+    pushUndo(ax+dx,ay+dy);definedMap[k]=partMeta;map[k]=Object.assign({},partMeta);
+  }
+  redrawAnchorGroup(ax,ay);
+  updateExport();
+  statusMsg(`Placed ${w}x${h} building`);
 }
 
 function floodFill(startX,startY){
   if(!inBounds(startX,startY))return;
-  const startMeta = map[`${startX},${startY}`]||{};
-  const targetType = startMeta.type||null;
-  const visited=new Set();
-  const queue=[[startX,startY]];
-  visited.add(`${startX},${startY}`);
+  const targetType=(map[`${startX},${startY}`]||{}).type||null;
+  const visited=new Set();const queue=[[startX,startY]];visited.add(`${startX},${startY}`);
   while(queue.length){
     const[cx,cy]=queue.shift();
-    // Apply same logic as paint
-    const existing=definedMap[`${cx},${cy}`]?Object.assign({},definedMap[`${cx},${cy}`]):Object.assign({},inferBg(cx,cy));
-    if(paintTerrain){existing.type=currentTerrainId; existing.variant=currentVariant;}
-    if(currentObjId==='')delete existing.object;
-    else if(currentObjId!==null)existing.object=currentObjId;
-    pushUndo(cx,cy);
-    definedMap[`${cx},${cy}`]=existing;
-    map[`${cx},${cy}`]=existing;
+    const ex=definedMap[`${cx},${cy}`]?Object.assign({},definedMap[`${cx},${cy}`]):Object.assign({},inferBg(cx,cy));
+    if(paintTerrain){ex.type=currentTerrainId;ex.variant=currentVariant;}
+    if(currentObjId==='')delete ex.object;
+    else if(currentObjId!==null)ex.object=currentObjId;
+    pushUndo(cx,cy);definedMap[`${cx},${cy}`]=ex;map[`${cx},${cy}`]=ex;
     redrawCell(cx,cy);
     for(const[nx,ny]of[[cx-1,cy],[cx+1,cy],[cx,cy-1],[cx,cy+1]]){
       const nk=`${nx},${ny}`;
       if(visited.has(nk)||!inBounds(nx,ny))continue;
-      const nm=map[nk]; const nt=nm?nm.type:null;
-      if(nt===targetType){visited.add(nk);queue.push([nx,ny]);}
+      if((map[nk]||{}).type===targetType){visited.add(nk);queue.push([nx,ny]);}
     }
   }
   updateExport();
@@ -652,58 +835,95 @@ function undo(){
   if(!undoStack.length)return;
   const{k,dispPrev,defPrev}=undoStack.pop();
   const[x,y]=parseKey(k);
-  if(defPrev)definedMap[k]=defPrev; else delete definedMap[k];
+  if(defPrev)definedMap[k]=defPrev;else delete definedMap[k];
   map[k]=dispPrev||inferBg(x,y);
   redrawCell(x,y);
   if(selectedCell&&selectedCell.x===x&&selectedCell.y===y)populateInspector(x,y);
-  updateExport(); statusMsg('Undone.');
+  updateExport();statusMsg('Undone.');
 }
 
-// ── Inspector ─────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// INSPECTOR
+// ═══════════════════════════════════════════════════════════════
 function selectCell(x,y){
   if(selectedCell){const o=selectedCell;selectedCell=null;redrawCell(o.x,o.y);}
-  selectedCell={x,y}; redrawCell(x,y); populateInspector(x,y);
+  // If _part, redirect to anchor
+  const meta=map[`${x},${y}`];
+  if(meta&&meta.object==='_part'&&meta.anchor){const[ax,ay]=parseKey(meta.anchor);x=ax;y=ay;}
+  selectedCell={x,y};redrawCell(x,y);populateInspector(x,y);
 }
+
 function populateInspector(x,y){
   const meta=map[`${x},${y}`]||{};
-  const isDefined=!!definedMap[`${x},${y}`];
-  document.getElementById('cell-coords').textContent=`x=${x}, y=${y}  ${isDefined?'':'(bg)'}(${meta.type||'?'})`;
+  const isDef=!!definedMap[`${x},${y}`];
+  document.getElementById('cell-coords').textContent=`x=${x}, y=${y} ${isDef?'':'(bg)'}(${meta.type||'?'})`;
   document.getElementById('prop-type').value=meta.type||'';
   document.getElementById('prop-name').value=meta.name||'';
   document.getElementById('prop-interiorType').value=meta.interiorType||'';
   document.getElementById('prop-doors').value=Array.isArray(meta.doors)?meta.doors.join(','):(meta.doors||'');
   document.getElementById('prop-object').value=meta.object||'';
+  // Show rotation buttons if cell has a rotatable object
+  const hasObj=meta.object&&meta.object!=='_part';
+  document.getElementById('row-rotation').style.display=hasObj?'':'none';
+  if(hasObj){
+    const rot=meta.rotation||0;
+    document.querySelectorAll('.rot-btn').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.rot)===rot));
+  }
 }
+
 function clearInspector(){
   document.getElementById('cell-coords').textContent='-';
   ['prop-type','prop-name','prop-interiorType','prop-doors','prop-object'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('row-rotation').style.display='none';
 }
+
 document.getElementById('btn-apply').addEventListener('click',()=>{
   if(!selectedCell)return;
-  const{x,y}=selectedCell; const k=`${x},${y}`;
+  const{x,y}=selectedCell;const k=`${x},${y}`;
   pushUndo(x,y);
   const type=document.getElementById('prop-type').value.trim();
   const name=document.getElementById('prop-name').value.trim();
   const it=document.getElementById('prop-interiorType').value.trim();
   const ds=document.getElementById('prop-doors').value.trim();
   const obj=document.getElementById('prop-object').value.trim();
-  const meta={};
-  if(type)meta.type=type; if(name)meta.name=name; if(it)meta.interiorType=it;
+  const meta=map[k]?Object.assign({},map[k]):{};
+  if(type)meta.type=type;if(name)meta.name=name;if(it)meta.interiorType=it;
   if(ds)meta.doors=ds.split(',').map(s=>s.trim()).filter(Boolean);
-  if(obj)meta.object=obj;
+  if(obj!==undefined){if(obj==='')delete meta.object;else meta.object=obj;}
   const seed=(((x&0xffff)<<16)|(y&0xffff))>>>0;
   for(const ck of[...objCache.keys()]){if(ck.includes('_'+seed))objCache.delete(ck);}
-  definedMap[k]=meta; map[k]=meta;
-  redrawCell(x,y); updateExport(); statusMsg('Applied.');
+  definedMap[k]=meta;map[k]=meta;redrawCell(x,y);updateExport();statusMsg('Applied.');
 });
 
-// ── Export ─────────────────────────────────────────────────────
+document.querySelectorAll('.rot-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    if(!selectedCell)return;
+    const{x,y}=selectedCell;const k=`${x},${y}`;
+    const rot=parseInt(btn.dataset.rot);
+    const meta=map[k]?Object.assign({},map[k]):{};
+    meta.rotation=rot;
+    pushUndo(x,y);definedMap[k]=meta;map[k]=meta;
+    redrawCell(x,y);populateInspector(x,y);updateExport();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// EXPORT / SAVE
+// ═══════════════════════════════════════════════════════════════
 function cellToJS(k,meta){
   const[x,y]=parseKey(k);
   const ex={};
   if(meta.interiorType)ex.interiorType=meta.interiorType;
   if(meta.doors&&meta.doors.length)ex.doors=meta.doors;
   if(meta.object)ex.object=meta.object;
+  if(meta.object==='_part'&&meta.anchor)ex.anchor=meta.anchor;
+  if(meta.roofStyle)ex.roofStyle=meta.roofStyle;
+  if(meta.roofShape)ex.roofShape=meta.roofShape;
+  if(meta.bldgW)ex.bldgW=meta.bldgW;
+  if(meta.bldgH)ex.bldgH=meta.bldgH;
+  if(meta.chimneys!=null)ex.chimneys=meta.chimneys;
+  if(meta.rotation)ex.rotation=meta.rotation;
+  if(meta.variant!=null)ex.variant=meta.variant;
   const es=Object.keys(ex).length?', '+JSON.stringify(ex).replace(/"(\w+)":/g,'$1:'):'';
   const n=(meta.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   return `t(${x},${y},'${meta.type||''}','${n}'${es});`;
@@ -713,7 +933,6 @@ function cellToOWJS(k,meta){
   const n=(meta.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   return `defCell(${x},${y},'${meta.type||''}','${n}');`;
 }
-
 function buildDiff(){
   const adds=[],removes=[];
   const all=new Set([...Object.keys(definedMap),...Object.keys(originalMap)]);
@@ -737,24 +956,19 @@ function updateExport(){
 function getDiff(){return document.getElementById('export-box').textContent;}
 function getFull(){
   const isOW=editorMode==='overworld';
-  const lines=['// Full export — paste into aerdorn.js'];
+  const lines=['// Full export'];
   for(const[k,m]of Object.entries(definedMap))lines.push(isOW?cellToOWJS(k,m):cellToJS(k,m));
   return lines.join('\n');
 }
-
-function doDownload(text,suf){const b=new Blob([text],{type:'text/javascript'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(editorMode==='settlement'?settlementId:editorMode)+'_'+suf+'.js';a.click();}
+function doDownload(t,s){const b=new Blob([t],{type:'text/javascript'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(editorMode==='settlement'?settlementId:editorMode)+'_'+s+'.js';a.click();}
 function doCopy(t){navigator.clipboard.writeText(t).then(()=>statusMsg('Copied!'));}
 function statusMsg(msg){const el=document.getElementById('status-msg');el.textContent=msg;setTimeout(()=>{if(el.textContent===msg)el.textContent='';},3000);}
-
-// Save to Game: copies diff JS to clipboard AND saves to localStorage
-// so you can paste into aerdorn.js manually or via a future local server
 function saveToGame(){
   const{adds,removes}=buildDiff();
-  if(!adds.length&&!removes.length){statusMsg('No changes to save.');return;}
+  if(!adds.length&&!removes.length){statusMsg('No changes.');return;}
   const text=getDiff();
-  try{localStorage.setItem('map_patch_'+editorMode+'_'+(settlementId||interiorId||'ow'),text);}catch(e){}
-  doCopy(text);
-  statusMsg('Diff copied to clipboard. Paste into aerdorn.js.');
+  try{localStorage.setItem('map_patch_'+editorMode+'_'+(settlementId||interiorId),text);}catch(e){}
+  doCopy(text);statusMsg('Diff copied. Paste into aerdorn.js.');
 }
 
 document.getElementById('btn-save').addEventListener('click',saveToGame);
@@ -763,23 +977,18 @@ document.getElementById('btn-export-full').addEventListener('click',()=>doDownlo
 document.getElementById('btn-dl-diff').addEventListener('click',()=>doDownload(getDiff(),'diff'));
 document.getElementById('btn-cp-diff').addEventListener('click',()=>doCopy(getDiff()));
 
-// ── Palettes ───────────────────────────────────────────────────
-function buildVariantPicker(typeId) {
-  let vp = document.getElementById('variant-picker');
-  if(!vp){ vp=document.createElement('div'); vp.id='variant-picker'; vp.style.cssText='display:flex;flex-wrap:wrap;gap:2px;padding:4px 4px 2px;border-bottom:1px solid #2a1e10;flex-shrink:0;'; document.getElementById('left-panel').insertBefore(vp, document.getElementById('left-panel').querySelector('.psec:last-child')); }
-  vp.innerHTML='';
-  const label=document.createElement('div');
-  label.style.cssText='width:100%;font-size:10px;color:#5a4820;letter-spacing:1px;margin-bottom:3px;';
-  label.textContent='VARIANT';
-  vp.appendChild(label);
+// ═══════════════════════════════════════════════════════════════
+// PALETTES
+// ═══════════════════════════════════════════════════════════════
+function buildVariantPicker(typeId){
+  const vp=document.getElementById('variant-picker');vp.innerHTML='';
   for(let v=0;v<8;v++){
     const sw=document.createElement('div');
-    sw.style.cssText=`width:20px;height:20px;border-radius:2px;cursor:pointer;image-rendering:pixelated;border:2px solid ${v===currentVariant?'#e8c870':'#2a1e10'};overflow:hidden;flex-shrink:0;`;
+    sw.style.cssText=`width:20px;height:20px;border-radius:2px;cursor:pointer;border:2px solid ${v===currentVariant?'#e8c870':'#2a1e10'};overflow:hidden;flex-shrink:0;`;
     const tc=getTileCanvas(typeId,0,0,v);
     if(tc){const c=document.createElement('canvas');c.width=20;c.height=20;c.style.cssText='width:20px;height:20px;image-rendering:pixelated;display:block;';c.getContext('2d').drawImage(tc,0,0,20,20);sw.appendChild(c);}
     else sw.style.background='#1a1208';
-    sw.title=`Variant ${v}`;
-    sw.addEventListener('click',()=>{ currentVariant=v; buildVariantPicker(typeId); });
+    sw.addEventListener('click',()=>{currentVariant=v;buildVariantPicker(typeId);});
     vp.appendChild(sw);
   }
 }
@@ -789,7 +998,7 @@ function buildTerrainPalette(){
   if(!types.find(t=>t.id===currentTerrainId))currentTerrainId=types[0].id;
   document.getElementById('terrain-label').textContent=
     editorMode==='overworld'?'TERRAIN (OW)':editorMode==='interior'?'TERRAIN (INT)':'TERRAIN';
-  const tp=document.getElementById('terrain-palette'); tp.innerHTML='';
+  const tp=document.getElementById('terrain-palette');tp.innerHTML='';
   for(const t of types){
     const div=document.createElement('div');
     div.className='pitem'+(t.id===currentTerrainId?' sel':'');
@@ -800,10 +1009,8 @@ function buildTerrainPalette(){
     const span=document.createElement('span');span.textContent=t.l;
     div.appendChild(sw);div.appendChild(span);
     div.addEventListener('click',()=>{
-      currentTerrainId=t.id;
-      paintTerrain=true;
-      tp.querySelectorAll('.pitem').forEach(e=>e.classList.remove('sel'));
-      div.classList.add('sel');
+      currentTerrainId=t.id;paintTerrain=true;
+      tp.querySelectorAll('.pitem').forEach(e=>e.classList.remove('sel'));div.classList.add('sel');
       buildVariantPicker(t.id);
     });
     tp.appendChild(div);
@@ -812,85 +1019,148 @@ function buildTerrainPalette(){
 }
 
 function buildObjPalette(){
-  const tabs=document.getElementById('obj-cat-tabs'); tabs.innerHTML='';
+  const tabs=document.getElementById('obj-cat-tabs');tabs.innerHTML='';
   for(const cat of OBJ_CATS){
-    const btn=document.createElement('button');
-    btn.textContent=cat.label;btn.style.cssText='font-size:10px;padding:2px 4px;';
+    const btn=document.createElement('button');btn.textContent=cat.label;
+    btn.style.cssText='font-size:10px;padding:2px 4px;';
     btn.classList.toggle('active',cat.id===currentObjCat);
     btn.addEventListener('click',()=>{currentObjCat=cat.id;buildObjPalette();});
     tabs.appendChild(btn);
   }
-  const op=document.getElementById('obj-palette'); op.innerHTML='';
-  const mk=(label,value)=>{
+  const op=document.getElementById('obj-palette');op.innerHTML='';
+  const mk=(label,value,previewFn)=>{
     const div=document.createElement('div');
     div.className='pitem'+(currentObjId===value?' sel':'');
     const sw=document.createElement('div');sw.className='swatch';
-    sw.style.background=value===null?'#1a1208':'#2a1a08';
-    if(value===null)sw.style.borderStyle='dashed';
+    sw.style.background=value==null?'#1a1208':'#2a1a08';
+    if(value==null)sw.style.borderStyle='dashed';
+    if(previewFn){
+      try{const g=previewFn(12345);if(g){const pc=document.createElement('canvas');MF.renderGridToCanvas(g,pc,1);const c=document.createElement('canvas');c.width=16;c.height=16;c.getContext('2d').drawImage(pc,0,0,16,16);sw.innerHTML='';sw.appendChild(c);}}catch(e){}
+    }
     const span=document.createElement('span');span.textContent=label;
     div.appendChild(sw);div.appendChild(span);
     div.addEventListener('click',()=>{
-      currentObjId=value;
-      paintTerrain=false; // object palette click — DON'T change terrain when painting
-      op.querySelectorAll('.pitem').forEach(e=>e.classList.remove('sel'));
-      div.classList.add('sel');
+      currentObjId=value;paintTerrain=false;
+      op.querySelectorAll('.pitem').forEach(e=>e.classList.remove('sel'));div.classList.add('sel');
     });
     op.appendChild(div);
   };
-  mk('(no change)',null);
-  mk('(clear)','');
+  mk('(no change)',null,null);mk('(clear)','',null);
   const cat=OBJ_CATS.find(c=>c.id===currentObjCat)||OBJ_CATS[0];
-  for(const item of cat.items){
-    const div=document.createElement('div');
-    div.className='pitem'+(currentObjId===item.id?' sel':'');
-    const sw=document.createElement('div');sw.className='swatch';sw.style.background='#1a1208';
-    try{
-      const grid=item.fn(12345);
-      if(grid){const c=document.createElement('canvas');c.width=16;c.height=16;const pc=document.createElement('canvas');MF.renderGridToCanvas(grid,pc,1);c.getContext('2d').drawImage(pc,0,0,16,16);sw.innerHTML='';sw.appendChild(c);}
-    }catch(e){}
-    const span=document.createElement('span');span.textContent=item.l;
-    div.appendChild(sw);div.appendChild(span);
-    div.addEventListener('click',()=>{
-      currentObjId=item.id;
-      paintTerrain=false; // object only — don't stomp terrain
-      op.querySelectorAll('.pitem').forEach(e=>e.classList.remove('sel'));
-      div.classList.add('sel');
-    });
-    op.appendChild(div);
+  for(const id of cat.ids){
+    const def=OBJECT_DEFS[id];if(!def)continue;
+    mk(def.l,id,def.fn);
   }
 }
 
+// ── Building palette ───────────────────────────────────────────
+function buildBldgPalette(){
+  // Size buttons
+  const sb=document.getElementById('bldg-size-btns');sb.innerHTML='';
+  for(const sz of BLDG_SIZES){
+    const[w,h]=sz.split('x').map(Number);
+    const btn=document.createElement('button');btn.textContent=sz;
+    btn.style.cssText='font-size:10px;padding:2px 5px;';
+    btn.classList.toggle('active',bldgConfig.w===w&&bldgConfig.h===h);
+    btn.addEventListener('click',()=>{bldgConfig.w=w;bldgConfig.h=h;buildBldgPalette();});
+    sb.appendChild(btn);
+  }
+  // Shape buttons
+  const shb=document.getElementById('bldg-shape-btns');shb.innerHTML='';
+  for(const sh of BLDG_SHAPES){
+    const btn=document.createElement('button');btn.textContent=sh;
+    btn.style.cssText='font-size:10px;padding:2px 5px;';
+    btn.classList.toggle('active',bldgConfig.shape===sh);
+    btn.addEventListener('click',()=>{bldgConfig.shape=sh;buildBldgPalette();});
+    shb.appendChild(btn);
+  }
+  // Roof style swatches
+  const rg=document.getElementById('bldg-roof-grid');rg.innerHTML='';
+  if(MF&&MF.ROOF_STYLES){
+    for(const rs of MF.ROOF_STYLES){
+      const sw=document.createElement('canvas');
+      sw.className='roof-swatch'+(rs.id===bldgConfig.styleId?' sel':'');
+      sw.title=rs.label;sw.width=28;sw.height=28;
+      // Generate small preview
+      try{
+        const g=rs.isThatch?MF.makeThatchRoof(20,20,'hip',[],12345):MF.makeRoofByShape(20,20,'hip',rs,[],12345);
+        if(g){const tc=document.createElement('canvas');MF.renderGridToCanvas(g,tc,1);sw.getContext('2d').drawImage(tc,0,0,28,28);}
+      }catch(e){}
+      sw.addEventListener('click',()=>{bldgConfig.styleId=rs.id;buildBldgPalette();});
+      rg.appendChild(sw);
+    }
+  }
+  updateBldgPreview();
+}
+
+function updateBldgPreview(){
+  const pv=document.getElementById('bldg-preview');
+  const{w,h,shape,styleId,chimneys}=bldgConfig;
+  const seed=99999;
+  const sc=getBldgSprite(w,h,shape,styleId,parseInt(chimneys)||1,seed);
+  const pvCtx=pv.getContext('2d');
+  pvCtx.clearRect(0,0,80,80);
+  pvCtx.fillStyle='#1a1408';pvCtx.fillRect(0,0,80,80);
+  if(sc){
+    const scale=Math.min(80/(w*20),80/(h*20));
+    const dw=w*20*scale,dh=h*20*scale;
+    pvCtx.imageSmoothingEnabled=false;
+    pvCtx.drawImage(sc,(80-dw)/2,(80-dh)/2,dw,dh);
+  }
+}
+
+// ── Left panel tabs ────────────────────────────────────────────
+function switchLpTab(tab){
+  currentLpTab=tab;
+  document.querySelectorAll('#lp-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.lp===tab));
+  document.querySelectorAll('.lp-panel').forEach(p=>p.classList.toggle('visible',p.id==='lp-'+tab));
+}
+document.querySelectorAll('#lp-tabs button').forEach(btn=>{
+  btn.addEventListener('click',()=>switchLpTab(btn.dataset.lp));
+});
+
+// Building detail inputs
+['bldg-interior','bldg-name'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',()=>{
+    bldgConfig[id==='bldg-interior'?'interiorType':'name']=document.getElementById(id).value;
+    updateBldgPreview();
+  });
+});
+document.getElementById('bldg-chimneys').addEventListener('change',e=>{bldgConfig.chimneys=parseInt(e.target.value);updateBldgPreview();});
+document.getElementById('btn-place-bldg').addEventListener('click',()=>{
+  if(!selectedCell){statusMsg('Pick a cell first (I key)');return;}
+  placeBuilding(selectedCell.x,selectedCell.y);
+});
+
 // ── Dropdowns ─────────────────────────────────────────────────
 function buildSettlementList(){
-  const sel=document.getElementById('settlement-select'); sel.innerHTML='';
+  const sel=document.getElementById('settlement-select');sel.innerHTML='';
   if(!window.WORLD_DATA)return;
   for(const[id,s]of Object.entries(window.WORLD_DATA.settlements)){
     const o=document.createElement('option');o.value=id;o.textContent=s.name||id;
-    if(id===settlementId)o.selected=true; sel.appendChild(o);
+    if(id===settlementId)o.selected=true;sel.appendChild(o);
   }
 }
 function buildInteriorList(){
-  const sel=document.getElementById('interior-select'); sel.innerHTML='';
+  const sel=document.getElementById('interior-select');sel.innerHTML='';
   const ids=new Set(['blank']);
-  if(window.WORLD_DATA){
+  if(window.WORLD_DATA)
     for(const s of Object.values(window.WORLD_DATA.settlements))
       for(const meta of Object.values(s.map))
         if(meta.enter&&meta.enter.id)ids.add(meta.enter.id);
-  }
   for(const id of[...ids].sort()){const o=document.createElement('option');o.value=id;o.textContent=id;sel.appendChild(o);}
   interiorId=sel.value;
 }
 
-// ── Mode / selectors ───────────────────────────────────────────
+// ── Mode ───────────────────────────────────────────────────────
 function applyMode(mode){
   editorMode=mode;
   document.getElementById('settlement-select').style.display=(mode==='settlement'||mode==='interior')?'':'none';
   document.getElementById('interior-select').style.display=mode==='interior'?'':'none';
   if(mode==='overworld'){tileSize=4;document.getElementById('zoom-select').value='4';}
   else if(tileSize<16){tileSize=24;document.getElementById('zoom-select').value='24';}
-  buildTerrainPalette(); buildObjPalette(); loadLayer();
+  buildTerrainPalette();buildObjPalette();loadLayer();
 }
-
 document.getElementById('mode-select').addEventListener('change',e=>applyMode(e.target.value));
 document.getElementById('settlement-select').addEventListener('change',e=>{settlementId=e.target.value;if(editorMode==='interior')buildInteriorList();loadLayer();});
 document.getElementById('interior-select').addEventListener('change',e=>{interiorId=e.target.value;loadLayer();});
@@ -909,10 +1179,13 @@ function handleMouse(e,isDown){
   if(!inBounds(x,y))return;
   if(currentTool==='pick'){if(isDown)selectCell(x,y);}
   else if(currentTool==='fill'){if(isDown){floodFill(x,y);selectCell(x,y);}}
-  else{applyPaint(x,y);if(isDown)selectCell(x,y);}
+  else{
+    if(currentLpTab==='building'&&isDown){placeBuilding(x,y);selectCell(x,y);}
+    else{applyPaint(x,y);if(isDown)selectCell(x,y);}
+  }
 }
 
-// ── Tools + keyboard ───────────────────────────────────────────
+// ── Tools + keys ───────────────────────────────────────────────
 document.querySelectorAll('[data-tool]').forEach(btn=>{
   btn.addEventListener('click',()=>{
     currentTool=btn.dataset.tool;
@@ -931,8 +1204,8 @@ document.addEventListener('keydown',e=>{
 function init(){
   if(!window.WORLD_DATA){statusMsg('ERROR: aerdorn.js not loaded');return;}
   if(!window.MapForge){statusMsg('ERROR: mapforge.js not loaded');return;}
-  MF = window.MapForge;
-  buildSettlementList(); buildInteriorList(); buildTerrainPalette(); buildObjPalette(); loadLayer();
+  MF=window.MapForge;
+  buildSettlementList();buildInteriorList();buildTerrainPalette();buildObjPalette();buildBldgPalette();loadLayer();
 }
 init();
 </script>
