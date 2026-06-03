@@ -6,6 +6,7 @@ const CONFIG = {
   IMAGE_PROXY_URL: 'https://keqzqhykfygplolcnxnn.supabase.co/functions/v1/image-proxy',
 
   TEXT_MODEL: 'anthropic/claude-3-haiku',
+  FALLBACK_MODEL: 'sao10k/l3-lunaris-8b',
 
   IMAGE_MODEL: 'sdxl_1024px',
   IMAGE_WIDTH: 1024,

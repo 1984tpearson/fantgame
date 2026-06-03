@@ -1935,13 +1935,13 @@ ${actionOnly?`ACTION MODE: Player acts. No location re-description. Omit LOCATIO
 RESPONSE FORMAT:
 SITUATION: <result, 1-2 sentences. If the player tried to approach or talk to someone and npcSpawn is null, narrate their reaction — they ignore you, walk away, give a curt response, etc. Never leave an approach unanswered.>
 IMAGE_SUBJECT: <3-6 word visual subject for image generation. Include what lies to the north if notable, e.g. "lush forest path, distant city walls north", "mossy stone crossroads, mountain peaks beyond", omit if no significant visual change>
-JSON: {"locationName":null,"exits":null,"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null}`:
+JSON: {"locationName":null,"exits":null,"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null,"deferred":false}`:
 `ENTRY MODE: Player just arrived.
 RESPONSE FORMAT:
 LOCATION: <pure scene description only — place, architecture, smells, weather, atmosphere. Do NOT mention people, NPCs, or activity here. 1-2 sentences.>
 SITUATION: <what is happening — people, activity, movement, NPCs present, mood of the crowd. Omit if nothing notable. 1-2 sentences.>
 IMAGE_SUBJECT: <3-6 word visual subject. Include what lies to the north if notable, e.g. "cobblestone market street, castle towers north">
-JSON: {"locationName":"...","exits":{"n":true,"s":true,"e":true,"w":true},"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null}`}
+JSON: {"locationName":"...","exits":{"n":true,"s":true,"e":true,"w":true},"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null,"deferred":false}`}
 
 CURRENCY RULES: coinsAwarded/coinsLost: {"currency":"copper"|"silver"|"gold","amount":N}. Null if none. NEVER put coins in inventoryAdd. When loot is a coin purse, money pouch, or any currency container, use coinsAwarded to add the coins directly — do NOT add the purse as an inventory item.
 ITEM VALUES: inventoryAdd items must include: [{"name":"Iron Dagger","valueCp":150}]
@@ -1968,78 +1968,86 @@ ITEM INTEGRITY RULES:
 - Items enter inventory only through: loot, purchase, gift, or narrative events you initiate.
 
 RESPONSE FORMAT RULES: End every response with a JSON: line. No markdown, no backticks around the JSON, no preamble before LOCATION/SITUATION.
+If you are unwilling or unable to fully resolve the player's action, do NOT narrate a refusal or substitute outcome — instead set "deferred":true in the JSON and leave SITUATION as a single neutral placeholder sentence. The action will be handled separately.
 
 ${actionOnly?`ACTION MODE: Player acts. No location re-description. Omit LOCATION.
 RESPONSE FORMAT:
 SITUATION: <result, 1-2 sentences. If the player tried to approach or talk to someone and npcSpawn is null, narrate their reaction — they ignore you, walk away, give a curt response, etc. Never leave an approach unanswered.>
 IMAGE_SUBJECT: <3-6 word visual subject for image generation. Include what lies to the north if notable, e.g. "lush forest path, distant city walls north", omit if no significant visual change>
-JSON: {"locationName":null,"exits":null,"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null}`:
+JSON: {"locationName":null,"exits":null,"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null,"deferred":false}`:
 `ENTRY MODE: Player just arrived.
 RESPONSE FORMAT:
 LOCATION: <pure scene description only — place, architecture, smells, weather, atmosphere. Do NOT mention people, NPCs, or activity here. 1-2 sentences.>
 SITUATION: <what is happening — people, activity, movement, NPCs present, mood of the crowd. Omit if nothing notable. 1-2 sentences.>
 IMAGE_SUBJECT: <3-6 word visual subject. Include what lies to the north if notable, e.g. "cobblestone market street, castle towers north">
-JSON: {"locationName":"...","exits":{"n":true,"s":true,"e":true,"w":true},"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null}`}
+JSON: {"locationName":"...","exits":{"n":true,"s":true,"e":true,"w":true},"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null,"deferred":false}`}
 `;
 }
 
 async function callAI(messages, actionOnly=false) {
   addTypingIndicator();
   try {
-    const res = await fetch(CONFIG.AI_PROXY_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': CONFIG.SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({
-        model: CONFIG.TEXT_MODEL,
-        max_tokens: 350,
-        messages: [
-          { role:'system', content: buildSystemPrompt(actionOnly) },
-          ...messages
-        ]
-      })
-    });
-    const data = await res.json();
+    const result = await callAIWithModel(CONFIG.TEXT_MODEL, messages, actionOnly);
+    if (result.meta?.deferred && CONFIG.FALLBACK_MODEL) {
+      const fallback = await callAIWithModel(CONFIG.FALLBACK_MODEL, messages, actionOnly);
+      removeTypingIndicator();
+      return fallback;
+    }
     removeTypingIndicator();
-    const raw = (data.choices?.[0]?.message?.content || '').trim();
-    let location='', situation='', notice='', imageSubject='', meta={};
-    // Normalise markdown bold labels e.g. **LOCATION:** → LOCATION:
-    const normalised = raw.replace(/\*\*([A-Z_]+):\*\*/g, '$1:').replace(/\*\*([A-Z_]+)\*\*:/g, '$1:');
-    const lines = normalised.split('\n');
-    let jsonStr = '';
-    for (const line of lines) {
-      const t = line.trim();
-      if (t.startsWith('LOCATION:')) location = t.replace('LOCATION:','').trim();
-      else if (t.startsWith('SITUATION:')) situation = t.replace('SITUATION:','').trim();
-      else if (t.startsWith('NOTICE:')) notice = t.replace('NOTICE:','').trim();
-      else if (t.startsWith('IMAGE_SUBJECT:')) imageSubject = t.replace('IMAGE_SUBJECT:','').trim();
-      else if (t.startsWith('JSON:')) jsonStr = t.replace('JSON:','').trim();
-    }
-    if (!jsonStr) jsonStr = lines[lines.length-1].trim();
-    try {
-      jsonStr = jsonStr.replace(/```json|```/g,'').trim();
-      meta = JSON.parse(jsonStr);
-    } catch(e) {
-      const m = raw.match(/\{[\s\S]*\}/);
-      if (m) try { meta = JSON.parse(m[0]); } catch(e2) {}
-      if (!location && !situation) location = raw.replace(/\{[\s\S]*\}/,'').replace(/JSON:.*/g,'').replace(/IMAGE_SUBJECT:.*/g,'').trim();
-    }
-    // Strip any leaked JSON or backticks from display fields
-    const stripMeta = (s) => s.replace(/```[\s\S]*?```/g,'').replace(/\{[\s\S]*\}/g,'').replace(/`/g,'').trim();
-    location = stripMeta(location);
-    situation = stripMeta(situation);
-    notice = stripMeta(notice);
-    // Don't display literal "null" strings
-    if (notice.toLowerCase() === 'null' || notice.toLowerCase() === 'none') notice = '';
-    if (situation.toLowerCase() === 'null' || situation.toLowerCase() === 'none') situation = '';
-    return { location, situation, notice, imageSubject, meta };
+    return result;
   } catch(e) {
     removeTypingIndicator();
     return { location:'', situation:'The world grows quiet... (error)', notice:'', imageSubject:'', meta:{} };
   }
+}
+
+async function callAIWithModel(model, messages, actionOnly=false) {
+  const res = await fetch(CONFIG.AI_PROXY_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': CONFIG.SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 350,
+      messages: [
+        { role:'system', content: buildSystemPrompt(actionOnly) },
+        ...messages
+      ]
+    })
+  });
+  const data = await res.json();
+  const raw = (data.choices?.[0]?.message?.content || '').trim();
+  let location='', situation='', notice='', imageSubject='', meta={};
+  const normalised = raw.replace(/\*\*([A-Z_]+):\*\*/g, '$1:').replace(/\*\*([A-Z_]+)\*\*:/g, '$1:');
+  const lines = normalised.split('\n');
+  let jsonStr = '';
+  for (const line of lines) {
+    const t = line.trim();
+    if (t.startsWith('LOCATION:')) location = t.replace('LOCATION:','').trim();
+    else if (t.startsWith('SITUATION:')) situation = t.replace('SITUATION:','').trim();
+    else if (t.startsWith('NOTICE:')) notice = t.replace('NOTICE:','').trim();
+    else if (t.startsWith('IMAGE_SUBJECT:')) imageSubject = t.replace('IMAGE_SUBJECT:','').trim();
+    else if (t.startsWith('JSON:')) jsonStr = t.replace('JSON:','').trim();
+  }
+  if (!jsonStr) jsonStr = lines[lines.length-1].trim();
+  try {
+    jsonStr = jsonStr.replace(/```json|```/g,'').trim();
+    meta = JSON.parse(jsonStr);
+  } catch(e) {
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (m) try { meta = JSON.parse(m[0]); } catch(e2) {}
+    if (!location && !situation) location = raw.replace(/\{[\s\S]*\}/,'').replace(/JSON:.*/g,'').replace(/IMAGE_SUBJECT:.*/g,'').trim();
+  }
+  const stripMeta = (s) => s.replace(/```[\s\S]*?```/g,'').replace(/\{[\s\S]*\}/g,'').replace(/`/g,'').trim();
+  location = stripMeta(location);
+  situation = stripMeta(situation);
+  notice = stripMeta(notice);
+  if (notice.toLowerCase() === 'null' || notice.toLowerCase() === 'none') notice = '';
+  if (situation.toLowerCase() === 'null' || situation.toLowerCase() === 'none') situation = '';
+  return { location, situation, notice, imageSubject, meta };
 }
 
 // ═══════════════════════════════════════════════════
