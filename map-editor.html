@@ -622,8 +622,21 @@ function computeBounds() {
 }
 function gridW(){return bounds.maxX-bounds.minX+1;}
 function gridH(){return bounds.maxY-bounds.minY+1;}
-function cellToCanvas(x,y){return{px:(x-bounds.minX)*tileSize,py:(gridH()-1-(y-bounds.minY))*tileSize};}
-function canvasToCell(px,py){return{x:Math.floor(px/tileSize)+bounds.minX,y:(gridH()-1-Math.floor(py/tileSize))+bounds.minY};}
+function cellToCanvas(x,y){
+  const px=(x-bounds.minX)*tileSize;
+  // Overworld: y increases downward (no flip). Settlement/interior: y=0=south=bottom (flip)
+  const py=editorMode==='overworld'
+    ? (y-bounds.minY)*tileSize
+    : (gridH()-1-(y-bounds.minY))*tileSize;
+  return{px,py};
+}
+function canvasToCell(px,py){
+  const x=Math.floor(px/tileSize)+bounds.minX;
+  const y=editorMode==='overworld'
+    ? Math.floor(py/tileSize)+bounds.minY
+    : (gridH()-1-Math.floor(py/tileSize))+bounds.minY;
+  return{x,y};
+}
 function inBounds(x,y){return x>=bounds.minX&&x<=bounds.maxX&&y>=bounds.minY&&y<=bounds.maxY;}
 
 // ═══════════════════════════════════════════════════════════════
@@ -1479,6 +1492,10 @@ function applyMode(mode){
   document.getElementById('settlement-select').style.display=(mode==='settlement'||mode==='interior')?'':'none';
   document.getElementById('interior-select').style.display=mode==='interior'?'':'none';
   document.getElementById('ow-nav').style.display=mode==='overworld'?'flex':'none';
+  if(mode==='overworld'){
+    document.getElementById('ow-cx').value=owCX;
+    document.getElementById('ow-cy').value=owCY;
+  }
   if(mode==='overworld'){tileSize=4;document.getElementById('zoom-select').value='4';}
   else if(tileSize<16){tileSize=24;document.getElementById('zoom-select').value='24';}
   buildTerrainPalette();buildObjPalette();loadLayer();
@@ -1515,6 +1532,26 @@ document.querySelectorAll('[data-tool]').forEach(btn=>{
   });
 });
 document.getElementById('btn-undo').addEventListener('click',undo);
+
+// Overworld panning via arrow keys
+const OW_PAN_STEP = 20; // cells per keypress
+document.addEventListener('keydown', e => {
+  if(editorMode!=='overworld')return;
+  if(e.target.matches('input,select,textarea'))return;
+  let moved=false;
+  if(e.key==='ArrowLeft'||e.key==='a'){owCX-=OW_PAN_STEP;moved=true;}
+  if(e.key==='ArrowRight'||e.key==='d'){owCX+=OW_PAN_STEP;moved=true;}
+  if(e.key==='ArrowUp'||e.key==='w'){owCY-=OW_PAN_STEP;moved=true;}
+  if(e.key==='ArrowDown'||e.key==='s'){owCY+=OW_PAN_STEP;moved=true;}
+  if(moved){
+    e.preventDefault();
+    owCX=Math.max(OW_BOUNDS.minX+OW_VIEWPORT_R,Math.min(OW_BOUNDS.maxX-OW_VIEWPORT_R,owCX));
+    owCY=Math.max(OW_BOUNDS.minY+OW_VIEWPORT_R,Math.min(OW_BOUNDS.maxY-OW_VIEWPORT_R,owCY));
+    document.getElementById('ow-cx').value=owCX;
+    document.getElementById('ow-cy').value=owCY;
+    tileCache.clear();loadLayer();
+  }
+});
 document.getElementById('ow-go').addEventListener('click',()=>{
   const cx=parseInt(document.getElementById('ow-cx').value)||346;
   const cy=parseInt(document.getElementById('ow-cy').value)||556;
