@@ -2098,7 +2098,7 @@ async function maybeGenerateNotice(x, y, locationName, terrainType) {
         max_tokens: 80,
         messages: [{
           role: 'system',
-          content: 'You are a detail spotter for a gritty fantasy RPG. Respond with ONE sentence only — no preamble, no explanation. Describe a single specific hidden, unusual, or interactive detail the player might notice on close inspection. It must be something they could act on: a concealed object, a suspicious person, a hidden entrance, something out of place. NOT general atmosphere, NOT crowds, NOT signs or stalls. If nothing genuinely interesting fits this location, respond with exactly: NONE'
+          content: 'You are a detail spotter for a gritty fantasy RPG. Respond with ONE sentence only — no preamble, no explanation. Describe a single specific hidden, unusual, or interactive detail the player might notice on close inspection. It must be something they could act on: a concealed object, a suspicious person, a hidden entrance, something out of place. NOT general atmosphere, NOT crowds, NOT signs or stalls. Be specific about the detail itself but vague about what it contains or leads to — tease, do not spoil. If nothing genuinely interesting fits this location, respond with exactly: NONE'
         }, {
           role: 'user',
           content: `Location: ${locationName} (${terrainType}). What specific hidden or unusual detail might a careful observer notice?`
