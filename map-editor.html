@@ -356,6 +356,7 @@ let undoStack = [];
 let selectedCell = null;
 let currentTool = 'paint';
 let currentTerrainId = 'street';  // what the terrain palette has selected
+let currentVariant = 0;           // 0–7, picked from variant strip
 let currentObjId = null;          // null=no change, ''=clear, string=set
 let paintTerrain = true;          // whether a paint stroke changes terrain
 let currentObjCat = 'extras';
@@ -470,9 +471,21 @@ function canvasToCell(px,py){return{x:Math.floor(px/tileSize)+bounds.minX,y:(gri
 function inBounds(x,y){return x>=bounds.minX&&x<=bounds.maxX&&y>=bounds.minY&&y<=bounds.maxY;}
 
 // ── Sprite rendering ───────────────────────────────────────────
-function getTileCanvas(type, x, y) {
-  const seed = ((x&0xffff)<<16)|(y&0xffff);
-  // Floorboard types
+// Variant seeds: each variant index maps to a fixed seed offset
+// so all cells painted with variant N look identical
+function variantSeed(type, variant) {
+  // Use a stable hash of type+variant so different types don't share seeds
+  let h = variant * 7919;
+  for(let i=0;i<type.length;i++) h = (h * 31 + type.charCodeAt(i)) & 0x7fffffff;
+  return h || 1;
+}
+
+// Get tile canvas — uses meta.variant if provided, otherwise falls back to (x,y) seed
+function getTileCanvas(type, x, y, variant) {
+  const seed = variant !== undefined && variant !== null
+    ? variantSeed(type, variant)
+    : (((x&0xffff)<<16)|(y&0xffff)) >>> 0;
+
   const floorMap = {floor_h:'h',floor_v:'v',floor_hbone:'herringbone',floor_diag:'diagonal',floor_parq:'parquet',floor_stone:'stone'};
   if(floorMap[type]){
     const key='floor_'+floorMap[type]+'_'+seed;
@@ -539,7 +552,7 @@ function renderAll() {
 
 function _drawCell(x,y,meta){
   const{px,py}=cellToCanvas(x,y);
-  const tc=getTileCanvas(meta.type,x,y);
+  const tc=getTileCanvas(meta.type,x,y,meta.variant);
   if(tc)ctx.drawImage(tc,px,py,tileSize,tileSize);
   else{ctx.fillStyle='#1a1408';ctx.fillRect(px,py,tileSize,tileSize);}
 
@@ -556,11 +569,6 @@ function _drawCell(x,y,meta){
   if(editorMode==='overworld'&&(meta.type==='town'||meta.type==='city'||meta.type==='village'||meta.type==='castle')){
     ctx.fillStyle='#e8c870cc';const sz=Math.max(2,tileSize/4);
     ctx.fillRect(px+tileSize/2-sz/2,py+tileSize/2-sz/2,sz,sz);
-  }
-  // Type border (only at useful zoom levels)
-  if(tileSize>=12){
-    const ti=ALL_T.find(t=>t.id===meta.type);
-    if(ti){ctx.strokeStyle=ti.c+'33';ctx.lineWidth=0.5;ctx.strokeRect(px+0.5,py+0.5,tileSize-1,tileSize-1);}
   }
 }
 
@@ -598,7 +606,7 @@ function applyPaint(x,y){
     const existing = definedMap[k] ? Object.assign({},definedMap[k]) : Object.assign({},inferBg(x,y));
 
     // Only update terrain if paintTerrain is true (terrain palette was used last)
-    if(paintTerrain) existing.type = currentTerrainId;
+    if(paintTerrain){ existing.type = currentTerrainId; existing.variant = currentVariant; }
 
     // Object handling
     if(currentObjId==='')delete existing.object;
@@ -623,7 +631,7 @@ function floodFill(startX,startY){
     const[cx,cy]=queue.shift();
     // Apply same logic as paint
     const existing=definedMap[`${cx},${cy}`]?Object.assign({},definedMap[`${cx},${cy}`]):Object.assign({},inferBg(cx,cy));
-    if(paintTerrain)existing.type=currentTerrainId;
+    if(paintTerrain){existing.type=currentTerrainId; existing.variant=currentVariant;}
     if(currentObjId==='')delete existing.object;
     else if(currentObjId!==null)existing.object=currentObjId;
     pushUndo(cx,cy);
@@ -756,6 +764,26 @@ document.getElementById('btn-dl-diff').addEventListener('click',()=>doDownload(g
 document.getElementById('btn-cp-diff').addEventListener('click',()=>doCopy(getDiff()));
 
 // ── Palettes ───────────────────────────────────────────────────
+function buildVariantPicker(typeId) {
+  let vp = document.getElementById('variant-picker');
+  if(!vp){ vp=document.createElement('div'); vp.id='variant-picker'; vp.style.cssText='display:flex;flex-wrap:wrap;gap:2px;padding:4px 4px 2px;border-bottom:1px solid #2a1e10;flex-shrink:0;'; document.getElementById('left-panel').insertBefore(vp, document.getElementById('left-panel').querySelector('.psec:last-child')); }
+  vp.innerHTML='';
+  const label=document.createElement('div');
+  label.style.cssText='width:100%;font-size:10px;color:#5a4820;letter-spacing:1px;margin-bottom:3px;';
+  label.textContent='VARIANT';
+  vp.appendChild(label);
+  for(let v=0;v<8;v++){
+    const sw=document.createElement('div');
+    sw.style.cssText=`width:20px;height:20px;border-radius:2px;cursor:pointer;image-rendering:pixelated;border:2px solid ${v===currentVariant?'#e8c870':'#2a1e10'};overflow:hidden;flex-shrink:0;`;
+    const tc=getTileCanvas(typeId,0,0,v);
+    if(tc){const c=document.createElement('canvas');c.width=20;c.height=20;c.style.cssText='width:20px;height:20px;image-rendering:pixelated;display:block;';c.getContext('2d').drawImage(tc,0,0,20,20);sw.appendChild(c);}
+    else sw.style.background='#1a1208';
+    sw.title=`Variant ${v}`;
+    sw.addEventListener('click',()=>{ currentVariant=v; buildVariantPicker(typeId); });
+    vp.appendChild(sw);
+  }
+}
+
 function buildTerrainPalette(){
   const types=editorMode==='overworld'?OW_TERRAIN:editorMode==='interior'?INT_TERRAIN:SETTLE_TERRAIN;
   if(!types.find(t=>t.id===currentTerrainId))currentTerrainId=types[0].id;
@@ -766,19 +794,21 @@ function buildTerrainPalette(){
     const div=document.createElement('div');
     div.className='pitem'+(t.id===currentTerrainId?' sel':'');
     const sw=document.createElement('div');sw.className='swatch';
-    const tc=getTileCanvas(t.id,99,99);
+    const tc=getTileCanvas(t.id,0,0,0);
     if(tc){const c=document.createElement('canvas');c.width=16;c.height=16;c.getContext('2d').drawImage(tc,0,0,16,16);sw.appendChild(c);}
     else sw.style.background='#3a2a10';
     const span=document.createElement('span');span.textContent=t.l;
     div.appendChild(sw);div.appendChild(span);
     div.addEventListener('click',()=>{
       currentTerrainId=t.id;
-      paintTerrain=true; // terrain palette click enables terrain painting
+      paintTerrain=true;
       tp.querySelectorAll('.pitem').forEach(e=>e.classList.remove('sel'));
       div.classList.add('sel');
+      buildVariantPicker(t.id);
     });
     tp.appendChild(div);
   }
+  buildVariantPicker(currentTerrainId);
 }
 
 function buildObjPalette(){
