@@ -102,7 +102,10 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
         <div class="plabel" id="terrain-label">TERRAIN</div>
       </div>
       <div class="pscroll" style="flex:1;"><div class="pgrid" id="terrain-palette"></div></div>
-
+      <div id="terrain-style-wrap" style="border-top:1px solid #2a1e10;padding:5px;flex-shrink:0;display:none;">
+        <div class="plabel">WOOD COLOUR</div>
+        <div id="terrain-style-picker" style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px;"></div>
+      </div>
     </div>
     <!-- OBJECT TAB -->
     <div id="lp-object" class="lp-panel" style="flex-direction:column;">
@@ -226,9 +229,9 @@ const SETTLE_TERRAIN = [
   {id:'building',l:'Building',mf:'farmland'},{id:'wall',l:'Wall (stone)',mf:'rocky'},
   {id:'gate',l:'Gate',mf:'cobble'},{id:'door',l:'Door',mf:'dirt'},
   {id:'interior',l:'Interior (cave)',mf:'cave'},{id:'floor',l:'Floor (dirt)',mf:'dirt'},
-  {id:'floor_h',l:'Planks H',mf:'floor_h'},{id:'floor_v',l:'Planks V',mf:'floor_v'},
-  {id:'floor_hbone',l:'Herringbone',mf:'floor_herringbone'},{id:'floor_diag',l:'Diagonal',mf:'floor_diagonal'},
-  {id:'floor_parq',l:'Parquet',mf:'floor_parquet'},{id:'floor_stone',l:'Stone Tile',mf:'floor_stone'},
+  {id:'floor_h',l:'Planks H',mf:'floor_h',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},{id:'floor_v',l:'Planks V',mf:'floor_v',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},
+  {id:'floor_hbone',l:'Herringbone',mf:'floor_herringbone',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},{id:'floor_diag',l:'Diagonal',mf:'floor_diagonal',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},
+  {id:'floor_parq',l:'Parquet',mf:'floor_parquet',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},{id:'floor_stone',l:'Stone Tile',mf:'floor_stone',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},
   {id:'yard',l:'Yard (grass)',mf:'grass'},
 ];
 const OW_TERRAIN = [
@@ -247,9 +250,9 @@ const OW_TERRAIN = [
 ];
 const INT_TERRAIN = [
   {id:'interior',l:'Cave Floor',mf:'cave'},{id:'floor',l:'Dirt Floor',mf:'dirt'},
-  {id:'floor_h',l:'Planks H',mf:'floor_h'},{id:'floor_v',l:'Planks V',mf:'floor_v'},
-  {id:'floor_hbone',l:'Herringbone',mf:'floor_herringbone'},{id:'floor_diag',l:'Diagonal',mf:'floor_diagonal'},
-  {id:'floor_parq',l:'Parquet',mf:'floor_parquet'},{id:'floor_stone',l:'Stone Tile',mf:'floor_stone'},
+  {id:'floor_h',l:'Planks H',mf:'floor_h',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},{id:'floor_v',l:'Planks V',mf:'floor_v',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},
+  {id:'floor_hbone',l:'Herringbone',mf:'floor_herringbone',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},{id:'floor_diag',l:'Diagonal',mf:'floor_diagonal',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},
+  {id:'floor_parq',l:'Parquet',mf:'floor_parquet',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},{id:'floor_stone',l:'Stone Tile',mf:'floor_stone',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},
   {id:'wall',l:'Wall (stone)',mf:'rocky'},{id:'door',l:'Door',mf:'dirt'},
   {id:'courtyard',l:'Yard (grass)',mf:'grass'},{id:'mud',l:'Mud',mf:'mud'},
 ];
@@ -485,6 +488,7 @@ let undoStack = [];
 let selectedCell = null;
 let currentTool = 'paint';
 let currentTerrainId = 'street';
+let currentTerrainStyle = null;
 let currentVariant = 0;
 let currentObjId = null;          // null=no change, ''=clear, string=object id
 let currentObjVariant = 0;
@@ -612,12 +616,13 @@ function inBounds(x,y){return x>=bounds.minX&&x<=bounds.maxX&&y>=bounds.minY&&y<
 // ═══════════════════════════════════════════════════════════════
 // TILE / SPRITE RENDERING
 // ═══════════════════════════════════════════════════════════════
-function getTileCanvas(type, x, y, variant) {
+function getTileCanvas(type, x, y, variant, terrainStyle) {
   const seed = (variant != null) ? variantSeed(type, variant) : (((x&0xffff)<<16)|(y&0xffff))>>>0;
   const floorMap = {floor_h:'h',floor_v:'v',floor_hbone:'herringbone',floor_diag:'diagonal',floor_parq:'parquet',floor_stone:'stone'};
   if (floorMap[type]) {
-    const key='fl_'+floorMap[type]+'_'+seed; if(tileCache.has(key))return tileCache.get(key);
-    try{const g=MF.makeFloorboard(floorMap[type],seed);const c=document.createElement('canvas');MF.renderGridToCanvas(g,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
+    const st = terrainStyle!=null ? terrainStyle : null;
+    const key='fl_'+floorMap[type]+'_'+seed+'_s'+(st??'x'); if(tileCache.has(key))return tileCache.get(key);
+    try{const g=MF.makeFloorboard(floorMap[type],seed,st);const c=document.createElement('canvas');MF.renderGridToCanvas(g,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
   }
   if (type==='cracked') {
     const key='crk_'+seed; if(tileCache.has(key))return tileCache.get(key);
@@ -764,7 +769,7 @@ function renderAll() {
   for (const [k,meta] of Object.entries(map)) {
     const [x,y]=parseKey(k); if(isNaN(x))continue;
     const {px,py}=cellToCanvas(x,y);
-    const tc=getTileCanvas(meta.type,x,y,meta.variant);
+    const tc=getTileCanvas(meta.type,x,y,meta.variant,meta.terrainStyle);
     if(tc) ctx.drawImage(tc,px,py,tileSize,tileSize);
     else { ctx.fillStyle='#1a1408'; ctx.fillRect(px,py,tileSize,tileSize); }
     // OW settlement dot
@@ -822,7 +827,7 @@ function renderAll() {
 
 function _drawCellTerrain(x,y,meta) {
   const {px,py}=cellToCanvas(x,y);
-  const tc=getTileCanvas(meta.type,x,y,meta.variant);
+  const tc=getTileCanvas(meta.type,x,y,meta.variant,meta.terrainStyle);
   if(tc) ctx.drawImage(tc,px,py,tileSize,tileSize);
   else { ctx.fillStyle='#1a1408'; ctx.fillRect(px,py,tileSize,tileSize); }
 }
@@ -905,7 +910,7 @@ function applyPaint(x,y){
     else{pushUndo(x,y);delete definedMap[k];map[k]=inferBg(x,y);redrawCell(x,y);}
   } else {
     const ex=definedMap[k]?Object.assign({},definedMap[k]):Object.assign({},inferBg(x,y));
-    if(paintTerrain){ex.type=currentTerrainId;ex.variant=currentVariant;}
+    if(paintTerrain){ex.type=currentTerrainId;ex.variant=currentVariant;if(currentTerrainStyle!=null)ex.terrainStyle=currentTerrainStyle;else delete ex.terrainStyle;}
     if(currentObjId==='')delete ex.object;
     else if(currentObjId!==null){ex.object=currentObjId;ex.objVariant=currentObjVariant;if(currentObjStyle!=null)ex.objStyle=currentObjStyle;else delete ex.objStyle;if(currentObjLinen!=null)ex.objLinen=currentObjLinen;else delete ex.objLinen;}
     pushUndo(x,y);definedMap[k]=ex;map[k]=ex;
@@ -966,7 +971,7 @@ function floodFill(startX,startY){
   while(queue.length){
     const[cx,cy]=queue.shift();
     const ex=definedMap[`${cx},${cy}`]?Object.assign({},definedMap[`${cx},${cy}`]):Object.assign({},inferBg(cx,cy));
-    if(paintTerrain){ex.type=currentTerrainId;ex.variant=currentVariant;}
+    if(paintTerrain){ex.type=currentTerrainId;ex.variant=currentVariant;if(currentTerrainStyle!=null)ex.terrainStyle=currentTerrainStyle;else delete ex.terrainStyle;}
     if(currentObjId==='')delete ex.object;
     else if(currentObjId!==null)ex.object=currentObjId;
     pushUndo(cx,cy);definedMap[`${cx},${cy}`]=ex;map[`${cx},${cy}`]=ex;
@@ -1137,6 +1142,35 @@ document.getElementById('btn-cp-diff').addEventListener('click',()=>doCopy(getDi
 // ═══════════════════════════════════════════════════════════════
 function buildVariantPicker(typeId){} // terrain randomises automatically — no picker
 
+function buildTerrainStylePicker(typeId){
+  const wrap=document.getElementById('terrain-style-wrap');
+  const vp=document.getElementById('terrain-style-picker');
+  const types=editorMode==='overworld'?OW_TERRAIN:editorMode==='interior'?INT_TERRAIN:SETTLE_TERRAIN;
+  const t=types.find(t=>t.id===typeId);
+  if(!t||!t.styles){wrap.style.display='none';currentTerrainStyle=null;return;}
+  wrap.style.display='';
+  vp.innerHTML='';
+  const rnd=document.createElement('button');
+  rnd.textContent='Rnd';rnd.style.cssText='font-size:9px;padding:1px 4px;margin:1px;';
+  rnd.classList.toggle('active',currentTerrainStyle===null);
+  rnd.addEventListener('click',()=>{currentTerrainStyle=null;buildTerrainStylePicker(typeId);});
+  vp.appendChild(rnd);
+  t.styles.forEach((name,i)=>{
+    const sw=document.createElement('div');
+    sw.style.cssText=`display:inline-flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;margin:1px;opacity:${currentTerrainStyle===i?1:0.65};`;
+    const cv=document.createElement('canvas');cv.width=20;cv.height=20;
+    cv.style.cssText=`width:20px;height:20px;image-rendering:pixelated;border:2px solid ${currentTerrainStyle===i?'#e8c870':'#2a1e10'};border-radius:2px;`;
+    const previewTile=getTileCanvas(typeId,99,99,null,i);
+    if(previewTile){cv.getContext('2d').drawImage(previewTile,0,0,20,20);}
+    const lbl=document.createElement('div');
+    lbl.style.cssText='font-size:8px;color:#8a7050;white-space:nowrap;';
+    lbl.textContent=name;
+    sw.appendChild(cv);sw.appendChild(lbl);
+    sw.addEventListener('click',()=>{currentTerrainStyle=i;buildTerrainStylePicker(typeId);});
+    vp.appendChild(sw);
+  });
+}
+
 function buildObjVariantPicker(objId){
   const wrap=document.getElementById('obj-variant-wrap');
   const vp=document.getElementById('obj-variant-picker');
@@ -1231,11 +1265,11 @@ function buildTerrainPalette(){
     div.addEventListener('click',()=>{
       currentTerrainId=t.id;paintTerrain=true;
       tp.querySelectorAll('.pitem').forEach(e=>e.classList.remove('sel'));div.classList.add('sel');
-      buildVariantPicker(t.id);
+      buildTerrainStylePicker(t.id);
     });
     tp.appendChild(div);
   }
-  buildVariantPicker(currentTerrainId);
+  buildTerrainStylePicker(currentTerrainId);
 }
 
 function buildObjPalette(){
