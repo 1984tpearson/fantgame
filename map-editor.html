@@ -81,6 +81,13 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
   <button id="tool-erase" data-tool="erase">&#10005; Erase</button>
   <button id="tool-pick" data-tool="pick">&#9677; Pick</button>
   <div class="sep"></div>
+  <div id="ow-nav" style="display:none;gap:3px;align-items:center;">
+    <span style="font-size:10px;color:#6a5030;">Centre:</span>
+    <input id="ow-cx" type="text" style="width:45px;" value="346">
+    <input id="ow-cy" type="text" style="width:45px;" value="556">
+    <button id="ow-go">Go</button>
+    <div class="sep"></div>
+  </div>
   <button id="btn-undo">&#8617; Undo</button>
   <div class="sep"></div>
   <button id="btn-save" class="save-btn">&#128190; Save</button>
@@ -501,6 +508,8 @@ let tileSize = 24;
 let isMouseDown = false;
 
 const OW_BOUNDS = {minX:0, maxX:499, minY:118, maxY:887};
+const OW_VIEWPORT_R = 30; // 61x61 viewport
+let owCX = 346, owCY = 556;
 const tileCache = new Map();
 const objCache  = new Map();
 
@@ -597,7 +606,11 @@ function loadLayer() {
 // ═══════════════════════════════════════════════════════════════
 let bounds = {minX:0,maxX:0,minY:0,maxY:0};
 function computeBounds() {
-  if (editorMode==='overworld') { bounds=Object.assign({},OW_BOUNDS); return; }
+  if (editorMode==='overworld') {
+    const vr=OW_VIEWPORT_R;
+    bounds={minX:owCX-vr,maxX:owCX+vr,minY:owCY-vr,maxY:owCY+vr};
+    return;
+  }
   let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity;
   for (const k of Object.keys(definedMap)) {
     const [x,y]=parseKey(k); if(isNaN(x))continue;
@@ -765,21 +778,23 @@ function renderAll() {
   canvas.width = gridW()*tileSize; canvas.height = gridH()*tileSize;
   ctx.fillStyle = '#050402'; ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  // Pass 1: terrain for all cells
-  for (const [k,meta] of Object.entries(map)) {
-    const [x,y]=parseKey(k); if(isNaN(x))continue;
-    const {px,py}=cellToCanvas(x,y);
-    const tc=getTileCanvas(meta.type,x,y,meta.variant,meta.terrainStyle);
-    if(tc) ctx.drawImage(tc,px,py,tileSize,tileSize);
-    else { ctx.fillStyle='#1a1408'; ctx.fillRect(px,py,tileSize,tileSize); }
-    // OW settlement dot
-    if(editorMode==='overworld'&&(meta.type==='town'||meta.type==='city'||meta.type==='village'||meta.type==='castle')){
-      ctx.fillStyle='#e8c870cc';const sz=Math.max(2,tileSize/4);ctx.fillRect(px+tileSize/2-sz/2,py+tileSize/2-sz/2,sz,sz);
+  // Pass 1: terrain — iterate viewport grid, use inferBg for undefined cells
+  for (let gx=bounds.minX; gx<=bounds.maxX; gx++) {
+    for (let gy=bounds.minY; gy<=bounds.maxY; gy++) {
+      const k=`${gx},${gy}`;
+      const meta = definedMap[k] || inferBg(gx,gy);
+      const {px,py}=cellToCanvas(gx,gy);
+      const tc=getTileCanvas(meta.type,gx,gy,meta.variant,meta.terrainStyle);
+      if(tc) ctx.drawImage(tc,px,py,tileSize,tileSize);
+      else { ctx.fillStyle='#1a1408'; ctx.fillRect(px,py,tileSize,tileSize); }
+      if(editorMode==='overworld'&&(meta.type==='town'||meta.type==='city'||meta.type==='village'||meta.type==='castle')){
+        ctx.fillStyle='#e8c870cc';const sz=Math.max(2,tileSize/4);ctx.fillRect(px+tileSize/2-sz/2,py+tileSize/2-sz/2,sz,sz);
+      }
     }
   }
 
   // Pass 2: objects — only draw on anchor cells (skip _part cells)
-  for (const [k,meta] of Object.entries(map)) {
+  for (const [k,meta] of Object.entries(definedMap)) {
     if (meta.object==='_part') continue; // span cell — skip
     const [x,y]=parseKey(k); if(isNaN(x))continue;
     const {px,py}=cellToCanvas(x,y);
@@ -808,7 +823,7 @@ function renderAll() {
   }
 
   // Pass 3: _part cell hatch overlays
-  for (const [k,meta] of Object.entries(map)) {
+  for (const [k,meta] of Object.entries(definedMap)) {
     if (meta.object !== '_part') continue;
     const [x,y]=parseKey(k); if(isNaN(x))continue;
     const {px,py}=cellToCanvas(x,y);
@@ -838,8 +853,7 @@ function _drawSel(x,y){
 }
 
 function redrawCell(x,y){
-  // For multi-cell objects we need to redraw all affected cells
-  const meta=map[`${x},${y}`];
+  const meta=definedMap[`${x},${y}`]||(editorMode==='overworld'?inferBg(x,y):map[`${x},${y}`]);
   if(meta&&meta.object==='_part'&&meta.anchor){
     const [ax,ay]=parseKey(meta.anchor); redrawAnchorGroup(ax,ay); return;
   }
@@ -903,7 +917,7 @@ function applyPaint(x,y){
   }
   const k=`${x},${y}`;
   if(currentTool==='erase'){
-    if(!definedMap[k])return;
+    if(!definedMap[k])return; // only erase explicitly defined cells
     // If it has span cells, erase those too
     const dm=definedMap[k];
     if(dm&&dm.bldgW)eraseAnchorGroup(x,y);
@@ -1464,6 +1478,7 @@ function applyMode(mode){
   editorMode=mode;
   document.getElementById('settlement-select').style.display=(mode==='settlement'||mode==='interior')?'':'none';
   document.getElementById('interior-select').style.display=mode==='interior'?'':'none';
+  document.getElementById('ow-nav').style.display=mode==='overworld'?'flex':'none';
   if(mode==='overworld'){tileSize=4;document.getElementById('zoom-select').value='4';}
   else if(tileSize<16){tileSize=24;document.getElementById('zoom-select').value='24';}
   buildTerrainPalette();buildObjPalette();loadLayer();
@@ -1500,6 +1515,11 @@ document.querySelectorAll('[data-tool]').forEach(btn=>{
   });
 });
 document.getElementById('btn-undo').addEventListener('click',undo);
+document.getElementById('ow-go').addEventListener('click',()=>{
+  const cx=parseInt(document.getElementById('ow-cx').value)||346;
+  const cy=parseInt(document.getElementById('ow-cy').value)||556;
+  owCX=cx; owCY=cy; tileCache.clear(); loadLayer();
+});
 document.addEventListener('keydown',e=>{
   if(e.target.matches('input,select,textarea'))return;
   if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();return;}
