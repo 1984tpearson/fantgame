@@ -1989,13 +1989,13 @@ async function callAI(messages, actionOnly=false) {
   addTypingIndicator();
   try {
     const result = await callAIWithModel(CONFIG.TEXT_MODEL, messages, actionOnly);
-    const refusalPhrases = ['not comfortable','cannot engage','family-friendly','wholesome direction','i apologize','i\'m unable','i am unable','not able to','inappropriate','as an ai'];
-    const situationLower = (result.situation || '').toLowerCase();
-    const isDeferred = result.meta?.deferred || refusalPhrases.some(p => situationLower.includes(p));
+    const refusalPhrases = ['as an ai','i apologize, but','appropriate boundaries','respectful and appropriate','constructive direction','constructive conversation','keeping things family','aligns with the established tone'];
+    const rawLower = (result._raw || '').toLowerCase();
+    const isDeferred = result.meta?.deferred || refusalPhrases.some(p => rawLower.includes(p));
     if (isDeferred && CONFIG.FALLBACK_MODEL) {
       const fallback = await callAIWithModel(CONFIG.FALLBACK_MODEL, messages, actionOnly);
       removeTypingIndicator();
-      return fallback;
+      return { ...fallback, _wasFallback: true };
     }
     removeTypingIndicator();
     return result;
@@ -2051,7 +2051,7 @@ async function callAIWithModel(model, messages, actionOnly=false) {
   notice = stripMeta(notice);
   if (notice.toLowerCase() === 'null' || notice.toLowerCase() === 'none') notice = '';
   if (situation.toLowerCase() === 'null' || situation.toLowerCase() === 'none') situation = '';
-  return { location, situation, notice, imageSubject, meta };
+  return { location, situation, notice, imageSubject, meta, _raw: raw };
 }
 
 // ═══════════════════════════════════════════════════
