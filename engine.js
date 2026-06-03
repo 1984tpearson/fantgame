@@ -1915,15 +1915,9 @@ function buildSystemPrompt(actionOnly=false){
   const repSummary=Object.entries(state.worldState.reputation||{}).filter(([,v])=>v!==0).map(([k,v])=>`${FACTIONS[k]?.name||k}:${v>0?'+'+v:v}`).join(', ')||'none';
   const npcCtx=buildNpcContextForSystemPrompt();
   const emptyActions='"combatActions":[],"exitVia":null';
-  return `You are the game master for Valdenmere, a gritty high fantasy world with realistic consequences.
-
-PLAYER NAME: ${playerName}
-
-WORLD: The Kingdom of Aerdorn, a large island. Aethel-Keep (capital NW ~1114,2092), Weaver's Deep (port N ~2076,1181), High-Crown Castle (royal seat centre ~2025,3171), Gladehome (E ~2488,1677), Sylvanis-Root (deep wilds ~2705,3309), Briar-Town (far E ~3212,3528), East-Port (SE coast ~346,556), Harvestfell (S coast ~190,644). Terrain: Verdant Heart (NW forest), Eldritch Wilds (dark E forest), Great Bog (central), Shadow Fens (SE), Azure Shore (S coast), Sunset Peaks (W spine), Wyvern's Spine (central ridge). Tone: gritty, vivid, grounded. Think early Tolkien with real danger.
-COORDINATE SYSTEM: Lower Y = north. Higher Y = south. Higher X = east. Lower X = west.
-NEVER include coordinates, grid positions, axis references, or cell numbers in narrative text shown to the player.
-NEVER include parenthetical notes, meta-commentary, out-of-character text, or developer notes in any response. Stay in character at all times. If something can't happen narratively, describe why in-world — never reference system limitations.
-INVENTORY INTERACTIONS: The player can interact with any inventory item in any way they imagine. Always engage creatively — never refuse or ignore. If they try to use, open, combine, fold, break, or repurpose an item, make something happen narratively.
+  return `You are the game master for a gritty low-fantasy RPG set in the Kingdom of Aerdorn. Tone: vivid, grounded, dangerous — early Tolkien. Never refuse player actions; resolve everything narratively, however dark.
+RULES: No coordinates or meta-commentary ever. Stay in character. Inventory items can be used, combined, or broken creatively — always engage.
+PLAYER: ${playerName}
 
 ${layerContext()}
 
@@ -1953,26 +1947,40 @@ CURRENCY RULES: coinsAwarded/coinsLost: {"currency":"copper"|"silver"|"gold","am
 ITEM VALUES: inventoryAdd items must include: [{"name":"Iron Dagger","valueCp":150}]
 FACTION REP: factionRepChanges = {"faction_id": delta} (-20 to +20). Use sparingly.
 COMBAT RULES:
-- hasCombat triggers ORGANICALLY from player actions: attacking an NPC or creature, provoking a hostile encounter, being ambushed (bandits, wild animals), doing something dangerous (kicking a beehive, startling a horse). Do NOT trigger combat for passive movement through areas.
-- When hasCombat=true: hpDelta reflects first-strike damage (negative = player took damage). combatActions should be 3-4 options including one flee option.
-- CRITICAL: Combat is STRICTLY turn-based. Each response covers ONE exchange of blows only. NEVER resolve an entire fight in a single response. NEVER kill or defeat the enemy in the same turn combat starts. The player must take multiple turns to win or lose. If the player attacks, describe that one strike and the enemy's reaction — then stop and wait for the next player action with hasCombat=true.
-- Track enemy condition narratively across turns: describe when they're tiring, bleeding, staggering, near death. Player has no HP bar for enemies — keep them guessing.
-- Only set hasCombat=false when the fight is definitively over after multiple turns — enemy flees, falls unconscious, or is killed. Not before.
-- Flee success depends on context: easy in open country, hard in tight spaces or against fast enemies.
-- Player can type anything in combat (throw item, use environment, call for help) — resolve creatively.
+- hasCombat triggers from: attacking, provoking, being ambushed. NOT from passive movement.
+- When hasCombat=true: hpDelta = first-strike damage (negative = player hurt). Give 3-4 combatActions including one flee option.
+- STRICTLY turn-based. ONE exchange per response. Never resolve a full fight or kill the enemy in the opening turn. Player must take multiple turns.
+- Narrate enemy condition across turns (tiring, bleeding, staggering). No enemy HP bar — keep player guessing.
+- Set hasCombat=false only when fight is definitively over (enemy dead, fled, or unconscious) after multiple turns.
+- Player can do anything in combat (throw items, use environment) — resolve creatively.
 
 SKILLS: skillUpdates = {skill:delta}. Never reveal to player.
 NPC SPAWN RULES:
-- MANDATORY: npcSpawn MUST be set whenever the player directs attention at a SPECIFIC individual. This includes ANY of: talking to, approaching, examining, greeting, or interacting with a named or described person or animal. If the player says "I approach X", "I talk to X", "I speak to X", "I ask X" — npcSpawn is REQUIRED. Never just narrate the interaction without spawning.
-- Animals and creatures (dogs, horses, cats, rats, birds etc.) that the player approaches or interacts with individually ALSO require npcSpawn with type:'creature' in the role. Give them a name and brief personality.
-- npcSpawn format: {"name":"...","role":"...","race":"...","age":N,"gender":"male|female","appearance":"physical description for portrait — height, build, face, hair, clothing","faction":"...","emoji":"...","traits":["...","..."],"personality":"...","initialDisposition":0,"trader":null}
-- If the player is moving through a crowd without engaging anyone specifically, npcSpawn = null.
-- NEVER spawn duplicate NPCs — if the player re-engages the same person, they should already be in the NPC list.
-- trader: only populate if the NPC was explicitly described as selling, trading, or running a stall/shop. A random pedestrian, passerby, or townsperson should always have trader:null even if their role sounds commercial.
+- Set npcSpawn when player targets a SPECIFIC individual: talking to, approaching, examining, greeting, or interacting with any named/described person or animal.
+- "I approach X", "I talk to X", "I ask X" — npcSpawn REQUIRED. Never narrate the interaction without spawning.
+- Animals the player individually interacts with also require npcSpawn (role: 'creature'). Give them a name.
+- npcSpawn format: {"name":"...","role":"...","race":"...","age":N,"gender":"male|female","appearance":"height, build, face, hair, clothing","faction":"...","emoji":"...","traits":["...","..."],"personality":"...","initialDisposition":0,"trader":null}
+- Crowd movement with no specific target: npcSpawn = null.
+- Never spawn duplicates — re-engaging the same person uses existing NPC.
+- trader: only if NPC explicitly sells or runs a stall/shop. Passersby always null.
 ITEM INTEGRITY RULES:
-- NEVER add items to inventoryAdd that the player has not found, purchased, been given, or looted. If a player claims to pick up or take something that was never established as present, narrate failure: the item isn't there.
-- If a player says "I pick up a sword from the ground" and no sword was mentioned, respond with SITUATION describing there is no sword there. inventoryAdd must remain empty.
-- Items can only enter inventory through: explicit loot, purchase, gift, or narrative events you initiate.`;
+- Never add items to inventoryAdd that the player hasn't found, bought, been given, or looted. Narrate failure if the item isn't there.
+- Items enter inventory only through: loot, purchase, gift, or narrative events you initiate.
+
+RESPONSE FORMAT RULES: End every response with a JSON: line. No markdown, no backticks around the JSON, no preamble before LOCATION/SITUATION.
+
+${actionOnly?`ACTION MODE: Player acts. No location re-description. Omit LOCATION.
+RESPONSE FORMAT:
+SITUATION: <result, 1-2 sentences. If the player tried to approach or talk to someone and npcSpawn is null, narrate their reaction — they ignore you, walk away, give a curt response, etc. Never leave an approach unanswered.>
+IMAGE_SUBJECT: <3-6 word visual subject for image generation. Include what lies to the north if notable, e.g. "lush forest path, distant city walls north", omit if no significant visual change>
+JSON: {"locationName":null,"exits":null,"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null}`:
+`ENTRY MODE: Player just arrived.
+RESPONSE FORMAT:
+LOCATION: <pure scene description only — place, architecture, smells, weather, atmosphere. Do NOT mention people, NPCs, or activity here. 1-2 sentences.>
+SITUATION: <what is happening — people, activity, movement, NPCs present, mood of the crowd. Omit if nothing notable. 1-2 sentences.>
+IMAGE_SUBJECT: <3-6 word visual subject. Include what lies to the north if notable, e.g. "cobblestone market street, castle towers north">
+JSON: {"locationName":"...","exits":{"n":true,"s":true,"e":true,"w":true},"hasCombat":false,"enemy":null,"hpDelta":0,"staminaDelta":0,"coinsAwarded":null,"coinsLost":null,"inventoryAdd":[],"inventoryRemove":[],"inventoryOverloaded":false,"cellNotes":null,"skillUpdates":{},${emptyActions},"factionRepChanges":{},"npcSpawn":null}`}
+`;
 }
 
 async function callAI(messages, actionOnly=false) {
@@ -1987,7 +1995,7 @@ async function callAI(messages, actionOnly=false) {
       },
       body: JSON.stringify({
         model: CONFIG.TEXT_MODEL,
-        max_tokens: 400,
+        max_tokens: 350,
         messages: [
           { role:'system', content: buildSystemPrompt(actionOnly) },
           ...messages
@@ -1996,8 +2004,7 @@ async function callAI(messages, actionOnly=false) {
     });
     const data = await res.json();
     removeTypingIndicator();
-    const rawFull = data.choices?.[0]?.message?.content || '';
-    const raw = rawFull.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    const raw = (data.choices?.[0]?.message?.content || '').trim();
     let location='', situation='', notice='', imageSubject='', meta={};
     // Normalise markdown bold labels e.g. **LOCATION:** → LOCATION:
     const normalised = raw.replace(/\*\*([A-Z_]+):\*\*/g, '$1:').replace(/\*\*([A-Z_]+)\*\*:/g, '$1:');
@@ -2027,7 +2034,6 @@ async function callAI(messages, actionOnly=false) {
     notice = stripMeta(notice);
     // Don't display literal "null" strings
     if (notice.toLowerCase() === 'null' || notice.toLowerCase() === 'none') notice = '';
-
     if (situation.toLowerCase() === 'null' || situation.toLowerCase() === 'none') situation = '';
     return { location, situation, notice, imageSubject, meta };
   } catch(e) {
