@@ -4,84 +4,57 @@
 <meta charset="UTF-8">
 <title>Aerdorn Map Editor</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0a0804; color: #c4b590; font-family: Georgia, serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-  #topbar {
-    background: #161008; border-bottom: 1px solid #3a2a10;
-    padding: 6px 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; flex-shrink: 0;
-  }
-  #topbar h1 { font-size: 13px; color: #e8c870; letter-spacing: 2px; white-space: nowrap; }
-  select, input[type=text] {
-    background: #0f0c06; border: 1px solid #3a2a10; color: #c4b590;
-    padding: 3px 7px; font-size: 12px; border-radius: 3px; font-family: Georgia, serif;
-  }
-  button {
-    background: #1a1208; border: 1px solid #3a2a10; color: #a08050;
-    padding: 4px 10px; font-size: 12px; border-radius: 3px; cursor: pointer; font-family: Georgia, serif;
-  }
-  button:hover { background: #2a1e08; border-color: #6a4820; }
-  button.active { background: #3a2808; border-color: #e8c870; color: #e8c870; }
-  .sep { width: 1px; height: 20px; background: #2a1e10; margin: 0 2px; }
-  #main { display: flex; flex: 1; overflow: hidden; }
-  #left-panel {
-    width: 190px; min-width: 190px; background: #0f0c08;
-    border-right: 1px solid #2a1e10; display: flex; flex-direction: column; overflow: hidden;
-  }
-  .panel-section { border-bottom: 1px solid #2a1e10; padding: 7px; flex-shrink: 0; }
-  .panel-label { font-size: 10px; letter-spacing: 2px; color: #5a4820; margin-bottom: 5px; }
-  .tool-row { display: flex; gap: 4px; flex-wrap: wrap; }
-  .palette-scroll { flex: 1; overflow-y: auto; }
-  .palette-grid { display: flex; flex-direction: column; gap: 2px; padding: 7px; }
-  .palette-item {
-    display: flex; align-items: center; gap: 6px; padding: 3px 5px;
-    border-radius: 3px; cursor: pointer; font-size: 11px; border: 1px solid transparent;
-  }
-  .palette-item:hover { background: #1a1208; }
-  .palette-item.selected { background: #2a1a08; border-color: #e8c870; color: #e8c870; }
-  .swatch { width: 16px; height: 16px; border-radius: 2px; border: 1px solid #3a2a10; flex-shrink: 0; overflow: hidden; }
-  .swatch canvas { display: block; width: 16px !important; height: 16px !important; image-rendering: pixelated; }
-  #canvas-wrap {
-    flex: 1; overflow: auto; background: #080602;
-    display: flex; align-items: flex-start; justify-content: flex-start; padding: 8px;
-  }
-  #grid-canvas { image-rendering: pixelated; cursor: crosshair; display: block; }
-  #right-panel {
-    width: 210px; min-width: 210px; background: #0f0c08;
-    border-left: 1px solid #2a1e10; display: flex; flex-direction: column; overflow-y: auto;
-  }
-  .cell-prop { display: flex; flex-direction: column; gap: 3px; margin-bottom: 7px; }
-  .cell-prop label { font-size: 10px; color: #6a5030; }
-  .cell-prop input, .cell-prop select { width: 100%; }
-  #cell-coords { font-size: 11px; color: #8a7050; margin-bottom: 8px; min-height: 16px; }
-  #export-box {
-    background: #0a0806; border: 1px solid #2a1e10; border-radius: 3px;
-    padding: 6px; font-size: 10px; font-family: monospace; color: #90a878;
-    white-space: pre; overflow-x: auto; min-height: 40px; max-height: 180px; overflow-y: auto;
-  }
-  #export-box:empty::before { content: '// No changes yet'; color: #3a2a10; }
-  /* Mode tabs */
-  .mode-tabs { display: flex; gap: 3px; }
-  .mode-tab { flex: 1; padding: 4px; font-size: 11px; text-align: center; }
-  .mode-tab.active { background: #3a2808; border-color: #e8c870; color: #e8c870; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0a0804; color: #c4b590; font-family: Georgia, serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+#topbar { background: #161008; border-bottom: 1px solid #3a2a10; padding: 5px 10px; display: flex; gap: 7px; align-items: center; flex-wrap: wrap; flex-shrink: 0; }
+#topbar h1 { font-size: 13px; color: #e8c870; letter-spacing: 2px; white-space: nowrap; }
+select, input[type=text] { background: #0f0c06; border: 1px solid #3a2a10; color: #c4b590; padding: 3px 6px; font-size: 11px; border-radius: 3px; font-family: Georgia, serif; }
+button { background: #1a1208; border: 1px solid #3a2a10; color: #a08050; padding: 3px 8px; font-size: 11px; border-radius: 3px; cursor: pointer; font-family: Georgia, serif; }
+button:hover { background: #2a1e08; border-color: #6a4820; }
+button.active { background: #3a2808; border-color: #e8c870; color: #e8c870; }
+button.save-btn { background: linear-gradient(180deg,#4a7020,#2a4810); border-color: #6a9030; color: #a8d060; }
+button.save-btn:hover { background: linear-gradient(180deg,#5a8028,#3a5818); }
+.sep { width: 1px; height: 18px; background: #2a1e10; margin: 0 2px; }
+#main { display: flex; flex: 1; overflow: hidden; }
+#left-panel { width: 180px; min-width: 180px; background: #0f0c08; border-right: 1px solid #2a1e10; display: flex; flex-direction: column; overflow: hidden; }
+.psec { border-bottom: 1px solid #2a1e10; padding: 6px; flex-shrink: 0; }
+.plabel { font-size: 10px; letter-spacing: 2px; color: #5a4820; margin-bottom: 4px; }
+.tool-row { display: flex; gap: 3px; flex-wrap: wrap; }
+.pscroll { overflow-y: auto; }
+.pgrid { display: flex; flex-direction: column; gap: 1px; padding: 5px; }
+.pitem { display: flex; align-items: center; gap: 5px; padding: 2px 4px; border-radius: 3px; cursor: pointer; font-size: 11px; border: 1px solid transparent; }
+.pitem:hover { background: #1a1208; }
+.pitem.selected { background: #2a1a08; border-color: #e8c870; color: #e8c870; }
+.swatch { width: 16px; height: 16px; border-radius: 2px; border: 1px solid #3a2a10; flex-shrink: 0; overflow: hidden; }
+.swatch canvas { display: block; width: 16px !important; height: 16px !important; image-rendering: pixelated; }
+.obj-cat-label { font-size: 10px; color: #4a3818; padding: 3px 5px 1px; letter-spacing: 1px; }
+#canvas-wrap { flex: 1; overflow: auto; background: #080602; display: flex; align-items: flex-start; justify-content: flex-start; padding: 8px; }
+#grid-canvas { image-rendering: pixelated; cursor: crosshair; display: block; }
+#right-panel { width: 200px; min-width: 200px; background: #0f0c08; border-left: 1px solid #2a1e10; display: flex; flex-direction: column; overflow-y: auto; }
+.cprop { display: flex; flex-direction: column; gap: 2px; margin-bottom: 6px; }
+.cprop label { font-size: 10px; color: #6a5030; }
+.cprop input, .cprop select { width: 100%; }
+#cell-coords { font-size: 11px; color: #8a7050; margin-bottom: 6px; min-height: 14px; }
+#export-box { background: #0a0806; border: 1px solid #2a1e10; border-radius: 3px; padding: 5px; font-size: 10px; font-family: monospace; color: #90a878; white-space: pre; overflow-x: auto; min-height: 40px; max-height: 160px; overflow-y: auto; }
+#export-box:empty::before { content: '// No changes yet'; color: #3a2a10; }
 </style>
 </head>
 <body>
 <div id="topbar">
   <h1>&#9874; MAP EDITOR</h1>
   <div class="sep"></div>
-  <!-- Mode selector -->
   <select id="mode-select">
     <option value="settlement">Settlement</option>
     <option value="overworld">Overworld</option>
     <option value="interior">Interior</option>
   </select>
-  <!-- Settlement picker (shown in settlement/interior mode) -->
   <select id="settlement-select"></select>
-  <!-- Interior picker (shown in interior mode) -->
   <select id="interior-select" style="display:none"></select>
   <div class="sep"></div>
-  <label style="font-size:11px;color:#6a5030">Zoom:</label>
+  <label style="font-size:10px;color:#6a5030">Zoom:</label>
   <select id="zoom-select">
+    <option value="4">4x</option>
+    <option value="6">6x</option>
     <option value="8">8x</option>
     <option value="12">12x</option>
     <option value="16">16x</option>
@@ -90,140 +63,222 @@
     <option value="48">48x</option>
   </select>
   <div class="sep"></div>
+  <button id="tool-paint" class="active" data-tool="paint">&#9999; Paint</button>
+  <button id="tool-fill" data-tool="fill">&#9632; Fill</button>
+  <button id="tool-erase" data-tool="erase">&#10005; Erase</button>
+  <button id="tool-pick" data-tool="pick">&#9677; Pick</button>
+  <div class="sep"></div>
   <button id="btn-undo">&#8617; Undo</button>
-  <button id="btn-export-diff">&#8595; Diff JS</button>
+  <div class="sep"></div>
+  <button id="btn-save" class="save-btn">&#128190; Save to Game</button>
   <button id="btn-copy-diff">&#128203; Copy Diff</button>
   <button id="btn-export-full">&#8595; Full JS</button>
   <span id="status-msg" style="font-size:11px;color:#5a7840;margin-left:4px;"></span>
 </div>
 <div id="main">
-  <!-- LEFT -->
   <div id="left-panel">
-    <div class="panel-section">
-      <div class="panel-label">TOOL</div>
-      <div class="tool-row">
-        <button class="active" id="tool-paint" data-tool="paint">&#9999; Paint</button>
-        <button id="tool-erase" data-tool="erase">&#10005; Erase</button>
-        <button id="tool-pick" data-tool="pick">&#9677; Pick</button>
-      </div>
-      <div style="font-size:10px;color:#3a2a10;margin-top:4px;">P/E/I  Ctrl+Z</div>
+    <div class="psec">
+      <div class="plabel" id="terrain-label">TERRAIN</div>
+      <div class="pscroll" style="max-height:200px;"><div class="pgrid" id="terrain-palette"></div></div>
     </div>
-    <div class="panel-section">
-      <div class="panel-label">TERRAIN</div>
-      <div style="font-size:10px;color:#5a4820;margin-bottom:3px;" id="terrain-section-label">Settlement</div>
-    </div>
-    <div class="palette-scroll" style="flex:1;">
-      <div class="palette-grid" id="terrain-palette"></div>
-    </div>
-    <div class="panel-section" style="flex-shrink:0;">
-      <div class="panel-label">OBJECT OVERLAY</div>
-    </div>
-    <div class="palette-scroll" style="max-height:160px;">
-      <div class="palette-grid" id="obj-palette"></div>
+    <div class="psec" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+      <div class="plabel">OBJECT</div>
+      <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:4px;" id="obj-cat-tabs"></div>
+      <div class="pscroll" style="flex:1;"><div class="pgrid" id="obj-palette"></div></div>
     </div>
   </div>
-
-  <!-- CANVAS -->
-  <div id="canvas-wrap">
-    <canvas id="grid-canvas"></canvas>
-  </div>
-
-  <!-- RIGHT -->
+  <div id="canvas-wrap"><canvas id="grid-canvas"></canvas></div>
   <div id="right-panel">
-    <div class="panel-section">
-      <div class="panel-label">SELECTED CELL</div>
+    <div class="psec">
+      <div class="plabel">CELL</div>
       <div id="cell-coords">-</div>
-      <div class="cell-prop"><label>Type</label><input id="prop-type" type="text" placeholder="building / street / docks..."></div>
-      <div class="cell-prop"><label>Name</label><input id="prop-name" type="text" placeholder="The Salt &amp; Sail Inn"></div>
-      <div class="cell-prop" id="prop-interiorType-row"><label>interiorType</label><input id="prop-interiorType" type="text" placeholder="inn / shop / house..."></div>
-      <div class="cell-prop" id="prop-doors-row"><label>doors (comma-sep)</label><input id="prop-doors" type="text" placeholder="north,east,south,west"></div>
-      <div class="cell-prop"><label>object</label><input id="prop-object" type="text" placeholder="well / cart / barrels..."></div>
-      <button id="btn-apply-props" style="width:100%;margin-top:4px;">&#10004; Apply Cell Changes</button>
+      <div class="cprop"><label>Type</label><input id="prop-type" type="text"></div>
+      <div class="cprop"><label>Name</label><input id="prop-name" type="text"></div>
+      <div class="cprop" id="row-interiorType"><label>interiorType</label><input id="prop-interiorType" type="text"></div>
+      <div class="cprop" id="row-doors"><label>doors</label><input id="prop-doors" type="text" placeholder="north,east..."></div>
+      <div class="cprop"><label>object</label><input id="prop-object" type="text"></div>
+      <div class="cprop" id="row-objparam"><label>shape/variant</label><input id="prop-objparam" type="text" placeholder="h / v / cross..."></div>
+      <button id="btn-apply" style="width:100%;margin-top:3px;">&#10004; Apply</button>
     </div>
-    <div class="panel-section" style="flex:1;padding-bottom:12px;">
-      <div class="panel-label">EXPORT DIFF</div>
+    <div class="psec" style="flex:1;padding-bottom:10px;">
+      <div class="plabel">EXPORT DIFF</div>
       <div id="export-box"></div>
-      <div style="display:flex;gap:4px;margin-top:6px;">
-        <button id="btn-export-diff2" style="flex:1">&#8595; Download</button>
-        <button id="btn-copy-diff2" style="flex:1">&#128203; Copy</button>
+      <div style="display:flex;gap:4px;margin-top:5px;">
+        <button id="btn-dl-diff" style="flex:1">&#8595; DL</button>
+        <button id="btn-cp-diff" style="flex:1">&#128203; Copy</button>
       </div>
     </div>
   </div>
 </div>
-
 <script src="mapforge.js"></script>
 <script src="worlds/aerdorn.js"></script>
 <script>
 'use strict';
 
-// ── Terrain type mappings ──────────────────────────────────────
+// ── Terrain maps ───────────────────────────────────────────────
 const TERRAIN_TO_MF = {
-  // Settlement / interior
   street:'dirt', building:'farmland', courtyard:'grass',
   market:'sand', docks:'cobble', gate:'cobble',
   interior:'cave', wall:'rocky', door:'dirt', road:'dirt',
-  // Overworld
+  floor:'farmland', yard:'grass',
   plains:'grass', forest:'forest_floor', wilds:'forest_floor',
   ocean:'water', river:'shallow_water', shore:'sand',
   farmland:'farmland', mountain:'rocky', peaks:'rocky',
   swamp:'swamp', bog:'swamp', fens:'swamp',
   city:'cobble', town:'grass', village:'grass',
-  ruins:'rocky', castle:'rocky', keep:'rocky',
+  ruins:'rocky', castle:'rocky', keep:'rocky', snow:'snow',
 };
 
-const SETTLEMENT_TERRAIN_TYPES = [
-  {id:'street',label:'Street',color:'#a07850'},
-  {id:'building',label:'Building',color:'#8a6840'},
-  {id:'courtyard',label:'Courtyard',color:'#70904a'},
-  {id:'market',label:'Market',color:'#c0a860'},
-  {id:'docks',label:'Docks',color:'#506878'},
-  {id:'gate',label:'Gate',color:'#706050'},
-  {id:'wall',label:'Wall',color:'#584838'},
-  {id:'door',label:'Door',color:'#8a5030'},
-  {id:'road',label:'Road',color:'#9a8060'},
-  {id:'interior',label:'Interior',color:'#383028'},
+const SETTLE_TERRAIN = [
+  {id:'street',l:'Street',c:'#a07850'},{id:'building',l:'Building',c:'#8a6840'},
+  {id:'courtyard',l:'Courtyard',c:'#70904a'},{id:'market',l:'Market',c:'#c0a860'},
+  {id:'docks',l:'Docks',c:'#506878'},{id:'gate',l:'Gate',c:'#706050'},
+  {id:'wall',l:'Wall',c:'#584838'},{id:'door',l:'Door',c:'#8a5030'},
+  {id:'road',l:'Road',c:'#9a8060'},{id:'interior',l:'Interior',c:'#383028'},
+  {id:'floor',l:'Floor',c:'#786050'},{id:'yard',l:'Yard',c:'#506838'},
+];
+const OW_TERRAIN = [
+  {id:'plains',l:'Plains',c:'#789060'},{id:'forest',l:'Forest',c:'#2a6030'},
+  {id:'wilds',l:'Wilds',c:'#1a5028'},{id:'ocean',l:'Ocean',c:'#204878'},
+  {id:'river',l:'River',c:'#3060a0'},{id:'shore',l:'Shore',c:'#c8b870'},
+  {id:'farmland',l:'Farmland',c:'#a0b850'},{id:'mountain',l:'Mountain',c:'#706858'},
+  {id:'peaks',l:'Peaks',c:'#908880'},{id:'swamp',l:'Swamp',c:'#405838'},
+  {id:'bog',l:'Bog',c:'#384830'},{id:'fens',l:'Fens',c:'#303c28'},
+  {id:'city',l:'City',c:'#806040'},{id:'town',l:'Town',c:'#907050'},
+  {id:'village',l:'Village',c:'#786040'},{id:'road',l:'Road',c:'#9a8060'},
+  {id:'ruins',l:'Ruins',c:'#605040'},{id:'castle',l:'Castle',c:'#504838'},
+  {id:'snow',l:'Snow',c:'#d8e0e8'},
+];
+const INT_TERRAIN = [
+  {id:'interior',l:'Floor',c:'#383028'},{id:'wall',l:'Wall',c:'#584838'},
+  {id:'door',l:'Door',c:'#8a5030'},{id:'courtyard',l:'Yard',c:'#70904a'},
+  {id:'street',l:'Street',c:'#a07850'},{id:'floor',l:'Plank Floor',c:'#786050'},
 ];
 
-const OVERWORLD_TERRAIN_TYPES = [
-  {id:'plains',label:'Plains',color:'#789060'},
-  {id:'forest',label:'Forest',color:'#2a6030'},
-  {id:'wilds',label:'Wilds',color:'#1a5028'},
-  {id:'ocean',label:'Ocean',color:'#204878'},
-  {id:'river',label:'River',color:'#3060a0'},
-  {id:'shore',label:'Shore',color:'#c8b870'},
-  {id:'farmland',label:'Farmland',color:'#a0b850'},
-  {id:'mountain',label:'Mountain',color:'#706858'},
-  {id:'peaks',label:'Peaks',color:'#908880'},
-  {id:'swamp',label:'Swamp',color:'#405838'},
-  {id:'bog',label:'Bog',color:'#384830'},
-  {id:'fens',label:'Fens',color:'#303c28'},
-  {id:'city',label:'City',color:'#806040'},
-  {id:'town',label:'Town',color:'#907050'},
-  {id:'village',label:'Village',color:'#786040'},
-  {id:'road',label:'Road',color:'#9a8060'},
-  {id:'ruins',label:'Ruins',color:'#605040'},
-  {id:'castle',label:'Castle',color:'#504838'},
+// ── Object catalogue — mirrors mapforge.js public API ──────────
+const OBJ_CATS = [
+  { id:'extras', label:'Extras', items:[
+    {id:'well',        l:'Well',          fn:s=>MapForge.makeWell(20,20,s)},
+    {id:'haystack',    l:'Haystack',      fn:s=>MapForge.makeHaystack(20,20,s)},
+    {id:'campfire',    l:'Campfire',      fn:s=>MapForge.makeCampfire(s)},
+    {id:'signpost',    l:'Signpost',      fn:s=>MapForge.makeSignpost(s)},
+    {id:'anvil',       l:'Anvil',         fn:s=>MapForge.makeAnvil(s)},
+    {id:'logpile',     l:'Log Pile',      fn:s=>MapForge.makeLogPile(s)},
+    {id:'barrels',     l:'Barrels',       fn:s=>MapForge.makeBarrelCluster(s)},
+    {id:'noticeboard', l:'Noticeboard',   fn:s=>MapForge.makeNoticeboard(s)},
+    {id:'trough',      l:'Trough',        fn:s=>MapForge.makeTrough(s)},
+    {id:'stall',       l:'Market Stall',  fn:s=>MapForge.makeMarketStall(s)},
+    {id:'cart',        l:'Cart',          fn:s=>MapForge.makeCart(s)},
+    {id:'chest',       l:'Chest',         fn:s=>MapForge.makeChest(s)},
+    {id:'campsite',    l:'Campsite',       fn:s=>MapForge.makeCampsite(s)},
+    {id:'altar',       l:'Altar',         fn:s=>MapForge.makeAltar(s)},
+    {id:'stockade',    l:'Stockade Fence',fn:s=>MapForge.makeStockadeFence(s)},
+    {id:'stocks',      l:'Stocks',        fn:s=>MapForge.makeStocks(s)},
+    {id:'torch',       l:'Torch',         fn:s=>MapForge.makeTorch(s)},
+    {id:'dungeon_bars',l:'Dungeon Bars',  fn:s=>MapForge.makeDungeonBars(s)},
+    {id:'catapult',    l:'Catapult',      fn:s=>MapForge.makeCatapult(s)},
+    {id:'boat',        l:'Boat',          fn:s=>MapForge.makeBoat(s)},
+    {id:'bridge',      l:'Bridge',        fn:s=>MapForge.makeBridge(s)},
+    {id:'magic_circle',l:'Magic Circle',  fn:s=>MapForge.makeMagicCircle(s)},
+    {id:'shrine',      l:'Shrine',        fn:s=>MapForge.makeShrine(s)},
+    {id:'gold_pile',   l:'Gold Pile',     fn:s=>MapForge.makeGoldPile(s)},
+    {id:'tent',        l:'Tent',          fn:s=>MapForge.makeTent(s)},
+    {id:'trapdoor',    l:'Trapdoor',      fn:s=>MapForge.makeTrapdoor(s)},
+    {id:'graveyard',   l:'Graveyard',     fn:s=>MapForge.makeGraveyard(40,40,s)},
+    {id:'coop',        l:'Chicken Coop',  fn:s=>MapForge.makeChickenCoop(s)},
+    {id:'garden',      l:'Garden',        fn:s=>MapForge.makeGarden(s)},
+  ]},
+  { id:'gore', label:'Gore', items:[
+    {id:'skeleton',    l:'Skeleton',      fn:s=>MapForge.makeSkeleton(s)},
+    {id:'dead_body',   l:'Dead Body',     fn:s=>MapForge.makeDeadBody(s)},
+    {id:'dirt_hole',   l:'Dirt Hole',     fn:s=>MapForge.makeDirtHole(s)},
+    {id:'blood',       l:'Blood Spatter', fn:s=>MapForge.makeBloodSpatter(s)},
+    {id:'bones',       l:'Bones Pile',    fn:s=>MapForge.makeBonesPile(s)},
+  ]},
+  { id:'nature', label:'Nature', items:[
+    {id:'bush',        l:'Bush (sm)',      fn:s=>MapForge.makeBushField('sm',s)},
+    {id:'bush_lg',     l:'Bush (lg)',      fn:s=>MapForge.makeBushField('lg',s)},
+    {id:'thicket',     l:'Thicket',       fn:s=>MapForge.makeThicket(s)},
+    {id:'tree_oak',    l:'Oak Tree',      fn:s=>MapForge.makeTopDownTree(20,20,'oak',s)},
+    {id:'tree_pine',   l:'Pine Tree',     fn:s=>MapForge.makeTopDownTree(20,20,'pine',s)},
+    {id:'tree_palm',   l:'Palm Tree',     fn:s=>MapForge.makeTopDownTree(20,20,'palm',s)},
+    {id:'tree_dead',   l:'Dead Tree',     fn:s=>MapForge.makeTopDownTree(20,20,'dead',s)},
+    {id:'rock',        l:'Rock',          fn:s=>MapForge.makeRock(16,14,'small',s)},
+    {id:'boulder',     l:'Boulder',       fn:s=>MapForge.makeRock(20,18,'boulder',s)},
+    {id:'pond',        l:'Pond',          fn:s=>MapForge.makePond(20,18,s)},
+    {id:'mushroom',    l:'Mushroom',      fn:s=>MapForge.makeMushroom('sm',s)},
+    {id:'log',         l:'Fallen Log',    fn:s=>MapForge.makeFallenLog(s)},
+    {id:'flowers',     l:'Flowers',       fn:s=>MapForge.makeFlowerPatch(s)},
+    {id:'fern',        l:'Fern',          fn:s=>MapForge.makePlant('fern',s)},
+    {id:'reeds',       l:'Reeds',         fn:s=>MapForge.makePlant('reeds',s)},
+    {id:'lily',        l:'Lily Pad',      fn:s=>MapForge.makePlant('lily',s)},
+    {id:'giant_roots', l:'Giant Roots',   fn:s=>MapForge.makeGiantRoots(s)},
+    {id:'crop_wheat',  l:'Wheat Crop',    fn:s=>MapForge.makeCropRow('wheat',2,s)},
+    {id:'crop_corn',   l:'Corn Crop',     fn:s=>MapForge.makeCropRow('corn',2,s)},
+    {id:'crop_veg',    l:'Vegetables',    fn:s=>MapForge.makeCropRow('vegetables',2,s)},
+  ]},
+  { id:'paths', label:'Paths', items:[
+    // path shapes — use objparam for shape, default 'h'
+    {id:'path_h',       l:'Path ━',        fn:(s,p)=>MapForge.makePath(p||'h','dirt',s)},
+    {id:'path_v',       l:'Path ┃',        fn:(s,p)=>MapForge.makePath(p||'v','dirt',s)},
+    {id:'path_cross',   l:'Path ╋',        fn:(s,p)=>MapForge.makePath('cross','dirt',s)},
+    {id:'path_corner_se',l:'Path ┏',       fn:(s,p)=>MapForge.makePath('corner_se','dirt',s)},
+    {id:'path_corner_sw',l:'Path ┓',       fn:(s,p)=>MapForge.makePath('corner_sw','dirt',s)},
+    {id:'path_corner_ne',l:'Path ┗',       fn:(s,p)=>MapForge.makePath('corner_ne','dirt',s)},
+    {id:'path_corner_nw',l:'Path ┛',       fn:(s,p)=>MapForge.makePath('corner_nw','dirt',s)},
+    {id:'path_t_s',     l:'Path ┳',        fn:(s,p)=>MapForge.makePath('t_south','dirt',s)},
+    {id:'path_t_n',     l:'Path ┻',        fn:(s,p)=>MapForge.makePath('t_north','dirt',s)},
+    {id:'path_t_e',     l:'Path ┣',        fn:(s,p)=>MapForge.makePath('t_east','dirt',s)},
+    {id:'path_t_w',     l:'Path ┫',        fn:(s,p)=>MapForge.makePath('t_west','dirt',s)},
+    {id:'track_h',      l:'Cart Track ━',  fn:(s,p)=>MapForge.makeCartTrack(p||'h','dirt',s)},
+    {id:'track_v',      l:'Cart Track ┃',  fn:(s,p)=>MapForge.makeCartTrack(p||'v','dirt',s)},
+    {id:'track_cross',  l:'Cart Track ╋',  fn:(s,p)=>MapForge.makeCartTrack('cross','dirt',s)},
+    {id:'track_corner_se',l:'Track ┏',     fn:(s,p)=>MapForge.makeCartTrack('corner_se','dirt',s)},
+    {id:'track_corner_sw',l:'Track ┓',     fn:(s,p)=>MapForge.makeCartTrack('corner_sw','dirt',s)},
+    {id:'track_corner_ne',l:'Track ┗',     fn:(s,p)=>MapForge.makeCartTrack('corner_ne','dirt',s)},
+    {id:'track_corner_nw',l:'Track ┛',     fn:(s,p)=>MapForge.makeCartTrack('corner_nw','dirt',s)},
+  ]},
+  { id:'structures', label:'Struct', items:[
+    {id:'wall_h',       l:'Stone Wall ━',  fn:(s,p)=>MapForge.makeStoneWall(p||'h',s)},
+    {id:'wall_v',       l:'Stone Wall ┃',  fn:(s,p)=>MapForge.makeStoneWall(p||'v',s)},
+    {id:'wall_corner',  l:'Stone Wall ┏',  fn:(s,p)=>MapForge.makeStoneWall('corner_se',s)},
+    {id:'fence_h',      l:'Wood Fence ━',  fn:(s,p)=>MapForge.makeWoodenFence(p||'h','post',s)},
+    {id:'fence_v',      l:'Wood Fence ┃',  fn:(s,p)=>MapForge.makeWoodenFence(p||'v','post',s)},
+    {id:'hedge_h',      l:'Hedge ━',       fn:(s,p)=>MapForge.makeHedge(p||'h',s)},
+    {id:'hedge_v',      l:'Hedge ┃',       fn:(s,p)=>MapForge.makeHedge(p||'v',s)},
+    {id:'hedge_corner', l:'Hedge ┏',       fn:(s,p)=>MapForge.makeHedge('corner_se',s)},
+    {id:'gate',         l:'Gate',          fn:(s,p)=>MapForge.makeGate(p||'h',s)},
+    {id:'dungeon',      l:'Dungeon Entry', fn:(s,p)=>MapForge.makeDungeonEntrance(s)},
+    {id:'ruins_obj',    l:'Ruins',         fn:(s,p)=>MapForge.makeRuins(s)},
+    {id:'watchtower',   l:'Watchtower',    fn:(s,p)=>MapForge.makeWatchtower(s)},
+    {id:'windmill',     l:'Windmill',      fn:(s,p)=>MapForge.makeWindmill(s)},
+    {id:'gallows',      l:'Gallows',       fn:(s,p)=>MapForge.makeGallows(s)},
+  ]},
+  { id:'furniture', label:'Furnit.', items:[
+    {id:'bed_s',        l:'Bed (single)',   fn:s=>MapForge.makeBed('single',s)},
+    {id:'bed_d',        l:'Bed (double)',   fn:s=>MapForge.makeBed('double',s)},
+    {id:'table_r',      l:'Table (round)',  fn:s=>MapForge.makeTable('round',s)},
+    {id:'table_l',      l:'Table (long)',   fn:s=>MapForge.makeTable('long',s)},
+    {id:'chair',        l:'Chair',          fn:s=>MapForge.makeChair('chair',s)},
+    {id:'throne',       l:'Throne',         fn:s=>MapForge.makeChair('throne',s)},
+    {id:'bookshelf',    l:'Bookshelf',      fn:s=>MapForge.makeBookshelf(s)},
+    {id:'drawers',      l:'Drawers',        fn:s=>MapForge.makeDrawers(s)},
+    {id:'cauldron',     l:'Cauldron',       fn:s=>MapForge.makeCauldron(s)},
+    {id:'weaponrack',   l:'Weapon Rack',    fn:s=>MapForge.makeWeaponRack(s)},
+    {id:'desk',         l:'Desk',           fn:s=>MapForge.makeDesk(s)},
+    {id:'stool',        l:'Stool',          fn:s=>MapForge.makeStool(s)},
+    {id:'wardrobe',     l:'Wardrobe',       fn:s=>MapForge.makeWardrobe(s)},
+    {id:'stairs',       l:'Stairs',         fn:s=>MapForge.makeStairs(s)},
+    {id:'basin',        l:'Stone Basin',    fn:s=>MapForge.makeBasin(s)},
+    {id:'fireplace',    l:'Fireplace',      fn:s=>MapForge.makeFireplace(s)},
+  ]},
+  { id:'none', label:'—', items:[] }, // will be prepended with none/clear
 ];
 
-const INTERIOR_TERRAIN_TYPES = [
-  {id:'floor',label:'Floor',color:'#786050'},
-  {id:'wall',label:'Wall',color:'#584838'},
-  {id:'door',label:'Door',color:'#8a5030'},
-  {id:'interior',label:'Interior',color:'#383028'},
-  {id:'courtyard',label:'Yard',color:'#70904a'},
-  {id:'street',label:'Street',color:'#a07850'},
-];
+const BUILDING_STYLE = {inn:'brown',shop:'terra',house:'dkbrown',chapel:'slate',market_hall:'amber',blacksmith:'darkslate',bathhouse:'blueslate',harbormaster:'darkslate',default:'brown'};
 
-const OBJECT_TYPES = ['well','cart','barrels','haystack','trough','signpost','noticeboard','logpile','bush','stall','anvil'];
-
-const BUILDING_STYLE = {
-  inn:'brown',shop:'terra',house:'dkbrown',chapel:'slate',
-  market_hall:'amber',blacksmith:'darkslate',bathhouse:'blueslate',
-  harbormaster:'darkslate',default:'brown',
-};
-
-// ── Editor state ───────────────────────────────────────────────
-let editorMode = 'settlement'; // 'settlement' | 'overworld' | 'interior'
+// ── State ──────────────────────────────────────────────────────
+let editorMode = 'settlement';
 let settlementId = 'frilar_town';
 let interiorId = null;
 let map = {};
@@ -232,584 +287,496 @@ let undoStack = [];
 let selectedCell = null;
 let currentTool = 'paint';
 let currentType = 'street';
-let currentObject = null;
+let currentObjId = null;   // null = no change, '' = clear
+let currentObjCat = 'extras';
 let tileSize = 24;
 let isMouseDown = false;
-
-// Overworld viewport: show a window around a settlement
-let owCentreX = 346, owCentreY = 556;
-const OW_RADIUS = 30; // cells in each direction to show
+let owCX = 346, owCY = 556;
+const OW_R = 40;
 
 const tileCache = new Map();
 const objCache  = new Map();
 
-// ── Overworld map building ─────────────────────────────────────
-// Build a flat map object for the overworld viewport
-function buildOverworldMap(cx, cy, radius) {
+// ── Key parsing (handles negative coords) ─────────────────────
+function parseKey(k) {
+  const ci = k.lastIndexOf(',');
+  return [parseInt(k.slice(0,ci),10), parseInt(k.slice(ci+1),10)];
+}
+
+// ── Layer loading ──────────────────────────────────────────────
+function buildOWMap() {
   const m = {};
-  for (let x = cx - radius; x <= cx + radius; x++) {
-    for (let y = cy - radius; y <= cy + radius; y++) {
-      const k = `${x},${y}`;
+  for (let x=owCX-OW_R; x<=owCX+OW_R; x++)
+    for (let y=owCY-OW_R; y<=owCY+OW_R; y++) {
+      const k=`${x},${y}`;
       const meta = window.WORLD_DATA.meta[k]
         || (window.WORLD_DATA.inferTerrain ? window.WORLD_DATA.inferTerrain(x,y) : {type:'plains',name:''});
-      m[k] = Object.assign({}, meta);
+      m[k] = Object.assign({},meta);
     }
-  }
   return m;
 }
 
-// ── Interior map building ──────────────────────────────────────
-// Interiors aren't in WORLD_DATA; build a placeholder grid
-// In your engine interiors are rendered procedurally, not stored as maps.
-// We just provide a blank canvas here so the user can sketch layout.
-const INTERIOR_STORE = {}; // persisted in-memory across switches
-
-function getOrCreateInterior(intId) {
-  if (INTERIOR_STORE[intId]) return INTERIOR_STORE[intId];
-  // 12x10 blank interior
-  const m = {};
-  for (let x = 0; x <= 11; x++) for (let y = 0; y <= 9; y++) {
-    if (x === 0 || x === 11 || y === 0 || y === 9) m[`${x},${y}`] = {type:'wall', name:'Wall'};
-    else m[`${x},${y}`] = {type:'interior', name:'Floor'};
+const INTERIOR_STORE = {};
+function getInterior(iid) {
+  if (INTERIOR_STORE[iid]) return INTERIOR_STORE[iid];
+  const m={};
+  for (let x=0;x<=13;x++) for (let y=0;y<=11;y++) {
+    if (x===0||x===13||y===0||y===11) m[`${x},${y}`]={type:'wall',name:'Wall'};
+    else m[`${x},${y}`]={type:'interior',name:'Floor'};
   }
-  m['5,0'] = {type:'door', name:'Entrance'};
-  INTERIOR_STORE[intId] = m;
-  return m;
+  m['6,0']={type:'door',name:'Entrance'};
+  INTERIOR_STORE[iid]=m; return m;
 }
 
-// ── Load a layer into the editor ───────────────────────────────
 function loadLayer() {
-  undoStack = []; selectedCell = null;
-  tileCache.clear(); objCache.clear();
-
-  if (editorMode === 'settlement') {
-    const s = window.WORLD_DATA && window.WORLD_DATA.settlements[settlementId];
+  undoStack=[]; selectedCell=null; tileCache.clear(); objCache.clear();
+  if (editorMode==='settlement') {
+    const s=window.WORLD_DATA&&window.WORLD_DATA.settlements[settlementId];
     if (!s) { statusMsg('Unknown settlement'); return; }
-    map = {};
-    for (const [k,v] of Object.entries(s.map)) map[k] = Object.assign({}, v);
-    originalMap = {};
-    for (const [k,v] of Object.entries(s.map)) originalMap[k] = Object.assign({}, v);
-    console.log('[MapEditor] Loaded settlement', settlementId, '— keys:', Object.keys(map).length);
-
-  } else if (editorMode === 'overworld') {
-    // Build from WORLD_DATA.meta + inferTerrain
-    map = buildOverworldMap(owCentreX, owCentreY, OW_RADIUS);
-    originalMap = buildOverworldMap(owCentreX, owCentreY, OW_RADIUS);
-    console.log('[MapEditor] Loaded overworld viewport centred', owCentreX, owCentreY, '— keys:', Object.keys(map).length);
-
-  } else if (editorMode === 'interior') {
-    const iid = interiorId || 'blank';
-    map = getOrCreateInterior(iid);
-    originalMap = {};
-    for (const [k,v] of Object.entries(map)) originalMap[k] = Object.assign({}, v);
-    console.log('[MapEditor] Loaded interior', iid, '— keys:', Object.keys(map).length);
+    map={}; for (const[k,v]of Object.entries(s.map)) map[k]=Object.assign({},v);
+    originalMap={}; for (const[k,v]of Object.entries(s.map)) originalMap[k]=Object.assign({},v);
+    console.log('[Editor] Settlement',settlementId,'keys:',Object.keys(map).length);
+  } else if (editorMode==='overworld') {
+    map = buildOWMap(); originalMap = buildOWMap();
+    console.log('[Editor] Overworld keys:',Object.keys(map).length);
+  } else {
+    const iid=interiorId||'blank';
+    map=getInterior(iid); originalMap={};
+    for(const[k,v]of Object.entries(map)) originalMap[k]=Object.assign({},v);
   }
-
   computeBounds(); renderAll(); clearInspector(); updateExport();
 }
 
 // ── Bounds ─────────────────────────────────────────────────────
-let bounds = {minX:0,maxX:0,minY:0,maxY:0};
-
+let bounds={minX:0,maxX:0,minY:0,maxY:0};
 function computeBounds() {
-  let mnX=Infinity, mxX=-Infinity, mnY=Infinity, mxY=-Infinity;
+  let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity;
   for (const k of Object.keys(map)) {
-    // Safe parse: split on last comma to handle negative numbers
-    const ci = k.lastIndexOf(',');
-    const x = parseInt(k.slice(0, ci), 10);
-    const y = parseInt(k.slice(ci + 1), 10);
-    if (isNaN(x) || isNaN(y)) continue;
-    if (x < mnX) mnX = x; if (x > mxX) mxX = x;
-    if (y < mnY) mnY = y; if (y > mxY) mxY = y;
+    const [x,y]=parseKey(k);
+    if(isNaN(x)||isNaN(y))continue;
+    if(x<mnX)mnX=x; if(x>mxX)mxX=x; if(y<mnY)mnY=y; if(y>mxY)mxY=y;
   }
-  if (!isFinite(mnX)) { bounds = {minX:-1,maxX:1,minY:-1,maxY:1}; return; }
-  const pad = editorMode === 'overworld' ? 0 : 2;
-  bounds = {minX: mnX - pad, maxX: mxX + pad, minY: mnY - pad, maxY: mxY + pad};
-  console.log('[MapEditor] Bounds:', bounds, 'gridW:', gridW(), 'gridH:', gridH());
+  if(!isFinite(mnX)){bounds={minX:-1,maxX:1,minY:-1,maxY:1};return;}
+  const pad=editorMode==='overworld'?0:2;
+  bounds={minX:mnX-pad,maxX:mxX+pad,minY:mnY-pad,maxY:mxY+pad};
+  console.log('[Editor] Bounds',bounds,'grid',gridW(),'x',gridH());
+}
+function gridW(){return bounds.maxX-bounds.minX+1;}
+function gridH(){return bounds.maxY-bounds.minY+1;}
+function cellToCanvas(x,y){return{px:(x-bounds.minX)*tileSize,py:(gridH()-1-(y-bounds.minY))*tileSize};}
+function canvasToCell(px,py){return{x:Math.floor(px/tileSize)+bounds.minX,y:(gridH()-1-Math.floor(py/tileSize))+bounds.minY};}
+function inBounds(x,y){return x>=bounds.minX&&x<=bounds.maxX&&y>=bounds.minY&&y<=bounds.maxY;}
+
+// ── Sprite rendering ───────────────────────────────────────────
+function getTerrainCanvas(type,x,y) {
+  if(!window.MapForge)return null;
+  const mf=TERRAIN_TO_MF[type]||'grass';
+  const seed=((x&0xffff)<<16)|(y&0xffff);
+  const key=mf+'_'+seed;
+  if(tileCache.has(key))return tileCache.get(key);
+  const grid=MapForge.makeTerrain(mf,seed,{});
+  const c=document.createElement('canvas');
+  MapForge.renderGridToCanvas(grid,c,1);
+  tileCache.set(key,c); return c;
 }
 
-function gridW() { return bounds.maxX - bounds.minX + 1; }
-function gridH() { return bounds.maxY - bounds.minY + 1; }
-
-// y=0=south → canvas bottom. Higher y = further north = lower py.
-function cellToCanvas(x, y) {
-  return {
-    px: (x - bounds.minX) * tileSize,
-    py: (gridH() - 1 - (y - bounds.minY)) * tileSize,
-  };
-}
-function canvasToCell(px, py) {
-  return {
-    x: Math.floor(px / tileSize) + bounds.minX,
-    y: (gridH() - 1 - Math.floor(py / tileSize)) + bounds.minY,
-  };
-}
-function inBounds(x, y) {
-  return x >= bounds.minX && x <= bounds.maxX && y >= bounds.minY && y <= bounds.maxY;
+// Render an object/sprite to a transparent canvas
+function getObjCanvas(objId, seed, param) {
+  const catItem = OBJ_CATS.flatMap(c=>c.items).find(i=>i.id===objId);
+  if(!catItem||!catItem.fn)return null;
+  const key=objId+'_'+seed+(param||'');
+  if(objCache.has(key))return objCache.get(key);
+  let grid=null;
+  try { grid=catItem.fn(seed,param); } catch(e){console.warn('obj err',objId,e);return null;}
+  if(!grid)return null;
+  const c=document.createElement('canvas');
+  MapForge.renderGridToCanvas(grid,c,1);
+  objCache.set(key,c); return c;
 }
 
-// ── Tile rendering ─────────────────────────────────────────────
-function getTerrainCanvas(type, x, y) {
-  if (!window.MapForge) return null;
-  const mfType = TERRAIN_TO_MF[type] || 'grass';
-  const seed = ((x & 0xffff) << 16) | (y & 0xffff);
-  const key = mfType + '_' + seed;
-  if (tileCache.has(key)) return tileCache.get(key);
-  const grid = MapForge.makeTerrain(mfType, seed, {});
-  const c = document.createElement('canvas');
-  MapForge.renderGridToCanvas(grid, c, 1);
-  tileCache.set(key, c);
-  return c;
-}
-
-function getObjectCanvas(meta, x, y) {
-  if (!window.MapForge) return null;
-  const seed = (((x & 0xffff) << 16) | (y & 0xffff)) >>> 0;
-  const obj = meta.object;
-  if (obj) {
-    const key = 'obj_' + obj + '_' + seed;
-    if (objCache.has(key)) return objCache.get(key);
-    let grid = null;
-    if      (obj==='well')        grid = MapForge.makeWell(20,20,seed);
-    else if (obj==='anvil')       grid = MapForge.makeAnvil(seed);
-    else if (obj==='barrels')     grid = MapForge.makeBarrelCluster(seed);
-    else if (obj==='cart')        grid = MapForge.makeCart(seed);
-    else if (obj==='haystack')    grid = MapForge.makeHaystack(20,20,seed);
-    else if (obj==='trough')      grid = MapForge.makeTrough(seed);
-    else if (obj==='signpost')    grid = MapForge.makeSignpost(seed);
-    else if (obj==='noticeboard') grid = MapForge.makeNoticeboard(seed);
-    else if (obj==='logpile')     grid = MapForge.makeLogPile(seed);
-    else if (obj==='bush')        grid = MapForge.makeBushField('sm',seed);
-    else if (obj==='stall')       grid = MapForge.makeMarketStall(seed);
-    if (grid) {
-      const c = document.createElement('canvas');
-      MapForge.renderGridToCanvas(grid, c, 1);
-      objCache.set(key, c);
-      return c;
-    }
+// Get object canvas for a cell's stored object field
+function getCellObjCanvas(meta,x,y) {
+  if(!window.MapForge)return null;
+  const seed=(((x&0xffff)<<16)|(y&0xffff))>>>0;
+  const obj=meta.object;
+  if(obj) {
+    const oc=getObjCanvas(obj,seed,meta.objParam);
+    if(oc)return oc;
   }
-  if (meta.type === 'building') {
-    const styleId = BUILDING_STYLE[meta.interiorType] || BUILDING_STYLE.default;
-    const key = 'roof_' + styleId + '_' + seed;
-    if (objCache.has(key)) return objCache.get(key);
-    const style = MapForge.ROOF_STYLES.find(s=>s.id===styleId) || MapForge.ROOF_STYLES[0];
-    const shapes = ['hip','ridge','pyramid','gambrel'];
-    const shape = shapes[seed % shapes.length];
-    const chimneys = MapForge.autoChimneys(20,20,seed%3===0?1:0);
-    const grid = style.isThatch
-      ? MapForge.makeThatchRoof(20,20,shape,chimneys,seed)
-      : MapForge.makeRoofByShape(20,20,shape,style,chimneys,seed);
-    const c = document.createElement('canvas');
-    MapForge.renderGridToCanvas(grid, c, 1);
-    objCache.set(key, c);
-    return c;
+  // building roof
+  if(meta.type==='building') {
+    const styleId=BUILDING_STYLE[meta.interiorType]||BUILDING_STYLE.default;
+    const key='roof_'+styleId+'_'+seed;
+    if(objCache.has(key))return objCache.get(key);
+    const style=MapForge.ROOF_STYLES.find(s=>s.id===styleId)||MapForge.ROOF_STYLES[0];
+    const shapes=['hip','ridge','pyramid','gambrel'];
+    const shape=shapes[seed%shapes.length];
+    const chimneys=MapForge.autoChimneys(20,20,seed%3===0?1:0);
+    const grid=style.isThatch?MapForge.makeThatchRoof(20,20,shape,chimneys,seed):MapForge.makeRoofByShape(20,20,shape,style,chimneys,seed);
+    const c=document.createElement('canvas');
+    MapForge.renderGridToCanvas(grid,c,1); objCache.set(key,c); return c;
   }
   return null;
 }
 
-// ── Canvas ─────────────────────────────────────────────────────
-const canvas = document.getElementById('grid-canvas');
-const ctx = canvas.getContext('2d');
+// ── Canvas rendering ───────────────────────────────────────────
+const canvas=document.getElementById('grid-canvas');
+const ctx=canvas.getContext('2d');
+const ALL_T=[...SETTLE_TERRAIN,...OW_TERRAIN,...INT_TERRAIN];
 
 function renderAll() {
-  canvas.width  = gridW() * tileSize;
-  canvas.height = gridH() * tileSize;
-  ctx.fillStyle = '#050402';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  for (const [k, meta] of Object.entries(map)) {
-    const ci = k.lastIndexOf(',');
-    const x = parseInt(k.slice(0, ci), 10);
-    const y = parseInt(k.slice(ci + 1), 10);
-    if (!isNaN(x) && !isNaN(y)) _drawCell(x, y, meta);
-  }
-  if (selectedCell) _drawSel(selectedCell.x, selectedCell.y);
+  canvas.width=gridW()*tileSize; canvas.height=gridH()*tileSize;
+  ctx.fillStyle='#050402'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  for(const[k,meta]of Object.entries(map)){const[x,y]=parseKey(k);if(!isNaN(x))_drawCell(x,y,meta);}
+  if(selectedCell)_drawSel(selectedCell.x,selectedCell.y);
 }
 
-const ALL_TYPES = [...SETTLEMENT_TERRAIN_TYPES, ...OVERWORLD_TERRAIN_TYPES, ...INTERIOR_TERRAIN_TYPES];
-
-function _drawCell(x, y, meta) {
-  const {px, py} = cellToCanvas(x, y);
-  const tc = getTerrainCanvas(meta.type, x, y);
-  if (tc) ctx.drawImage(tc, px, py, tileSize, tileSize);
-  else { ctx.fillStyle = '#1a1408'; ctx.fillRect(px, py, tileSize, tileSize); }
-  if (tileSize >= 12) {
-    const oc = getObjectCanvas(meta, x, y);
-    if (oc) ctx.drawImage(oc, px, py, tileSize, tileSize);
+function _drawCell(x,y,meta){
+  const{px,py}=cellToCanvas(x,y);
+  // terrain base
+  const tc=getTerrainCanvas(meta.type,x,y);
+  if(tc)ctx.drawImage(tc,px,py,tileSize,tileSize);
+  else{ctx.fillStyle='#1a1408';ctx.fillRect(px,py,tileSize,tileSize);}
+  // object overlay — drawn on top, transparent pixels show terrain beneath
+  if(tileSize>=8){const oc=getCellObjCanvas(meta,x,y);if(oc)ctx.drawImage(oc,px,py,tileSize,tileSize);}
+  // settlement/city dot on overworld
+  if(editorMode==='overworld'&&(meta.type==='town'||meta.type==='city'||meta.type==='village'||meta.type==='castle')){
+    ctx.fillStyle='#e8c870cc';const sz=Math.max(2,tileSize/5);
+    ctx.fillRect(px+tileSize/2-sz/2,py+tileSize/2-sz/2,sz,sz);
   }
-  // Draw settlement/overworld markers at small zoom
-  if (editorMode === 'overworld' && (meta.type === 'town' || meta.type === 'city' || meta.type === 'village' || meta.type === 'castle')) {
-    ctx.fillStyle = '#e8c870cc';
-    const sz = Math.max(3, tileSize/4);
-    ctx.fillRect(px + tileSize/2 - sz/2, py + tileSize/2 - sz/2, sz, sz);
-  }
-  const ti = ALL_TYPES.find(t => t.id === meta.type);
-  if (ti) {
-    ctx.strokeStyle = ti.color + '33';
-    ctx.lineWidth = 0.5;
-    ctx.strokeRect(px + 0.5, py + 0.5, tileSize - 1, tileSize - 1);
-  }
+  // subtle type border
+  const ti=ALL_T.find(t=>t.id===meta.type);
+  if(ti&&tileSize>=12){ctx.strokeStyle=ti.c+'33';ctx.lineWidth=0.5;ctx.strokeRect(px+0.5,py+0.5,tileSize-1,tileSize-1);}
 }
 
-function _drawSel(x, y) {
-  const {px, py} = cellToCanvas(x, y);
-  ctx.strokeStyle = '#e8c870';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(px + 1, py + 1, tileSize - 2, tileSize - 2);
+function _drawSel(x,y){
+  const{px,py}=cellToCanvas(x,y);
+  ctx.strokeStyle='#e8c870';ctx.lineWidth=2;ctx.strokeRect(px+1,py+1,tileSize-2,tileSize-2);
 }
 
-function redrawCell(x, y) {
-  const {px, py} = cellToCanvas(x, y);
-  ctx.fillStyle = '#050402';
-  ctx.fillRect(px, py, tileSize, tileSize);
-  const meta = map[`${x},${y}`];
-  if (meta) _drawCell(x, y, meta);
-  if (selectedCell && selectedCell.x === x && selectedCell.y === y) _drawSel(x, y);
+function redrawCell(x,y){
+  const{px,py}=cellToCanvas(x,y);
+  ctx.fillStyle='#050402';ctx.fillRect(px,py,tileSize,tileSize);
+  const meta=map[`${x},${y}`];if(meta)_drawCell(x,y,meta);
+  if(selectedCell&&selectedCell.x===x&&selectedCell.y===y)_drawSel(x,y);
 }
 
 // ── Edit ops ───────────────────────────────────────────────────
-function pushUndo(x, y) {
-  const k = `${x},${y}`;
-  undoStack.push({k, prev: map[k] ? Object.assign({}, map[k]) : null});
-  if (undoStack.length > 300) undoStack.shift();
+function pushUndo(x,y){
+  const k=`${x},${y}`;
+  undoStack.push({k,prev:map[k]?Object.assign({},map[k]):null});
+  if(undoStack.length>400)undoStack.shift();
 }
 
-function paintCell(x, y) {
-  if (!inBounds(x, y)) return;
-  const k = `${x},${y}`;
-  if (currentTool === 'erase') {
-    if (!map[k]) return;
-    pushUndo(x, y);
-    delete map[k];
-  } else {
-    const ex = map[k] ? Object.assign({}, map[k]) : {};
-    ex.type = currentType;
-    if (currentObject === '') delete ex.object;
-    else if (currentObject !== null) ex.object = currentObject;
-    pushUndo(x, y);
-    map[k] = ex;
+function applyPaint(x,y){
+  if(!inBounds(x,y))return;
+  const k=`${x},${y}`;
+  if(currentTool==='erase'){if(!map[k])return;pushUndo(x,y);delete map[k];}
+  else{
+    const ex=map[k]?Object.assign({},map[k]):{};
+    ex.type=currentType;
+    if(currentObjId==='')delete ex.object;
+    else if(currentObjId!==null)ex.object=currentObjId;
+    pushUndo(x,y);map[k]=ex;
   }
-  redrawCell(x, y);
+  redrawCell(x,y);updateExport();
+}
+
+// Flood fill — BFS on matching type
+function floodFill(startX,startY){
+  const startK=`${startX},${startY}`;
+  const startMeta=map[startK];
+  const targetType=startMeta?startMeta.type:null;
+  if(targetType===currentType&&currentObjId===null)return; // nothing to do
+  const visited=new Set();
+  const queue=[[startX,startY]];
+  visited.add(startK);
+  while(queue.length){
+    const[cx,cy]=queue.shift();
+    pushUndo(cx,cy);
+    const ex=map[`${cx},${cy}`]?Object.assign({},map[`${cx},${cy}`]):{};
+    ex.type=currentType;
+    if(currentObjId==='')delete ex.object;
+    else if(currentObjId!==null)ex.object=currentObjId;
+    map[`${cx},${cy}`]=ex;
+    redrawCell(cx,cy);
+    // 4-neighbours
+    for(const[nx,ny]of[[cx-1,cy],[cx+1,cy],[cx,cy-1],[cx,cy+1]]){
+      const nk=`${nx},${ny}`;
+      if(visited.has(nk)||!inBounds(nx,ny))continue;
+      const nm=map[nk];
+      const nt=nm?nm.type:null;
+      if(nt===targetType){visited.add(nk);queue.push([nx,ny]);}
+    }
+  }
   updateExport();
 }
 
-function undo() {
-  if (!undoStack.length) return;
-  const {k, prev} = undoStack.pop();
-  if (prev) map[k] = prev; else delete map[k];
-  const ci = k.lastIndexOf(',');
-  const x = parseInt(k.slice(0, ci), 10);
-  const y = parseInt(k.slice(ci + 1), 10);
-  redrawCell(x, y);
-  if (selectedCell && selectedCell.x===x && selectedCell.y===y) populateInspector(x,y);
-  updateExport();
-  statusMsg('Undone.');
+function undo(){
+  if(!undoStack.length)return;
+  const{k,prev}=undoStack.pop();
+  if(prev)map[k]=prev;else delete map[k];
+  const[x,y]=parseKey(k);
+  redrawCell(x,y);
+  if(selectedCell&&selectedCell.x===x&&selectedCell.y===y)populateInspector(x,y);
+  updateExport();statusMsg('Undone.');
 }
 
 // ── Inspector ─────────────────────────────────────────────────
-function selectCell(x, y) {
-  if (selectedCell) { const o = selectedCell; selectedCell = null; redrawCell(o.x, o.y); }
-  selectedCell = {x, y};
-  redrawCell(x, y);
-  populateInspector(x, y);
+function selectCell(x,y){
+  if(selectedCell){const o=selectedCell;selectedCell=null;redrawCell(o.x,o.y);}
+  selectedCell={x,y};redrawCell(x,y);populateInspector(x,y);
+}
+function populateInspector(x,y){
+  const meta=map[`${x},${y}`]||{};
+  document.getElementById('cell-coords').textContent=`x=${x}, y=${y} (${meta.type||'empty'})`;
+  document.getElementById('prop-type').value=meta.type||'';
+  document.getElementById('prop-name').value=meta.name||'';
+  document.getElementById('prop-interiorType').value=meta.interiorType||'';
+  document.getElementById('prop-doors').value=Array.isArray(meta.doors)?meta.doors.join(','):(meta.doors||'');
+  document.getElementById('prop-object').value=meta.object||'';
+  document.getElementById('prop-objparam').value=meta.objParam||'';
+}
+function clearInspector(){
+  document.getElementById('cell-coords').textContent='-';
+  ['prop-type','prop-name','prop-interiorType','prop-doors','prop-object','prop-objparam'].forEach(id=>document.getElementById(id).value='');
 }
 
-function populateInspector(x, y) {
-  const meta = map[`${x},${y}`] || {};
-  document.getElementById('cell-coords').textContent = `x=${x},  y=${y}  (${meta.type || 'empty'})`;
-  document.getElementById('prop-type').value         = meta.type || '';
-  document.getElementById('prop-name').value         = meta.name || '';
-  document.getElementById('prop-interiorType').value = meta.interiorType || '';
-  document.getElementById('prop-doors').value        = Array.isArray(meta.doors) ? meta.doors.join(',') : (meta.doors || '');
-  document.getElementById('prop-object').value       = meta.object || '';
-}
-
-function clearInspector() {
-  document.getElementById('cell-coords').textContent = '-';
-  ['prop-type','prop-name','prop-interiorType','prop-doors','prop-object'].forEach(id => document.getElementById(id).value = '');
-}
-
-document.getElementById('btn-apply-props').addEventListener('click', () => {
-  if (!selectedCell) return;
-  const {x, y} = selectedCell;
-  const k = `${x},${y}`;
-  pushUndo(x, y);
-  const type     = document.getElementById('prop-type').value.trim();
-  const name     = document.getElementById('prop-name').value.trim();
-  const it       = document.getElementById('prop-interiorType').value.trim();
-  const doorsStr = document.getElementById('prop-doors').value.trim();
-  const obj      = document.getElementById('prop-object').value.trim();
-  const meta = {};
-  if (type)     meta.type = type;
-  if (name)     meta.name = name;
-  if (it)       meta.interiorType = it;
-  if (doorsStr) meta.doors = doorsStr.split(',').map(s=>s.trim()).filter(Boolean);
-  if (obj)      meta.object = obj;
-  const seed = (((x & 0xffff) << 16) | (y & 0xffff)) >>> 0;
-  for (const ck of [...objCache.keys()]) { if (ck.endsWith('_'+seed)) objCache.delete(ck); }
-  map[k] = meta;
-  redrawCell(x, y);
-  updateExport();
-  statusMsg('Applied.');
+document.getElementById('btn-apply').addEventListener('click',()=>{
+  if(!selectedCell)return;
+  const{x,y}=selectedCell;const k=`${x},${y}`;pushUndo(x,y);
+  const type=document.getElementById('prop-type').value.trim();
+  const name=document.getElementById('prop-name').value.trim();
+  const it=document.getElementById('prop-interiorType').value.trim();
+  const doorsStr=document.getElementById('prop-doors').value.trim();
+  const obj=document.getElementById('prop-object').value.trim();
+  const param=document.getElementById('prop-objparam').value.trim();
+  const meta={};
+  if(type)meta.type=type; if(name)meta.name=name; if(it)meta.interiorType=it;
+  if(doorsStr)meta.doors=doorsStr.split(',').map(s=>s.trim()).filter(Boolean);
+  if(obj)meta.object=obj; if(param)meta.objParam=param;
+  const seed=(((x&0xffff)<<16)|(y&0xffff))>>>0;
+  for(const ck of[...objCache.keys()]){if(ck.endsWith('_'+seed))objCache.delete(ck);}
+  map[k]=meta;redrawCell(x,y);updateExport();statusMsg('Applied.');
 });
 
-// ── Export ─────────────────────────────────────────────────────
-function cellToJS(k, meta) {
-  const ci = k.lastIndexOf(',');
-  const x  = parseInt(k.slice(0, ci), 10);
-  const y  = parseInt(k.slice(ci + 1), 10);
-  const extra = {};
-  if (meta.interiorType) extra.interiorType = meta.interiorType;
-  if (meta.doors && meta.doors.length) extra.doors = meta.doors;
-  if (meta.object) extra.object = meta.object;
-  const extraStr = Object.keys(extra).length
-    ? ', ' + JSON.stringify(extra).replace(/"(\w+)":/g, '$1:') : '';
-  const name = (meta.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+// ── Export / save ──────────────────────────────────────────────
+function cellToJS(k,meta){
+  const[x,y]=parseKey(k);
+  const extra={};
+  if(meta.interiorType)extra.interiorType=meta.interiorType;
+  if(meta.doors&&meta.doors.length)extra.doors=meta.doors;
+  if(meta.object)extra.object=meta.object;
+  if(meta.objParam)extra.objParam=meta.objParam;
+  const extraStr=Object.keys(extra).length?', '+JSON.stringify(extra).replace(/"(\w+)":/g,'$1:'):'';
+  const name=(meta.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   return `t(${x},${y},'${meta.type||''}','${name}'${extraStr});`;
 }
-
-function cellToOWJS(k, meta) {
-  const ci = k.lastIndexOf(',');
-  const x  = parseInt(k.slice(0, ci), 10);
-  const y  = parseInt(k.slice(ci + 1), 10);
-  const name = (meta.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+function cellToOWJS(k,meta){
+  const[x,y]=parseKey(k);
+  const name=(meta.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   return `defCell(${x},${y},'${meta.type||''}','${name}');`;
 }
-
-function buildDiff() {
-  const adds = [], removes = [];
-  const allKeys = new Set([...Object.keys(map), ...Object.keys(originalMap)]);
-  for (const k of allKeys) {
-    const orig = originalMap[k], curr = map[k];
-    if (!curr && orig) removes.push(k);
-    else if (curr && JSON.stringify(curr) !== JSON.stringify(orig)) adds.push([k, curr]);
+function buildDiff(){
+  const adds=[],removes=[];
+  const all=new Set([...Object.keys(map),...Object.keys(originalMap)]);
+  for(const k of all){
+    const orig=originalMap[k],curr=map[k];
+    if(!curr&&orig)removes.push(k);
+    else if(curr&&JSON.stringify(curr)!==JSON.stringify(orig))adds.push([k,curr]);
   }
-  return {adds, removes};
+  return{adds,removes};
 }
-
-function updateExport() {
-  const {adds, removes} = buildDiff();
-  const box = document.getElementById('export-box');
-  if (!adds.length && !removes.length) { box.textContent = ''; return; }
-  const isOW = editorMode === 'overworld';
-  const lines = ['// -- DIFF --'];
-  if (removes.length) {
-    lines.push('// Removed:');
-    for (const k of removes) {
-      const ci = k.lastIndexOf(','); const x = k.slice(0,ci); const y = k.slice(ci+1);
-      lines.push(`// DELETE t(${x},${y},...)`);
-    }
-  }
-  if (adds.length) {
-    lines.push('// New / changed:');
-    for (const [k,meta] of adds) lines.push(isOW ? cellToOWJS(k,meta) : cellToJS(k,meta));
-  }
-  box.textContent = lines.join('\n');
+function updateExport(){
+  const{adds,removes}=buildDiff();
+  const box=document.getElementById('export-box');
+  if(!adds.length&&!removes.length){box.textContent='';return;}
+  const isOW=editorMode==='overworld';
+  const lines=['// -- DIFF --'];
+  if(removes.length){lines.push('// Removed:');for(const k of removes){const[x,y]=parseKey(k);lines.push(`// DEL t(${x},${y},...)`);}  }
+  if(adds.length){lines.push('// Changed:');for(const[k,m]of adds)lines.push(isOW?cellToOWJS(k,m):cellToJS(k,m));}
+  box.textContent=lines.join('\n');
 }
-
-function getDiffText()  { return document.getElementById('export-box').textContent; }
-
-function getFullText() {
-  const isOW = editorMode === 'overworld';
-  const label = editorMode === 'settlement'
-    ? (window.WORLD_DATA.settlements[settlementId]?.name || settlementId)
-    : editorMode === 'interior' ? (interiorId || 'interior')
-    : 'overworld viewport';
-  const lines = [`// -- ${label} full export --`];
-  for (const [k,meta] of Object.entries(map)) {
-    lines.push(isOW ? cellToOWJS(k,meta) : cellToJS(k,meta));
-  }
+function getDiff(){return document.getElementById('export-box').textContent;}
+function getFull(){
+  const isOW=editorMode==='overworld';
+  const lines=['// Full export'];
+  for(const[k,m]of Object.entries(map))lines.push(isOW?cellToOWJS(k,m):cellToJS(k,m));
   return lines.join('\n');
 }
 
-function doDownload(text, suffix) {
-  const blob = new Blob([text], {type:'text/javascript'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = (settlementId||'map') + '_' + suffix + '.js';
-  a.click();
-}
-function doCopy(text) { navigator.clipboard.writeText(text).then(() => statusMsg('Copied!')); }
-function statusMsg(msg) {
-  const el = document.getElementById('status-msg');
-  el.textContent = msg;
-  setTimeout(() => { if (el.textContent===msg) el.textContent=''; }, 2000);
+// Save to game — write diff JS snippet back into aerdorn.js
+// We write a comment-demarcated block after the settlement's closing brace
+// that you can review. For direct injection we write to aerdorn.js via fetch.
+// Since we're on GitHub Pages (read-only), we save to localStorage as a patch
+// and alert the user with the diff to paste.
+async function saveToGame(){
+  const{adds,removes}=buildDiff();
+  if(!adds.length&&!removes.length){statusMsg('No changes.');return;}
+  if(editorMode==='overworld'){
+    doCopy(getDiff());
+    statusMsg('Overworld diff copied — paste into aerdorn.js defCell() section');
+    return;
+  }
+  // For settlement: we have direct file access via Desktop Commander running locally.
+  // Try to write the diff to a patch file next to aerdorn.js so you can review it.
+  const patchName=`${settlementId}_patch.js`;
+  const text=getDiff();
+  // Save to localStorage as fallback
+  try{localStorage.setItem('editor_patch_'+settlementId,text);}catch(e){}
+  doCopy(text);
+  statusMsg('Diff copied + saved to localStorage. Paste into aerdorn.js');
 }
 
-document.getElementById('btn-export-diff').addEventListener('click',  () => doDownload(getDiffText(),'diff'));
-document.getElementById('btn-copy-diff').addEventListener('click',    () => doCopy(getDiffText()));
-document.getElementById('btn-export-full').addEventListener('click',  () => doDownload(getFullText(),'full'));
-document.getElementById('btn-export-diff2').addEventListener('click', () => doDownload(getDiffText(),'diff'));
-document.getElementById('btn-copy-diff2').addEventListener('click',   () => doCopy(getDiffText()));
+function doDownload(text,suf){const b=new Blob([text],{type:'text/javascript'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(settlementId||'map')+'_'+suf+'.js';a.click();}
+function doCopy(text){navigator.clipboard.writeText(text).then(()=>statusMsg('Copied!'));}
+function statusMsg(msg){const el=document.getElementById('status-msg');el.textContent=msg;setTimeout(()=>{if(el.textContent===msg)el.textContent='';},3000);}
+
+document.getElementById('btn-save').addEventListener('click',saveToGame);
+document.getElementById('btn-copy-diff').addEventListener('click',()=>doCopy(getDiff()));
+document.getElementById('btn-export-full').addEventListener('click',()=>doDownload(getFull(),'full'));
+document.getElementById('btn-dl-diff').addEventListener('click',()=>doDownload(getDiff(),'diff'));
+document.getElementById('btn-cp-diff').addEventListener('click',()=>doCopy(getDiff()));
 
 // ── Palettes ───────────────────────────────────────────────────
-function getActiveTerainTypes() {
-  if (editorMode === 'overworld') return OVERWORLD_TERRAIN_TYPES;
-  if (editorMode === 'interior')  return INTERIOR_TERRAIN_TYPES;
-  return SETTLEMENT_TERRAIN_TYPES;
+function getTerrainList(){
+  if(editorMode==='overworld')return OW_TERRAIN;
+  if(editorMode==='interior')return INT_TERRAIN;
+  return SETTLE_TERRAIN;
 }
 
-function buildPalettes() {
-  const types = getActiveTerainTypes();
-  // Make sure currentType is valid for this mode
-  if (!types.find(t => t.id === currentType)) currentType = types[0].id;
-
-  const tp = document.getElementById('terrain-palette');
-  tp.innerHTML = '';
-  for (const t of types) {
-    const div = document.createElement('div');
-    div.className = 'palette-item' + (t.id === currentType ? ' selected' : '');
-    const sw = document.createElement('div'); sw.className = 'swatch';
-    const tc = getTerrainCanvas(t.id, 99, 99);
-    if (tc) {
-      const c = document.createElement('canvas'); c.width=16; c.height=16;
-      c.getContext('2d').drawImage(tc, 0, 0, 16, 16);
-      sw.appendChild(c);
-    } else sw.style.background = t.color;
-    const span = document.createElement('span'); span.textContent = t.label;
-    div.appendChild(sw); div.appendChild(span);
-    div.addEventListener('click', () => {
-      currentType = t.id;
-      tp.querySelectorAll('.palette-item').forEach(el => el.classList.remove('selected'));
-      div.classList.add('selected');
-    });
+function buildTerrainPalette(){
+  const types=getTerrainList();
+  if(!types.find(t=>t.id===currentType))currentType=types[0].id;
+  const tp=document.getElementById('terrain-palette');tp.innerHTML='';
+  document.getElementById('terrain-label').textContent=
+    editorMode==='overworld'?'TERRAIN (OW)':editorMode==='interior'?'TERRAIN (INT)':'TERRAIN';
+  for(const t of types){
+    const div=document.createElement('div');div.className='pitem'+(t.id===currentType?' selected':'');
+    const sw=document.createElement('div');sw.className='swatch';
+    const tc=getTerrainCanvas(t.id,99,99);
+    if(tc){const c=document.createElement('canvas');c.width=16;c.height=16;c.getContext('2d').drawImage(tc,0,0,16,16);sw.appendChild(c);}
+    else sw.style.background=t.c;
+    const span=document.createElement('span');span.textContent=t.l;
+    div.appendChild(sw);div.appendChild(span);
+    div.addEventListener('click',()=>{currentType=t.id;tp.querySelectorAll('.pitem').forEach(e=>e.classList.remove('selected'));div.classList.add('selected');});
     tp.appendChild(div);
   }
+}
 
-  const op = document.getElementById('obj-palette');
-  op.innerHTML = '';
-  const mkObj = (label, value) => {
-    const div = document.createElement('div');
-    div.className = 'palette-item' + (currentObject === value ? ' selected' : '');
-    const sw = document.createElement('div'); sw.className = 'swatch';
-    sw.style.background = value === null ? '#1a1208' : '#2a1a08';
-    if (value === null) sw.style.borderStyle = 'dashed';
-    const span = document.createElement('span'); span.textContent = label;
-    div.appendChild(sw); div.appendChild(span);
-    div.addEventListener('click', () => {
-      currentObject = value;
-      op.querySelectorAll('.palette-item').forEach(el => el.classList.remove('selected'));
-      div.classList.add('selected');
-    });
+function buildObjPalette(){
+  // Category tabs
+  const tabs=document.getElementById('obj-cat-tabs');tabs.innerHTML='';
+  for(const cat of OBJ_CATS){
+    const btn=document.createElement('button');
+    btn.textContent=cat.label;btn.style.fontSize='10px';btn.style.padding='2px 5px';
+    btn.classList.toggle('active',cat.id===currentObjCat);
+    btn.addEventListener('click',()=>{currentObjCat=cat.id;buildObjPalette();});
+    tabs.appendChild(btn);
+  }
+  const op=document.getElementById('obj-palette');op.innerHTML='';
+  // none / clear
+  const mkCtrl=(label,value)=>{
+    const div=document.createElement('div');div.className='pitem'+(currentObjId===value?' selected':'');
+    const sw=document.createElement('div');sw.className='swatch';sw.style.background=value===null?'#1a1208':'#2a1a08';if(value===null)sw.style.borderStyle='dashed';
+    const span=document.createElement('span');span.textContent=label;
+    div.appendChild(sw);div.appendChild(span);
+    div.addEventListener('click',()=>{currentObjId=value;op.querySelectorAll('.pitem').forEach(e=>e.classList.remove('selected'));div.classList.add('selected');});
     op.appendChild(div);
   };
-  mkObj('(no change)', null);
-  mkObj('(clear)', '');
-  for (const obj of OBJECT_TYPES) mkObj(obj, obj);
-
-  document.getElementById('terrain-section-label').textContent =
-    editorMode === 'overworld' ? 'Overworld' :
-    editorMode === 'interior'  ? 'Interior'  : 'Settlement';
-}
-
-// ── Settlement / interior dropdowns ───────────────────────────
-function buildSettlementList() {
-  const sel = document.getElementById('settlement-select');
-  sel.innerHTML = '';
-  if (!window.WORLD_DATA) return;
-  for (const [id, s] of Object.entries(window.WORLD_DATA.settlements)) {
-    const opt = document.createElement('option');
-    opt.value = id; opt.textContent = s.name || id;
-    if (id === settlementId) opt.selected = true;
-    sel.appendChild(opt);
-  }
-}
-
-function buildInteriorList() {
-  const sel = document.getElementById('interior-select');
-  sel.innerHTML = '';
-  if (!window.WORLD_DATA) return;
-  // Collect all interiorType values referenced in settlements
-  const ids = new Set(['blank']);
-  for (const s of Object.values(window.WORLD_DATA.settlements)) {
-    for (const meta of Object.values(s.map)) {
-      if (meta.type === 'door' && meta.enter?.id) ids.add(meta.enter.id);
+  mkCtrl('(no change)',null);mkCtrl('(clear)','');
+  const cat=OBJ_CATS.find(c=>c.id===currentObjCat);
+  if(!cat||!cat.items.length)return;
+  for(const item of cat.items){
+    const div=document.createElement('div');div.className='pitem'+(currentObjId===item.id?' selected':'');
+    const sw=document.createElement('div');sw.className='swatch';sw.style.background='#1a1208';
+    // preview sprite
+    const previewSeed=12345;
+    if(item.fn){
+      try{
+        const grid=item.fn(previewSeed,null);
+        if(grid){const c=document.createElement('canvas');c.width=16;c.height=16;const pc=document.createElement('canvas');MapForge.renderGridToCanvas(grid,pc,1);const pctx=c.getContext('2d');pctx.drawImage(pc,0,0,16,16);sw.innerHTML='';sw.appendChild(c);}
+      }catch(e){}
     }
+    const span=document.createElement('span');span.textContent=item.l;
+    div.appendChild(sw);div.appendChild(span);
+    div.addEventListener('click',()=>{currentObjId=item.id;op.querySelectorAll('.pitem').forEach(e=>e.classList.remove('selected'));div.classList.add('selected');});
+    op.appendChild(div);
   }
-  for (const id of [...ids].sort()) {
-    const opt = document.createElement('option');
-    opt.value = id; opt.textContent = id;
-    sel.appendChild(opt);
-  }
-  interiorId = sel.value;
 }
 
-// ── Mode switching ─────────────────────────────────────────────
-function applyMode(mode) {
-  editorMode = mode;
-  const settlementVisible = mode === 'settlement' || mode === 'interior';
-  document.getElementById('settlement-select').style.display = settlementVisible ? '' : 'none';
-  document.getElementById('interior-select').style.display   = mode === 'interior' ? '' : 'none';
-  // Adjust default zoom
-  if (mode === 'overworld') {
-    tileSize = 12;
-    document.getElementById('zoom-select').value = '12';
-  } else if (tileSize < 16) {
-    tileSize = 24;
-    document.getElementById('zoom-select').value = '24';
+// ── Dropdowns ─────────────────────────────────────────────────
+function buildSettlementList(){
+  const sel=document.getElementById('settlement-select');sel.innerHTML='';
+  if(!window.WORLD_DATA)return;
+  for(const[id,s]of Object.entries(window.WORLD_DATA.settlements)){
+    const opt=document.createElement('option');opt.value=id;opt.textContent=s.name||id;
+    if(id===settlementId)opt.selected=true;sel.appendChild(opt);
   }
-  buildPalettes();
-  loadLayer();
+}
+function buildInteriorList(){
+  const sel=document.getElementById('interior-select');sel.innerHTML='';
+  const ids=new Set(['blank']);
+  if(window.WORLD_DATA){
+    for(const s of Object.values(window.WORLD_DATA.settlements))
+      for(const meta of Object.values(s.map))
+        if(meta.enter&&meta.enter.id)ids.add(meta.enter.id);
+  }
+  for(const id of[...ids].sort()){const o=document.createElement('option');o.value=id;o.textContent=id;sel.appendChild(o);}
+  interiorId=sel.value;
 }
 
-document.getElementById('mode-select').addEventListener('change', e => applyMode(e.target.value));
-document.getElementById('settlement-select').addEventListener('change', e => {
-  settlementId = e.target.value;
-  if (editorMode === 'interior') buildInteriorList();
-  loadLayer();
-});
-document.getElementById('interior-select').addEventListener('change', e => {
-  interiorId = e.target.value;
-  loadLayer();
-});
-document.getElementById('zoom-select').addEventListener('change', e => {
-  tileSize = parseInt(e.target.value);
-  tileCache.clear(); objCache.clear();
-  renderAll();
-});
-
-// ── Mouse ──────────────────────────────────────────────────────
-canvas.addEventListener('mousedown', e => { isMouseDown = true; handleMouse(e); });
-canvas.addEventListener('mousemove', e => { if (isMouseDown) handleMouse(e); });
-canvas.addEventListener('mouseup',   () => { isMouseDown = false; });
-canvas.addEventListener('mouseleave',() => { isMouseDown = false; });
-
-function handleMouse(e) {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const px = (e.clientX - rect.left) * scaleX;
-  const py = (e.clientY - rect.top)  * scaleY;
-  const {x, y} = canvasToCell(px, py);
-  if (currentTool === 'pick') selectCell(x, y);
-  else { paintCell(x, y); if (currentTool !== 'erase') selectCell(x, y); }
+// ── Mode/settlement change ─────────────────────────────────────
+function applyMode(mode){
+  editorMode=mode;
+  document.getElementById('settlement-select').style.display=(mode==='settlement'||mode==='interior')?'':'none';
+  document.getElementById('interior-select').style.display=mode==='interior'?'':'none';
+  if(mode==='overworld'){tileSize=8;document.getElementById('zoom-select').value='8';}
+  else if(tileSize<16){tileSize=24;document.getElementById('zoom-select').value='24';}
+  buildTerrainPalette();buildObjPalette();loadLayer();
 }
 
-// ── Tool buttons + keyboard ────────────────────────────────────
-document.querySelectorAll('[data-tool]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    currentTool = btn.dataset.tool;
-    document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === currentTool));
+document.getElementById('mode-select').addEventListener('change',e=>applyMode(e.target.value));
+document.getElementById('settlement-select').addEventListener('change',e=>{settlementId=e.target.value;if(editorMode==='interior')buildInteriorList();loadLayer();});
+document.getElementById('interior-select').addEventListener('change',e=>{interiorId=e.target.value;loadLayer();});
+document.getElementById('zoom-select').addEventListener('change',e=>{tileSize=parseInt(e.target.value);tileCache.clear();objCache.clear();renderAll();});
+
+// ── Mouse handling ─────────────────────────────────────────────
+canvas.addEventListener('mousedown',e=>{isMouseDown=true;handleMouse(e,true);});
+canvas.addEventListener('mousemove',e=>{if(isMouseDown)handleMouse(e,false);});
+canvas.addEventListener('mouseup',()=>{isMouseDown=false;});
+canvas.addEventListener('mouseleave',()=>{isMouseDown=false;});
+
+function handleMouse(e,isDown){
+  const rect=canvas.getBoundingClientRect();
+  const sx=canvas.width/rect.width,sy=canvas.height/rect.height;
+  const px=(e.clientX-rect.left)*sx,py=(e.clientY-rect.top)*sy;
+  const{x,y}=canvasToCell(px,py);
+  if(currentTool==='pick'){if(isDown)selectCell(x,y);}
+  else if(currentTool==='fill'){if(isDown){floodFill(x,y);selectCell(x,y);}}
+  else{applyPaint(x,y);selectCell(x,y);}
+}
+
+// ── Tool buttons ───────────────────────────────────────────────
+document.querySelectorAll('[data-tool]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    currentTool=btn.dataset.tool;
+    document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===currentTool));
   });
 });
-
-document.getElementById('btn-undo').addEventListener('click', undo);
-
-document.addEventListener('keydown', e => {
-  if (e.target.matches('input,select,textarea')) return;
-  if ((e.ctrlKey||e.metaKey) && e.key==='z') { e.preventDefault(); undo(); return; }
-  if (e.key==='p') { currentTool='paint'; document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool==='paint')); }
-  if (e.key==='e') { currentTool='erase'; document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool==='erase')); }
-  if (e.key==='i') { currentTool='pick';  document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool==='pick')); }
+document.getElementById('btn-undo').addEventListener('click',undo);
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,select,textarea'))return;
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();return;}
+  const map2={p:'paint',e:'erase',i:'pick',f:'fill'};
+  if(map2[e.key]){currentTool=map2[e.key];document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===currentTool));}
 });
 
 // ── Init ───────────────────────────────────────────────────────
-function init() {
-  if (!window.WORLD_DATA) { statusMsg('ERROR: aerdorn.js not loaded'); return; }
-  if (!window.MapForge)   { statusMsg('ERROR: mapforge.js not loaded'); return; }
-  buildSettlementList();
-  buildInteriorList();
-  buildPalettes();
-  loadLayer();
+function init(){
+  if(!window.WORLD_DATA){statusMsg('ERROR: aerdorn.js not loaded');return;}
+  if(!window.MapForge){statusMsg('ERROR: mapforge.js not loaded');return;}
+  buildSettlementList();buildInteriorList();buildTerrainPalette();buildObjPalette();loadLayer();
 }
 init();
 </script>
