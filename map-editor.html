@@ -113,6 +113,10 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
         <div style="display:flex;gap:2px;flex-wrap:wrap;" id="obj-cat-tabs"></div>
       </div>
       <div class="pscroll" style="flex:1;"><div class="pgrid" id="obj-palette"></div></div>
+      <div id="obj-variant-wrap" style="border-top:1px solid #2a1e10;padding:5px;flex-shrink:0;display:none;">
+        <div class="plabel">VARIANT</div>
+        <div id="obj-variant-picker" style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px;"></div>
+      </div>
     </div>
     <!-- BUILDING TAB -->
     <div id="lp-building" class="lp-panel" style="flex-direction:column;overflow-y:auto;">
@@ -407,7 +411,8 @@ let selectedCell = null;
 let currentTool = 'paint';
 let currentTerrainId = 'street';
 let currentVariant = 0;
-let currentObjId = null;   // null=no change, ''=clear, string=object id
+let currentObjId = null;          // null=no change, ''=clear, string=object id
+let currentObjVariant = 0;
 let paintTerrain = true;
 let currentObjCat = 'extras';
 let currentLpTab = 'terrain';
@@ -648,7 +653,8 @@ function renderAll() {
       if(def){
         const cw=Math.ceil(def.w/20), ch=Math.ceil(def.h/20);
         const rot=meta.rotation||0;
-        const sc=getObjSpriteCanvas(meta.object,seed);
+        const objSeed = meta.objVariant!=null ? variantSeed(meta.object,meta.objVariant) : seed;
+        const sc=getObjSpriteCanvas(meta.object,objSeed);
         drawSprite(sc,px,py,def.w,def.h,cw,ch,def.snap,rot);
       }
     } else if (meta.type==='building' && meta.bldgW) {
@@ -705,9 +711,13 @@ function redrawCell(x,y){
   if(meta)_drawCellTerrain(x,y,meta);
   // Redraw object pass for this cell only
   if(meta&&meta.object&&meta.object!=='_part'){
-    const seed=(((x&0xffff)<<16)|(y&0xffff))>>>0;
+    const posSeed=(((x&0xffff)<<16)|(y&0xffff))>>>0;
     const def=getObjDef(meta.object);
-    if(def){const sc=getObjSpriteCanvas(meta.object,seed);drawSprite(sc,px,py,def.w,def.h,Math.ceil(def.w/20),Math.ceil(def.h/20),def.snap,meta.rotation||0);}
+    if(def){
+      const objSeed=meta.objVariant!=null?variantSeed(meta.object,meta.objVariant):posSeed;
+      const sc=getObjSpriteCanvas(meta.object,objSeed);
+      drawSprite(sc,px,py,def.w,def.h,Math.ceil(def.w/20),Math.ceil(def.h/20),def.snap,meta.rotation||0);
+    }
   } else if(meta&&meta.type==='building'){
     const seed=(((x&0xffff)<<16)|(y&0xffff))>>>0;
     const sc=getBldgSprite(1,1,meta.roofShape||'hip',meta.roofStyle||'brown',1,seed);
@@ -764,7 +774,7 @@ function applyPaint(x,y){
     const ex=definedMap[k]?Object.assign({},definedMap[k]):Object.assign({},inferBg(x,y));
     if(paintTerrain){ex.type=currentTerrainId;ex.variant=currentVariant;}
     if(currentObjId==='')delete ex.object;
-    else if(currentObjId!==null)ex.object=currentObjId;
+    else if(currentObjId!==null){ex.object=currentObjId;ex.objVariant=currentObjVariant;}
     pushUndo(x,y);definedMap[k]=ex;map[k]=ex;
     redrawCell(x,y);
   }
@@ -993,6 +1003,28 @@ function buildVariantPicker(typeId){
   }
 }
 
+function buildObjVariantPicker(objId){
+  const wrap=document.getElementById('obj-variant-wrap');
+  const vp=document.getElementById('obj-variant-picker');
+  if(!objId){wrap.style.display='none';vp.innerHTML='';return;}
+  const def=OBJECT_DEFS[objId];
+  if(!def||!def.fn){wrap.style.display='none';return;}
+  wrap.style.display='';
+  vp.innerHTML='';
+  for(let v=0;v<8;v++){
+    const seed=variantSeed(objId,v);
+    const sw=document.createElement('div');
+    sw.style.cssText=`width:20px;height:20px;border-radius:2px;cursor:pointer;border:2px solid ${v===currentObjVariant?'#e8c870':'#2a1e10'};overflow:hidden;flex-shrink:0;background:#1a1208;`;
+    try{
+      const g=def.fn(seed);
+      if(g){const pc=document.createElement('canvas');MF.renderGridToCanvas(g,pc,1);const c=document.createElement('canvas');c.width=20;c.height=20;c.style.cssText='width:20px;height:20px;image-rendering:pixelated;display:block;';c.getContext('2d').drawImage(pc,0,0,20,20);sw.appendChild(c);}
+    }catch(e){}
+    sw.title=`Variant ${v}`;
+    sw.addEventListener('click',()=>{currentObjVariant=v;buildObjVariantPicker(objId);});
+    vp.appendChild(sw);
+  }
+}
+
 function buildTerrainPalette(){
   const types=editorMode==='overworld'?OW_TERRAIN:editorMode==='interior'?INT_TERRAIN:SETTLE_TERRAIN;
   if(!types.find(t=>t.id===currentTerrainId))currentTerrainId=types[0].id;
@@ -1042,6 +1074,7 @@ function buildObjPalette(){
     div.addEventListener('click',()=>{
       currentObjId=value;paintTerrain=false;
       op.querySelectorAll('.pitem').forEach(e=>e.classList.remove('sel'));div.classList.add('sel');
+      buildObjVariantPicker(value||null);
     });
     op.appendChild(div);
   };
