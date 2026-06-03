@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Aerdorn Map Editor</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0804; color: #c4b590; font-family: Georgia, serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  #topbar {
+    background: #161008; border-bottom: 1px solid #3a2a10;
+    padding: 6px 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; flex-shrink: 0;
+  }
+  #topbar h1 { font-size: 14px; color: #e8c870; letter-spacing: 2px; white-space: nowrap; }
+  select, input[type=text] {
+    background: #0f0c06; border: 1px solid #3a2a10; color: #c4b590;
+    padding: 3px 7px; font-size: 12px; border-radius: 3px; font-family: Georgia, serif;
+  }
+  button {
+    background: #1a1208; border: 1px solid #3a2a10; color: #a08050;
+    padding: 4px 10px; font-size: 12px; border-radius: 3px; cursor: pointer; font-family: Georgia, serif;
+  }
+  button:hover { background: #2a1e08; border-color: #6a4820; }
+  button.active { background: #3a2808; border-color: #e8c870; color: #e8c870; }
+  .sep { width: 1px; height: 20px; background: #2a1e10; margin: 0 4px; }
+  #main { display: flex; flex: 1; overflow: hidden; }
+  #left-panel {
+    width: 200px; min-width: 200px; background: #0f0c08;
+    border-right: 1px solid #2a1e10; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .panel-section { border-bottom: 1px solid #2a1e10; padding: 8px; }
+  .panel-label { font-size: 10px; letter-spacing: 2px; color: #5a4820; margin-bottom: 5px; }
+  .tool-row { display: flex; gap: 4px; flex-wrap: wrap; }
+  .palette-grid { display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+  .palette-item {
+    display: flex; align-items: center; gap: 6px; padding: 3px 5px;
+    border-radius: 3px; cursor: pointer; font-size: 11px; border: 1px solid transparent;
+  }
+  .palette-item:hover { background: #1a1208; }
+  .palette-item.selected { background: #2a1a08; border-color: #e8c870; color: #e8c870; }
+  .swatch { width: 16px; height: 16px; border-radius: 2px; border: 1px solid #3a2a10; flex-shrink: 0; overflow: hidden; }
+  .swatch canvas { display: block; width: 16px !important; height: 16px !important; image-rendering: pixelated; }
+  #canvas-wrap {
+    flex: 1; overflow: auto; background: #080602;
+    display: flex; align-items: flex-start; justify-content: flex-start; padding: 8px;
+  }
+  #grid-canvas { image-rendering: pixelated; cursor: crosshair; display: block; }
+  #right-panel {
+    width: 210px; min-width: 210px; background: #0f0c08;
+    border-left: 1px solid #2a1e10; display: flex; flex-direction: column; overflow-y: auto;
+  }
+  .cell-prop { display: flex; flex-direction: column; gap: 3px; margin-bottom: 7px; }
+  .cell-prop label { font-size: 10px; color: #6a5030; }
+  .cell-prop input { width: 100%; }
+  #cell-coords { font-size: 11px; color: #8a7050; margin-bottom: 8px; min-height: 16px; }
+  #export-box {
+    background: #0a0806; border: 1px solid #2a1e10; border-radius: 3px;
+    padding: 6px; font-size: 10px; font-family: monospace; color: #90a878;
+    white-space: pre; overflow-x: auto; min-height: 60px; max-height: 220px; overflow-y: auto;
+  }
+  #export-box:empty::before { content: '// No changes yet'; color: #3a2a10; }
+  #terrain-palette-wrap { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  #obj-palette-wrap { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+</style>
+</head>
+<body>
+<div id="topbar">
+  <h1>&#9874; AERDORN MAP EDITOR</h1>
+  <div class="sep"></div>
+  <label style="font-size:11px;color:#6a5030">Settlement:</label>
+  <select id="settlement-select"></select>
+  <div class="sep"></div>
+  <label style="font-size:11px;color:#6a5030">Zoom:</label>
+  <select id="zoom-select">
+    <option value="16">16x</option>
+    <option value="24" selected>24x</option>
+    <option value="32">32x</option>
+    <option value="48">48x</option>
+  </select>
+  <div class="sep"></div>
+  <button id="btn-undo">&#8617; Undo</button>
+  <button id="btn-export-diff">&#8595; Diff JS</button>
+  <button id="btn-copy-diff">&#128203; Copy Diff</button>
+  <button id="btn-export-full">&#8595; Full JS</button>
+  <span id="status-msg" style="font-size:11px;color:#5a7840;margin-left:4px;"></span>
+</div>
+<div id="main">
+  <div id="left-panel">
+    <div class="panel-section">
+      <div class="panel-label">TOOL</div>
+      <div class="tool-row">
+        <button class="active" id="tool-paint" data-tool="paint">&#9999; Paint</button>
+        <button id="tool-erase" data-tool="erase">&#10005; Erase</button>
+        <button id="tool-pick" data-tool="pick">&#9677; Pick</button>
+      </div>
+      <div style="font-size:10px;color:#3a2a10;margin-top:5px;">P / E / I &nbsp;&#183;&nbsp; Ctrl+Z undo</div>
+    </div>
+    <div class="panel-section" id="terrain-palette-wrap">
+      <div class="panel-label">TERRAIN</div>
+      <div class="palette-grid" id="terrain-palette"></div>
+    </div>
+    <div class="panel-section" id="obj-palette-wrap" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+      <div class="panel-label">OBJECT OVERLAY</div>
+      <div class="palette-grid" id="obj-palette"></div>
+    </div>
+  </div>
+  <div id="canvas-wrap">
+    <canvas id="grid-canvas"></canvas>
+  </div>
+  <div id="right-panel">
+    <div class="panel-section">
+      <div class="panel-label">SELECTED CELL</div>
+      <div id="cell-coords">-</div>
+      <div class="cell-prop"><label>Type</label><input id="prop-type" type="text" placeholder="building / street / docks..."></div>
+      <div class="cell-prop"><label>Name</label><input id="prop-name" type="text" placeholder="The Salt &amp; Sail Inn"></div>
+      <div class="cell-prop"><label>interiorType</label><input id="prop-interiorType" type="text" placeholder="inn / shop / house..."></div>
+      <div class="cell-prop"><label>doors (comma-separated)</label><input id="prop-doors" type="text" placeholder="north,east,south,west"></div>
+      <div class="cell-prop"><label>object</label><input id="prop-object" type="text" placeholder="well / cart / barrels..."></div>
+      <button id="btn-apply-props" style="width:100%;margin-top:4px;">&#10004; Apply Cell Changes</button>
+    </div>
+    <div class="panel-section" style="flex:1;padding-bottom:12px;">
+      <div class="panel-label">EXPORT DIFF</div>
+      <div id="export-box"></div>
+      <div style="display:flex;gap:4px;margin-top:6px;">
+        <button id="btn-export-diff2" style="flex:1">&#8595; Download</button>
+        <button id="btn-copy-diff2" style="flex:1">&#128203; Copy</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="mapforge.js"></script>
+<script src="worlds/aerdorn.js"></script>
+<script>
+'use strict';
+const TERRAIN_TO_MF = {
+  street:'dirt', building:'farmland', courtyard:'grass',
+  market:'sand', docks:'cobble', gate:'cobble',
+  interior:'cave', wall:'rocky', door:'dirt',
+  road:'dirt', plains:'grass', forest:'forest_floor',
+  ocean:'water', river:'shallow_water',
+};
+const TERRAIN_TYPES = [
+  {id:'street',label:'Street',color:'#a07850'},
+  {id:'building',label:'Building',color:'#8a6840'},
+  {id:'courtyard',label:'Courtyard',color:'#70904a'},
+  {id:'market',label:'Market',color:'#c0a860'},
+  {id:'docks',label:'Docks',color:'#506878'},
+  {id:'gate',label:'Gate',color:'#706050'},
+  {id:'wall',label:'Wall',color:'#584838'},
+  {id:'door',label:'Door',color:'#8a5030'},
+  {id:'road',label:'Road',color:'#9a8060'},
+  {id:'interior',label:'Interior',color:'#383028'},
+];
+const OBJECT_TYPES = ['well','cart','barrels','haystack','trough','signpost','noticeboard','logpile','bush','stall','anvil'];
+const BUILDING_STYLE = {inn:'brown',shop:'terra',house:'dkbrown',chapel:'slate',market_hall:'amber',blacksmith:'darkslate',bathhouse:'blueslate',harbormaster:'darkslate',default:'brown'};
+
+let settlementId='frilar_town', map={}, originalMap={}, undoStack=[], selectedCell=null;
+let currentTool='paint', currentType='street', currentObject=null, tileSize=24, isMouseDown=false;
+const tileCache=new Map(), objCache=new Map();
+
+function loadSettlement(id) {
+  settlementId=id;
+  const s=window.WORLD_DATA&&window.WORLD_DATA.settlements[id];
+  if(!s){alert('Unknown settlement: '+id);return;}
+  map={};for(const[k,v]of Object.entries(s.map))map[k]=Object.assign({},v);
+  originalMap={};for(const[k,v]of Object.entries(s.map))originalMap[k]=Object.assign({},v);
+  undoStack=[];selectedCell=null;tileCache.clear();objCache.clear();
+  computeBounds();renderAll();clearInspector();updateExport();
+}
+
+let bounds={minX:0,maxX:0,minY:0,maxY:0};
+function computeBounds() {
+  let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity;
+  for(const k of Object.keys(map)){const[x,y]=k.split(',').map(Number);if(x<mnX)mnX=x;if(x>mxX)mxX=x;if(y<mnY)mnY=y;if(y>mxY)mxY=y;}
+  bounds={minX:mnX-2,maxX:mxX+2,minY:mnY-2,maxY:mxY+2};
+}
+function gridW(){return bounds.maxX-bounds.minX+1;}
+function gridH(){return bounds.maxY-bounds.minY+1;}
+function cellToCanvas(x,y){return{px:(x-bounds.minX)*tileSize,py:(gridH()-1-(y-bounds.minY))*tileSize};}
+function canvasToCell(px,py){return{x:Math.floor(px/tileSize)+bounds.minX,y:(gridH()-1-Math.floor(py/tileSize))+bounds.minY};}
+function inBounds(x,y){return x>=bounds.minX&&x<=bounds.maxX&&y>=bounds.minY&&y<=bounds.maxY;}
+
+function getTerrainCanvas(type,x,y) {
+  if(!window.MapForge)return null;
+  const mfType=TERRAIN_TO_MF[type]||'grass';
+  const seed=((x&0xffff)<<16)|(y&0xffff);
+  const key=mfType+'_'+seed;
+  if(tileCache.has(key))return tileCache.get(key);
+  const grid=MapForge.makeTerrain(mfType,seed,{});
+  const c=document.createElement('canvas');MapForge.renderGridToCanvas(grid,c,1);
+  tileCache.set(key,c);return c;
+}
+
+function getObjectCanvas(meta,x,y) {
+  if(!window.MapForge)return null;
+  const seed=(((x&0xffff)<<16)|(y&0xffff))>>>0;
+  const obj=meta.object;
+  if(obj){
+    const key='obj_'+obj+'_'+seed;
+    if(objCache.has(key))return objCache.get(key);
+    let grid=null;
+    if(obj==='well')grid=MapForge.makeWell(20,20,seed);
+    else if(obj==='anvil')grid=MapForge.makeAnvil(seed);
+    else if(obj==='barrels')grid=MapForge.makeBarrelCluster(seed);
+    else if(obj==='cart')grid=MapForge.makeCart(seed);
+    else if(obj==='haystack')grid=MapForge.makeHaystack(20,20,seed);
+    else if(obj==='trough')grid=MapForge.makeTrough(seed);
+    else if(obj==='signpost')grid=MapForge.makeSignpost(seed);
+    else if(obj==='noticeboard')grid=MapForge.makeNoticeboard(seed);
+    else if(obj==='logpile')grid=MapForge.makeLogPile(seed);
+    else if(obj==='bush')grid=MapForge.makeBushField('sm',seed);
+    else if(obj==='stall')grid=MapForge.makeMarketStall(seed);
+    if(grid){const c=document.createElement('canvas');MapForge.renderGridToCanvas(grid,c,1);objCache.set(key,c);return c;}
+  }
+  if(meta.type==='building'){
+    const styleId=BUILDING_STYLE[meta.interiorType]||BUILDING_STYLE.default;
+    const key='roof_'+styleId+'_'+seed;
+    if(objCache.has(key))return objCache.get(key);
+    const style=MapForge.ROOF_STYLES.find(s=>s.id===styleId)||MapForge.ROOF_STYLES[0];
+    const shapes=['hip','ridge','pyramid','gambrel'];
+    const shape=shapes[seed%shapes.length];
+    const chimneys=MapForge.autoChimneys(20,20,seed%3===0?1:0);
+    const grid=style.isThatch?MapForge.makeThatchRoof(20,20,shape,chimneys,seed):MapForge.makeRoofByShape(20,20,shape,style,chimneys,seed);
+    const c=document.createElement('canvas');MapForge.renderGridToCanvas(grid,c,1);objCache.set(key,c);return c;
+  }
+  return null;
+}
+
+const canvas=document.getElementById('grid-canvas');
+const ctx=canvas.getContext('2d');
+
+function renderAll() {
+  canvas.width=gridW()*tileSize;canvas.height=gridH()*tileSize;
+  ctx.fillStyle='#050402';ctx.fillRect(0,0,canvas.width,canvas.height);
+  for(const[k,meta]of Object.entries(map)){const[x,y]=k.split(',').map(Number);_drawCell(x,y,meta);}
+  if(selectedCell)_drawSel(selectedCell.x,selectedCell.y);
+}
+
+function _drawCell(x,y,meta) {
+  const{px,py}=cellToCanvas(x,y);
+  const tc=getTerrainCanvas(meta.type,x,y);
+  if(tc)ctx.drawImage(tc,px,py,tileSize,tileSize);
+  else{ctx.fillStyle='#1a1408';ctx.fillRect(px,py,tileSize,tileSize);}
+  if(tileSize>=16){const oc=getObjectCanvas(meta,x,y);if(oc)ctx.drawImage(oc,px,py,tileSize,tileSize);}
+  const ti=TERRAIN_TYPES.find(t=>t.id===meta.type);
+  if(ti){ctx.strokeStyle=ti.color+'44';ctx.lineWidth=0.5;ctx.strokeRect(px+0.5,py+0.5,tileSize-1,tileSize-1);}
+}
+
+function _drawSel(x,y) {
+  const{px,py}=cellToCanvas(x,y);
+  ctx.strokeStyle='#e8c870';ctx.lineWidth=2;ctx.strokeRect(px+1,py+1,tileSize-2,tileSize-2);
+}
+
+function redrawCell(x,y) {
+  const{px,py}=cellToCanvas(x,y);
+  ctx.fillStyle='#050402';ctx.fillRect(px,py,tileSize,tileSize);
+  const meta=map[`${x},${y}`];if(meta)_drawCell(x,y,meta);
+  if(selectedCell&&selectedCell.x===x&&selectedCell.y===y)_drawSel(x,y);
+}
+
+function pushUndo(x,y) {
+  const k=`${x},${y}`;
+  undoStack.push({k,prev:map[k]?Object.assign({},map[k]):null});
+  if(undoStack.length>300)undoStack.shift();
+}
+
+function paintCell(x,y) {
+  if(!inBounds(x,y))return;
+  const k=`${x},${y}`;
+  if(currentTool==='erase'){if(!map[k])return;pushUndo(x,y);delete map[k];}
+  else{
+    const ex=map[k]?Object.assign({},map[k]):{};
+    ex.type=currentType;
+    if(currentObject==='')delete ex.object;
+    else if(currentObject!==null)ex.object=currentObject;
+    pushUndo(x,y);map[k]=ex;
+  }
+  redrawCell(x,y);updateExport();
+}
+
+function undo() {
+  if(!undoStack.length)return;
+  const{k,prev}=undoStack.pop();
+  if(prev)map[k]=prev;else delete map[k];
+  const[x,y]=k.split(',').map(Number);
+  redrawCell(x,y);
+  if(selectedCell&&selectedCell.x===x&&selectedCell.y===y)populateInspector(x,y);
+  updateExport();statusMsg('Undone.');
+}
+
+function selectCell(x,y) {
+  if(selectedCell){const o=selectedCell;selectedCell=null;redrawCell(o.x,o.y);}
+  selectedCell={x,y};redrawCell(x,y);populateInspector(x,y);
+}
+
+function populateInspector(x,y) {
+  const meta=map[`${x},${y}`]||{};
+  document.getElementById('cell-coords').textContent=`x=${x},  y=${y}  (${meta.type||'empty'})`;
+  document.getElementById('prop-type').value=meta.type||'';
+  document.getElementById('prop-name').value=meta.name||'';
+  document.getElementById('prop-interiorType').value=meta.interiorType||'';
+  document.getElementById('prop-doors').value=Array.isArray(meta.doors)?meta.doors.join(','):(meta.doors||'');
+  document.getElementById('prop-object').value=meta.object||'';
+}
+
+function clearInspector() {
+  document.getElementById('cell-coords').textContent='-';
+  ['prop-type','prop-name','prop-interiorType','prop-doors','prop-object'].forEach(id=>document.getElementById(id).value='');
+}
+
+document.getElementById('btn-apply-props').addEventListener('click',()=>{
+  if(!selectedCell)return;
+  const{x,y}=selectedCell;const k=`${x},${y}`;pushUndo(x,y);
+  const type=document.getElementById('prop-type').value.trim();
+  const name=document.getElementById('prop-name').value.trim();
+  const it=document.getElementById('prop-interiorType').value.trim();
+  const doorsStr=document.getElementById('prop-doors').value.trim();
+  const obj=document.getElementById('prop-object').value.trim();
+  const meta={};
+  if(type)meta.type=type;if(name)meta.name=name;if(it)meta.interiorType=it;
+  if(doorsStr)meta.doors=doorsStr.split(',').map(s=>s.trim()).filter(Boolean);
+  if(obj)meta.object=obj;
+  const seed=(((x&0xffff)<<16)|(y&0xffff))>>>0;
+  for(const ck of[...objCache.keys()]){if(ck.endsWith('_'+seed))objCache.delete(ck);}
+  map[k]=meta;redrawCell(x,y);updateExport();statusMsg('Applied.');
+});
+
+function cellToJS(k,meta) {
+  const[x,y]=k.split(',').map(Number);
+  const extra={};
+  if(meta.interiorType)extra.interiorType=meta.interiorType;
+  if(meta.doors&&meta.doors.length)extra.doors=meta.doors;
+  if(meta.object)extra.object=meta.object;
+  const extraStr=Object.keys(extra).length?', '+JSON.stringify(extra).replace(/"(\w+)":/g,'$1:'):'';
+  const name=(meta.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  return `t(${x},${y},'${meta.type||''}','${name}'${extraStr});`;
+}
+
+function buildDiff() {
+  const adds=[],removes=[];
+  const allKeys=new Set([...Object.keys(map),...Object.keys(originalMap)]);
+  for(const k of allKeys){
+    const orig=originalMap[k],curr=map[k];
+    if(!curr&&orig)removes.push(k);
+    else if(curr&&JSON.stringify(curr)!==JSON.stringify(orig))adds.push([k,curr]);
+  }
+  return{adds,removes};
+}
+
+function updateExport() {
+  const{adds,removes}=buildDiff();
+  const box=document.getElementById('export-box');
+  if(!adds.length&&!removes.length){box.textContent='';return;}
+  const lines=['// -- DIFF --'];
+  if(removes.length){lines.push('// Cells removed - delete these t() lines in aerdorn.js:');for(const k of removes){const[x,y]=k.split(',').map(Number);lines.push(`// DELETE: t(${x},${y},...)`);}  }
+  if(adds.length){lines.push('// New / changed cells:');for(const[k,meta]of adds)lines.push(cellToJS(k,meta));}
+  box.textContent=lines.join('\n');
+}
+
+function getDiffText(){return document.getElementById('export-box').textContent;}
+function getFullText() {
+  const s=window.WORLD_DATA.settlements[settlementId];
+  const lines=[`// -- ${s?s.name:settlementId} - full map export --`,'// Replace the t()/rect() block inside the settlement IIFE in aerdorn.js'];
+  for(const[k,meta]of Object.entries(map))lines.push(cellToJS(k,meta));
+  return lines.join('\n');
+}
+
+function doDownload(text,suffix) {
+  const blob=new Blob([text],{type:'text/javascript'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=settlementId+'_'+suffix+'.js';a.click();
+}
+function doCopy(text){navigator.clipboard.writeText(text).then(()=>statusMsg('Copied!'));}
+function statusMsg(msg){const el=document.getElementById('status-msg');el.textContent=msg;setTimeout(()=>{if(el.textContent===msg)el.textContent='';},2000);}
+
+document.getElementById('btn-export-diff').addEventListener('click',()=>doDownload(getDiffText(),'diff'));
+document.getElementById('btn-copy-diff').addEventListener('click',()=>doCopy(getDiffText()));
+document.getElementById('btn-export-full').addEventListener('click',()=>doDownload(getFullText(),'full'));
+document.getElementById('btn-export-diff2').addEventListener('click',()=>doDownload(getDiffText(),'diff'));
+document.getElementById('btn-copy-diff2').addEventListener('click',()=>doCopy(getDiffText()));
+
+function buildPalettes() {
+  const tp=document.getElementById('terrain-palette');tp.innerHTML='';
+  for(const t of TERRAIN_TYPES){
+    const div=document.createElement('div');div.className='palette-item'+(t.id===currentType?' selected':'');
+    const sw=document.createElement('div');sw.className='swatch';
+    const tc=getTerrainCanvas(t.id,99,99);
+    if(tc){const c=document.createElement('canvas');c.width=16;c.height=16;c.getContext('2d').drawImage(tc,0,0,16,16);sw.appendChild(c);}
+    else sw.style.background=t.color;
+    const span=document.createElement('span');span.textContent=t.label;
+    div.appendChild(sw);div.appendChild(span);
+    div.addEventListener('click',()=>{currentType=t.id;tp.querySelectorAll('.palette-item').forEach(el=>el.classList.remove('selected'));div.classList.add('selected');});
+    tp.appendChild(div);
+  }
+  const op=document.getElementById('obj-palette');op.innerHTML='';
+  const mkObj=(label,value)=>{
+    const div=document.createElement('div');div.className='palette-item'+(currentObject===value?' selected':'');
+    const sw=document.createElement('div');sw.className='swatch';sw.style.background=value===null?'#1a1208':'#2a1a08';if(value===null)sw.style.borderStyle='dashed';
+    const span=document.createElement('span');span.textContent=label;
+    div.appendChild(sw);div.appendChild(span);
+    div.addEventListener('click',()=>{currentObject=value;op.querySelectorAll('.palette-item').forEach(el=>el.classList.remove('selected'));div.classList.add('selected');});
+    op.appendChild(div);
+  };
+  mkObj('(no change)',null);mkObj('(clear)','');
+  for(const obj of OBJECT_TYPES)mkObj(obj,obj);
+}
+
+function buildSettlementList() {
+  const sel=document.getElementById('settlement-select');sel.innerHTML='';
+  for(const[id,s]of Object.entries(window.WORLD_DATA.settlements)){
+    const opt=document.createElement('option');opt.value=id;opt.textContent=s.name||id;if(id===settlementId)opt.selected=true;sel.appendChild(opt);
+  }
+}
+
+canvas.addEventListener('mousedown',e=>{isMouseDown=true;handleMouse(e);});
+canvas.addEventListener('mousemove',e=>{if(isMouseDown)handleMouse(e);});
+canvas.addEventListener('mouseup',()=>{isMouseDown=false;});
+canvas.addEventListener('mouseleave',()=>{isMouseDown=false;});
+
+function handleMouse(e) {
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=canvas.width/rect.width,scaleY=canvas.height/rect.height;
+  const px=(e.clientX-rect.left)*scaleX,py=(e.clientY-rect.top)*scaleY;
+  const{x,y}=canvasToCell(px,py);
+  if(currentTool==='pick')selectCell(x,y);
+  else{paintCell(x,y);if(currentTool!=='erase')selectCell(x,y);}
+}
+
+document.querySelectorAll('[data-tool]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    currentTool=btn.dataset.tool;
+    document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===currentTool));
+  });
+});
+
+document.getElementById('settlement-select').addEventListener('change',e=>loadSettlement(e.target.value));
+document.getElementById('zoom-select').addEventListener('change',e=>{tileSize=parseInt(e.target.value);tileCache.clear();objCache.clear();renderAll();});
+document.getElementById('btn-undo').addEventListener('click',undo);
+
+document.addEventListener('keydown',e=>{
+  if(e.target.matches('input,select,textarea'))return;
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();return;}
+  if(e.key==='p'){currentTool='paint';document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool==='paint'));}
+  if(e.key==='e'){currentTool='erase';document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool==='erase'));}
+  if(e.key==='i'){currentTool='pick';document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool==='pick'));}
+});
+
+function init() {
+  if(!window.WORLD_DATA){document.getElementById('status-msg').textContent='ERROR: aerdorn.js not loaded';return;}
+  if(!window.MapForge){document.getElementById('status-msg').textContent='ERROR: mapforge.js not loaded';return;}
+  buildSettlementList();buildPalettes();loadSettlement(settlementId);
+}
+init();
+</script>
+</body>
+</html>
