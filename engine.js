@@ -1801,7 +1801,7 @@ const _OBJ_DIMS = {
   campfire:{w:16,h:16,snap:'center'}, signpost:{w:14,h:18,snap:'center'},
   anvil:{w:16,h:14,snap:'south'}, logpile:{w:20,h:18,snap:'south'},
   barrels:{w:18,h:16,snap:'south'}, noticeboard:{w:16,h:16,snap:'south'},
-  trough:{w:18,h:10,snap:'south'}, stall:{w:24,h:20,snap:'south'},
+  trough:{w:18,h:10,snap:'south'}, stall:{w:24,h:20,snap:'south',cells:[1,1]},
   cart:{w:22,h:18,snap:'center'}, chest:{w:14,h:12,snap:'south'},
   campsite:{w:24,h:20,snap:'center'}, altar:{w:20,h:20,snap:'center'},
   stockade:{w:20,h:12,snap:'south'}, stocks:{w:20,h:14,snap:'center'},
