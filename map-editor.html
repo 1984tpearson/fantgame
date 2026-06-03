@@ -289,11 +289,7 @@ const OBJ_CATS = [
 ];
 
 const BLDG_STYLE = {inn:'brown',shop:'terra',house:'dkbrown',chapel:'slate',market_hall:'amber',blacksmith:'darkslate',bathhouse:'blueslate',harbormaster:'darkslate',default:'brown'};
-const MF = () => window.MapForge; // accessed as MF() won't work — alias below
-let MF; // will be set in init
-
-// Default background terrain for undefined cells by mode
-const DEFAULT_BG = {settlement:'courtyard', overworld:'plains', interior:'interior'};
+let MF; // set in init() to window.MapForge
 
 // ── State ──────────────────────────────────────────────────────
 let editorMode = 'settlement';
