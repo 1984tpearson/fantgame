@@ -441,14 +441,20 @@ function getObjCanvas(objId, seed) {
 }
 
 function getBldgCanvas(meta, seed) {
+  if(!MF.ROOF_STYLES||!MF.ROOF_STYLES.length)return null;
   const styleId = BLDG_STYLE[meta.interiorType]||BLDG_STYLE.default;
   const key = 'roof_'+styleId+'_'+seed;
   if(objCache.has(key))return objCache.get(key);
   const style = MF.ROOF_STYLES.find(s=>s.id===styleId)||MF.ROOF_STYLES[0];
+  if(!style)return null;
   const shapes=['hip','ridge','pyramid','gambrel'];
   const shape=shapes[seed%shapes.length];
-  const chimneys=MF.autoChimneys(20,20,seed%3===0?1:0);
-  const grid=style.isThatch?MF.makeThatchRoof(20,20,shape,chimneys,seed):MF.makeRoofByShape(20,20,shape,style,chimneys,seed);
+  let grid=null;
+  try{
+    const chimneys=MF.autoChimneys?MF.autoChimneys(20,20,seed%3===0?1:0):[];
+    grid=style.isThatch?MF.makeThatchRoof(20,20,shape,chimneys,seed):MF.makeRoofByShape(20,20,shape,style,chimneys,seed);
+  }catch(e){return null;}
+  if(!grid)return null;
   const c=document.createElement('canvas');
   MF.renderGridToCanvas(grid,c,1);
   objCache.set(key,c); return c;
