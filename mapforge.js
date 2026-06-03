@@ -1328,7 +1328,7 @@ function makeFloorboard(pattern, seed, style) {
 }
 
 // ─── FURNITURE GENERATORS ────────────────────────────────────────────────────
-function makeBed(type, seed, style) {
+function makeBed(type, seed, style, linen) {
   const W=type==='double'?20:14, H=24;
   const rng=mulberry32(seed), grid=createPixelGrid(W,H);
   const rngW=mulberry32(seed+4441);
@@ -1340,9 +1340,19 @@ function makeBed(type, seed, style) {
     {a:[158,118,62,255],b:[188,148,88,255],c:[128,88,40,255]}, // maple
   ][(style!=null?style%5:Math.floor(rngW()*5))];
   const FR=jitter(woodF.a,12,rngW), FRL=jitter(woodF.b,12,rngW), FRD=jitter(woodF.c,10,rngW); // frame
-  const SH=[188,168,128,255],SHL=[215,195,158,255],SHD=[148,125,88,255]; // sheets
-  const PIL=[225,215,188,255]; // pillow
-  const BL=jitter([88,68,148,255],14,rng); // blanket colour — random each gen
+  // Linen: sheets, pillow, blanket — colour selectable
+  const linenCols=[
+    {sh:[188,168,128,255],shl:[215,195,158,255],shd:[148,125,88,255],pil:[225,215,188,255],bl:[88,68,148,255]},  // natural/purple
+    {sh:[210,195,165,255],shl:[235,220,190,255],shd:[168,148,112,255],pil:[240,230,205,255],bl:[168,68,68,255]}, // white/red
+    {sh:[148,178,158,255],shl:[178,208,188,255],shd:[118,148,128,255],pil:[195,220,200,255],bl:[58,98,68,255]},  // green
+    {sh:[165,178,210,255],shl:[192,205,235,255],shd:[128,142,175,255],pil:[205,215,240,255],bl:[48,72,138,255]}, // blue
+    {sh:[210,175,158,255],shl:[235,198,182,255],shd:[168,132,118,255],pil:[240,215,200,255],bl:[158,72,48,255]}, // terracotta/orange
+    {sh:[185,155,195,255],shl:[215,182,225,255],shd:[148,118,158,255],pil:[225,200,235,255],bl:[98,48,128,255]}, // lilac
+    {sh:[195,165,135,255],shl:[225,195,162,255],shd:[158,128,98,255],pil:[235,210,178,255],bl:[88,65,38,255]},   // brown/tan
+  ];
+  const lc=linenCols[linen!=null?linen%linenCols.length:Math.floor(rng()*linenCols.length)];
+  const SH=lc.sh,SHL=lc.shl,SHD=lc.shd,PIL=lc.pil;
+  const BL=jitter(lc.bl,14,rng); // blanket colour
 
   // frame
   for(let x=0;x<W;x++) for(let y=0;y<H;y++) setPixel(grid,x,y,jitter(FR,10,rng));

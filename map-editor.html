@@ -102,10 +102,7 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
         <div class="plabel" id="terrain-label">TERRAIN</div>
       </div>
       <div class="pscroll" style="flex:1;"><div class="pgrid" id="terrain-palette"></div></div>
-      <div id="variant-wrap" style="border-top:1px solid #2a1e10;padding:5px;flex-shrink:0;">
-        <div class="plabel">VARIANT</div>
-        <div id="variant-picker" style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px;"></div>
-      </div>
+
     </div>
     <!-- OBJECT TAB -->
     <div id="lp-object" class="lp-panel" style="flex-direction:column;">
@@ -380,12 +377,14 @@ const OBJECT_DEFS = {
   castle_wall_cne:{l:'Castle Wall ┗', w:20, h:20, snap:'center', fn:s=>MF.makeCastleWall('corner_ne',s)},
   castle_wall_cnw:{l:'Castle Wall ┛', w:20, h:20, snap:'center', fn:s=>MF.makeCastleWall('corner_nw',s)},
   // Furniture — fn:(seed,style)=>sprite, styles=colour preset labels
-  bed_s:        {l:'Bed (single)',   w:14, h:24, snap:'south',
+  bed_s:        {l:'Bed (single)',   w:14, h:24, snap:'south', cells:[1,1],
     styles:['Oak','Walnut','Pine','Ebony','Maple'],
-    fn:(s,st)=>MF.makeBed('single',s,st)},
-  bed_d:        {l:'Bed (double)',   w:20, h:24, snap:'south',
+    linen:['Natural','Red','Green','Blue','Terracotta','Lilac','Brown'],
+    fn:(s,st,ln)=>MF.makeBed('single',s,st,ln)},
+  bed_d:        {l:'Bed (double)',   w:20, h:24, snap:'south', cells:[1,1],
     styles:['Oak','Walnut','Pine','Ebony','Maple'],
-    fn:(s,st)=>MF.makeBed('double',s,st)},
+    linen:['Natural','Red','Green','Blue','Terracotta','Lilac','Brown'],
+    fn:(s,st,ln)=>MF.makeBed('double',s,st,ln)},
   table_r:      {l:'Table (round)',  w:16, h:16, snap:'center', fn:(s)=>MF.makeTable('round',s)},
   table_l:      {l:'Table (long)',   w:24, h:16, snap:'center', fn:(s)=>MF.makeTable('long',s)},
   chair:        {l:'Chair',          w:12, h:14, snap:'south',
@@ -490,6 +489,7 @@ let currentVariant = 0;
 let currentObjId = null;          // null=no change, ''=clear, string=object id
 let currentObjVariant = 0;
 let currentObjStyle = null;  // null=random, number=locked colour preset
+let currentObjLinen = null;  // secondary colour (fabric/linen for beds)
 let paintTerrain = true;
 let currentObjCat = 'extras';
 let currentLpTab = 'terrain';
@@ -517,11 +517,11 @@ function variantSeed(type, v) {
 // Cells spanned by an anchor object given rotation
 // rotation 0/180: w cols east, h rows north (y increases north in our convention)
 // rotation 90/270: swap w/h
-function getSpanCells(ax, ay, objW, objH, rotation) {
+function getSpanCells(ax, ay, objW, objH, rotation, defCells) {
   const cells = [];
-  // Convert pixel size to cell count (ceiling)
-  let cw = Math.ceil(objW / 20);
-  let ch = Math.ceil(objH / 20);
+  // Use explicit cell override if provided (e.g. beds force 1x1)
+  let cw = defCells ? defCells[0] : Math.ceil(objW / 20);
+  let ch = defCells ? defCells[1] : Math.ceil(objH / 20);
   if (rotation === 90 || rotation === 270) { const tmp=cw; cw=ch; ch=tmp; }
   // Anchor is bottom-left of the sprite footprint (south=low y, north=high y)
   // Cells extend east (+x) and north (+y) from anchor
@@ -628,11 +628,12 @@ function getTileCanvas(type, x, y, variant) {
   try{const g=MF.makeTerrain(mf,seed,{});const c=document.createElement('canvas');MF.renderGridToCanvas(g,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
 }
 
-function getObjSpriteCanvas(objId, seed, style) {
+function getObjSpriteCanvas(objId, seed, style, linen) {
   const def = OBJECT_DEFS[objId]; if(!def||!def.fn)return null;
   const styleVal = (def.styles && style!=null) ? style : null;
-  const key=objId+'_'+seed+'_s'+(styleVal??'x'); if(objCache.has(key))return objCache.get(key);
-  let g; try{g=def.fn(seed,styleVal);}catch(e){return null;}
+  const linenVal = (def.linen && linen!=null) ? linen : null;
+  const key=objId+'_'+seed+'_s'+(styleVal??'x')+'_l'+(linenVal??'x'); if(objCache.has(key))return objCache.get(key);
+  let g; try{g=def.fn(seed,styleVal,linenVal);}catch(e){return null;}
   if(!g)return null;
   const c=document.createElement('canvas'); MF.renderGridToCanvas(g,c,1);
   objCache.set(key,c); return c;
@@ -782,10 +783,11 @@ function renderAll() {
     if (meta.object && meta.object !== '_part') {
       const def=getObjDef(meta.object);
       if(def){
-        const cw=Math.ceil(def.w/20), ch=Math.ceil(def.h/20);
+        const cw=def.cells?def.cells[0]:Math.ceil(def.w/20);
+        const ch=def.cells?def.cells[1]:Math.ceil(def.h/20);
         const rot=meta.rotation||0;
         const objSeed = meta.objVariant!=null ? variantSeed(meta.object,meta.objVariant) : seed;
-        const sc=getObjSpriteCanvas(meta.object,objSeed,meta.objStyle);
+        const sc=getObjSpriteCanvas(meta.object,objSeed,meta.objStyle,meta.objLinen);
         drawSprite(sc,px,py,def.w,def.h,cw,ch,def.snap,rot);
       }
     } else if (meta.type==='building' && meta.bldgW) {
@@ -847,8 +849,10 @@ function redrawCell(x,y){
     const def=getObjDef(meta.object);
     if(def){
       const objSeed=meta.objVariant!=null?variantSeed(meta.object,meta.objVariant):posSeed;
-      const sc=getObjSpriteCanvas(meta.object,objSeed,meta.objStyle);
-      drawSprite(sc,px,py,def.w,def.h,Math.ceil(def.w/20),Math.ceil(def.h/20),def.snap,meta.rotation||0);
+      const sc=getObjSpriteCanvas(meta.object,objSeed,meta.objStyle,meta.objLinen);
+      const cw=def.cells?def.cells[0]:Math.ceil(def.w/20);
+      const ch=def.cells?def.cells[1]:Math.ceil(def.h/20);
+      drawSprite(sc,px,py,def.w,def.h,cw,ch,def.snap,meta.rotation||0);
     }
   } else if(meta&&meta.type==='building'){
     const seed=(((x&0xffff)<<16)|(y&0xffff))>>>0;
@@ -903,7 +907,7 @@ function applyPaint(x,y){
     const ex=definedMap[k]?Object.assign({},definedMap[k]):Object.assign({},inferBg(x,y));
     if(paintTerrain){ex.type=currentTerrainId;ex.variant=currentVariant;}
     if(currentObjId==='')delete ex.object;
-    else if(currentObjId!==null){ex.object=currentObjId;ex.objVariant=currentObjVariant;if(currentObjStyle!=null)ex.objStyle=currentObjStyle;else delete ex.objStyle;}
+    else if(currentObjId!==null){ex.object=currentObjId;ex.objVariant=currentObjVariant;if(currentObjStyle!=null)ex.objStyle=currentObjStyle;else delete ex.objStyle;if(currentObjLinen!=null)ex.objLinen=currentObjLinen;else delete ex.objLinen;}
     pushUndo(x,y);definedMap[k]=ex;map[k]=ex;
     redrawCell(x,y);
   }
@@ -1131,18 +1135,7 @@ document.getElementById('btn-cp-diff').addEventListener('click',()=>doCopy(getDi
 // ═══════════════════════════════════════════════════════════════
 // PALETTES
 // ═══════════════════════════════════════════════════════════════
-function buildVariantPicker(typeId){
-  const vp=document.getElementById('variant-picker');vp.innerHTML='';
-  for(let v=0;v<8;v++){
-    const sw=document.createElement('div');
-    sw.style.cssText=`width:20px;height:20px;border-radius:2px;cursor:pointer;border:2px solid ${v===currentVariant?'#e8c870':'#2a1e10'};overflow:hidden;flex-shrink:0;`;
-    const tc=getTileCanvas(typeId,0,0,v);
-    if(tc){const c=document.createElement('canvas');c.width=20;c.height=20;c.style.cssText='width:20px;height:20px;image-rendering:pixelated;display:block;';c.getContext('2d').drawImage(tc,0,0,20,20);sw.appendChild(c);}
-    else sw.style.background='#1a1208';
-    sw.addEventListener('click',()=>{currentVariant=v;buildVariantPicker(typeId);});
-    vp.appendChild(sw);
-  }
-}
+function buildVariantPicker(typeId){} // terrain randomises automatically — no picker
 
 function buildObjVariantPicker(objId){
   const wrap=document.getElementById('obj-variant-wrap');
@@ -1182,25 +1175,41 @@ function buildObjVariantPicker(objId){
       sw.addEventListener('click',()=>{currentObjStyle=i;buildObjVariantPicker(objId);});
       vp.appendChild(sw);
     });
-  } else {
-    // No colour presets — show random seed variant swatches
-    const label=document.createElement('div');
-    label.style.cssText='width:100%;font-size:9px;color:#5a4820;letter-spacing:1px;margin-bottom:3px;';
-    label.textContent='VARIANT';
-    vp.appendChild(label);
-    currentObjStyle=null;
-    for(let v=0;v<8;v++){
-      const seed=variantSeed(objId,v);
-      const sw=document.createElement('div');
-      sw.style.cssText=`width:20px;height:20px;border-radius:2px;cursor:pointer;border:2px solid ${v===currentObjVariant?'#e8c870':'#2a1e10'};overflow:hidden;flex-shrink:0;background:#1a1208;`;
-      try{
-        const g=def.fn(seed,null);
-        if(g){const pc=document.createElement('canvas');MF.renderGridToCanvas(g,pc,1);const c=document.createElement('canvas');c.width=20;c.height=20;c.style.cssText='width:20px;height:20px;image-rendering:pixelated;display:block;';c.getContext('2d').drawImage(pc,0,0,20,20);sw.appendChild(c);}
-      }catch(e){}
-      sw.title=`Variant ${v}`;
-      sw.addEventListener('click',()=>{currentObjVariant=v;buildObjVariantPicker(objId);});
-      vp.appendChild(sw);
+    // Linen/fabric picker if object has it
+    if(def.linen){
+      const sep=document.createElement('div');
+      sep.style.cssText='width:100%;height:1px;background:#2a1e10;margin:4px 0;';
+      vp.appendChild(sep);
+      const llabel=document.createElement('div');
+      llabel.style.cssText='width:100%;font-size:9px;color:#5a4820;letter-spacing:1px;margin-bottom:3px;';
+      llabel.textContent='LINEN';
+      vp.appendChild(llabel);
+      const lrnd=document.createElement('button');
+      lrnd.textContent='Rnd';lrnd.style.cssText='font-size:9px;padding:1px 4px;margin:1px;';
+      lrnd.classList.toggle('active',currentObjLinen===null);
+      lrnd.addEventListener('click',()=>{currentObjLinen=null;buildObjVariantPicker(objId);});
+      vp.appendChild(lrnd);
+      def.linen.forEach((name,i)=>{
+        const sw=document.createElement('div');
+        sw.style.cssText=`display:inline-flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;margin:1px;opacity:${currentObjLinen===i?1:0.65};`;
+        const cv=document.createElement('canvas');cv.width=20;cv.height=20;
+        cv.style.cssText=`width:20px;height:20px;image-rendering:pixelated;border:2px solid ${currentObjLinen===i?'#e8c870':'#2a1e10'};border-radius:2px;`;
+        try{
+          const g=def.fn(12345,null,i);
+          if(g){const pc=document.createElement('canvas');MF.renderGridToCanvas(g,pc,1);cv.getContext('2d').drawImage(pc,0,0,20,20);}
+        }catch(e){}
+        const lbl=document.createElement('div');
+        lbl.style.cssText='font-size:8px;color:#8a7050;white-space:nowrap;';
+        lbl.textContent=name;
+        sw.appendChild(cv);sw.appendChild(lbl);
+        sw.addEventListener('click',()=>{currentObjLinen=i;buildObjVariantPicker(objId);});
+        vp.appendChild(sw);
+      });
     }
+  } else {
+    // No colour presets — no picker needed, variation is automatic per placement
+    wrap.style.display='none';
+    currentObjStyle=null;
   }
 }
 

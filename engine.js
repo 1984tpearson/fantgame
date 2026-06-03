@@ -1664,9 +1664,9 @@ const _BUILDING_STYLE = {
   castle:'blueslate', keep:'blueslate', tower:'slate', ruins:'blackened',
   default:'brown',
 };
-function _getObjectCanvas(objId, seed, style) {
+function _getObjectCanvas(objId, seed, style, linen) {
   // Generate and cache a single object sprite canvas
-  const key = 'obj_' + objId + '_' + seed + '_s' + (style??'x');
+  const key = 'obj_' + objId + '_' + seed + '_s' + (style??'x') + '_l' + (linen??'x');
   if (_objCache.has(key)) return _objCache.get(key);
   const MF = MapForge;
   let grid = null;
@@ -1770,8 +1770,8 @@ function _getObjectCanvas(objId, seed, style) {
     else if (objId==='castle_wall_csw') grid = MF.makeCastleWall('corner_sw',seed);
     else if (objId==='castle_wall_cne') grid = MF.makeCastleWall('corner_ne',seed);
     else if (objId==='castle_wall_cnw') grid = MF.makeCastleWall('corner_nw',seed);
-    else if (objId==='bed_s')        grid = MF.makeBed('single',seed,style);
-    else if (objId==='bed_d')        grid = MF.makeBed('double',seed,style);
+    else if (objId==='bed_s')        grid = MF.makeBed('single',seed,style,linen);
+    else if (objId==='bed_d')        grid = MF.makeBed('double',seed,style,linen);
     else if (objId==='table_r')      grid = MF.makeTable('round',seed);
     else if (objId==='table_l')      grid = MF.makeTable('long',seed);
     else if (objId==='chair')        grid = MF.makeChair('chair',seed,style);
@@ -1848,7 +1848,7 @@ const _OBJ_DIMS = {
   castle_wall_h:{w:20,h:20,snap:'center'}, castle_wall_v:{w:20,h:20,snap:'center'},
   castle_wall_cse:{w:20,h:20,snap:'center'}, castle_wall_csw:{w:20,h:20,snap:'center'},
   castle_wall_cne:{w:20,h:20,snap:'center'}, castle_wall_cnw:{w:20,h:20,snap:'center'},
-  bed_s:{w:14,h:24,snap:'south'}, bed_d:{w:20,h:24,snap:'south'},
+  bed_s:{w:14,h:24,snap:'south',cells:[1,1]}, bed_d:{w:20,h:24,snap:'south',cells:[1,1]},
   table_r:{w:16,h:16,snap:'center'}, table_l:{w:24,h:16,snap:'center'},
   chair:{w:12,h:14,snap:'south'}, throne:{w:18,h:20,snap:'south'},
   bookshelf:{w:20,h:8,snap:'south'}, drawers:{w:16,h:10,snap:'south'},
@@ -1858,14 +1858,15 @@ const _OBJ_DIMS = {
   basin:{w:16,h:12,snap:'south'}, fireplace:{w:20,h:16,snap:'south'},
 }
 
-function _drawObjSprite(ctx, srcCanvas, sx, sy, cs, nativeW, nativeH, snap, rotation) {
-  // cs = cell size in screen pixels, nativeW/H in mapforge pixels (20px per cell)
+function _drawObjSprite(ctx, srcCanvas, sx, sy, cs, nativeW, nativeH, snap, rotation, cellW, cellH) {
+  cellW = cellW||1; cellH = cellH||1;
   let sprW = (nativeW / 20) * cs;
   let sprH = (nativeH / 20) * cs;
-  // Single-cell objects: scale to fit with up to 15% overlap
-  const maxD = cs * 1.15;
-  if(sprW > maxD || sprH > maxD){
-    const scale = Math.min(maxD/sprW, maxD/sprH);
+  // Scale down to fit allocated cells with 15% overflow allowed
+  const maxW = cs * cellW * 1.15;
+  const maxH = cs * cellH * 1.15;
+  if(sprW > maxW || sprH > maxH){
+    const scale = Math.min(maxW/sprW, maxH/sprH);
     sprW *= scale; sprH *= scale;
   }
   const rotW = (rotation === 90 || rotation === 270) ? sprH : sprW;
@@ -1914,7 +1915,7 @@ function _getObjectTile(meta, cx, cy) {
     : (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
   // Named object
   if (meta.object && meta.object !== '_part') {
-    return _getObjectCanvas(meta.object, seed, meta.objStyle);
+    return _getObjectCanvas(meta.object, seed, meta.objStyle, meta.objLinen);
   }
   // Building with editor-placed roof (has bldgW)
   if (meta.type === 'building' && meta.bldgW) {
@@ -1954,8 +1955,12 @@ if(cs>=10){
     if(tile){
       if(meta.object&&meta.object!=='_part'){
         const dims=_OBJ_DIMS[meta.object];
-        if(dims) _drawObjSprite(ctx,tile,sx,sy,cs,dims.w,dims.h,dims.snap,meta.rotation||0);
-        else ctx.drawImage(tile,sx,sy,cs,cs);
+        if(dims){
+          // dims.cells overrides cell span (e.g. beds force 1x1)
+          const cellW=dims.cells?dims.cells[0]:1;
+          const cellH=dims.cells?dims.cells[1]:1;
+          _drawObjSprite(ctx,tile,sx,sy,cs,dims.w,dims.h,dims.snap,meta.rotation||0,cellW,cellH);
+        } else ctx.drawImage(tile,sx,sy,cs,cs);
       } else {
         ctx.drawImage(tile,sx,sy,cs,cs);
       }
