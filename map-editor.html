@@ -120,30 +120,47 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
     </div>
     <!-- BUILDING TAB -->
     <div id="lp-building" class="lp-panel" style="flex-direction:column;overflow-y:auto;">
-      <div id="bldg-preview-wrap">
+      <div class="psec">
         <div class="plabel">PREVIEW</div>
-        <canvas id="bldg-preview" width="80" height="80" style="width:80px;height:80px;margin-top:4px;"></canvas>
+        <canvas id="bldg-preview" width="160" height="100" style="width:160px;height:100px;margin-top:4px;image-rendering:pixelated;"></canvas>
       </div>
       <div class="psec">
-        <div class="plabel">SIZE</div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:2px;" id="bldg-size-btns"></div>
+        <div class="plabel">BUILDING TYPE</div>
+        <div style="display:flex;gap:2px;flex-wrap:wrap;margin-top:2px;" id="bldg-type-btns"></div>
       </div>
       <div class="psec">
+        <div class="plabel">WIDTH / HEIGHT</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:3px;">
+          <select id="bldg-w"><option value="20">20px (1)</option><option value="40" selected>40px (2)</option><option value="60">60px (3)</option><option value="80">80px (4)</option></select>
+          <span style="color:#5a4820;">x</span>
+          <select id="bldg-h"><option value="20">20px (1)</option><option value="40" selected>40px (2)</option><option value="60">60px (3)</option><option value="80">80px (4)</option></select>
+        </div>
+      </div>
+      <div class="psec" id="bldg-footprint-sec">
+        <div class="plabel">FOOTPRINT</div>
+        <div style="display:flex;gap:2px;flex-wrap:wrap;margin-top:2px;" id="bldg-footprint-btns"></div>
+      </div>
+      <div class="psec" id="bldg-shape-sec">
         <div class="plabel">ROOF SHAPE</div>
-        <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:2px;" id="bldg-shape-btns"></div>
+        <div style="display:flex;gap:2px;flex-wrap:wrap;margin-top:2px;" id="bldg-shape-btns"></div>
+      </div>
+      <div class="psec" id="bldg-pattern-sec">
+        <div class="plabel">TILE PATTERN</div>
+        <div style="display:flex;gap:2px;flex-wrap:wrap;margin-top:2px;" id="bldg-pattern-btns"></div>
       </div>
       <div class="psec">
         <div class="plabel">ROOF STYLE</div>
         <div class="roof-grid" id="bldg-roof-grid"></div>
       </div>
       <div class="psec">
+        <div class="plabel">YARD</div>
+        <div style="display:flex;gap:2px;flex-wrap:wrap;margin-top:2px;" id="bldg-yard-btns"></div>
+      </div>
+      <div class="psec">
         <div class="plabel">DETAILS</div>
-        <div class="bprop"><label>Interior</label><input id="bldg-interior" type="text" placeholder="inn / shop / house…"></div>
+        <div class="bprop"><label>Interior</label><input id="bldg-interior" type="text" placeholder="inn / shop / house"></div>
         <div class="bprop"><label>Name</label><input id="bldg-name" type="text" placeholder="The Rusty Anchor"></div>
-        <div class="bprop"><label>Chimneys</label>
-          <select id="bldg-chimneys"><option value="0">0</option><option value="1" selected>1</option><option value="2">2</option></select>
-        </div>
-        <button id="btn-place-bldg" style="width:100%;margin-top:4px;background:linear-gradient(180deg,#3a2808,#1a1208);border-color:#6a4820;color:#e8c870;">
+        <button id="btn-place-bldg" style="width:100%;margin-top:6px;background:linear-gradient(180deg,#3a2808,#1a1208);border-color:#6a4820;color:#e8c870;padding:6px;">
           &#127968; Place Building
         </button>
       </div>
@@ -382,17 +399,47 @@ const OBJ_CATS = [
   {id:'furn',    label:'Furn.',   ids:['bed_s','bed_d','table_r','table_l','chair','throne','bookshelf','drawers','cauldron','weaponrack','desk','stool','wardrobe','stairs','basin','fireplace']},
 ];
 
-// Building config
-const BLDG_SIZES = ['1x1','2x2','2x3','3x2','3x3','2x4','4x2','4x4','3x4','4x3'];
+// Building config — mirrors the original pixel forge
+const BLDG_TYPES = [
+  {id:'standard',    l:'Standard'},
+  {id:'watchtower',  l:'Watchtower'},
+  {id:'windmill',    l:'Windmill'},
+  {id:'gate',        l:'Gate'},
+  {id:'castle_wall', l:'Castle Wall'},
+  {id:'dungeon_ent', l:'Dungeon Ent.'},
+  {id:'ruins',       l:'Ruins'},
+  {id:'l_shape',     l:'L-Shape'},
+  {id:'t_shape',     l:'T-Shape'},
+  {id:'irregular',   l:'Irregular'},
+];
+const BLDG_FOOTPRINTS = [
+  {id:'rect',      l:'Rectangle'},
+  {id:'L',         l:'L-Shape'},
+  {id:'T',         l:'T-Shape'},
+  {id:'irregular', l:'Irregular'},
+];
 const BLDG_SHAPES = ['hip','ridge','pyramid','mansard','gambrel','conical'];
+const BLDG_PATTERNS = [
+  {id:'default', l:'Tile'},
+  {id:'fish',    l:'Fish Scale'},
+  {id:'diamond', l:'Diamond'},
+  {id:'slate',   l:'Flagstone'},
+  {id:'shake',   l:'Shake'},
+];
+const BLDG_YARDS = ['none','bottom','top','left','right'];
+// Special types that don't use roof shape/pattern/style pickers
+const BLDG_SPECIAL = new Set(['watchtower','windmill','gate','castle_wall','dungeon_ent']);
 
 let bldgConfig = {
-  w: 2, h: 2,
+  type: 'standard',
+  w: 40, h: 40,         // pixel dimensions
+  footprint: 'rect',
   shape: 'hip',
-  styleId: 'brown',
+  pattern: 'default',
+  styleId: 'red',
+  yard: 'none',
   interiorType: 'house',
   name: '',
-  chimneys: 1,
 };
 
 let MF; // set in init()
@@ -560,7 +607,48 @@ function getObjSpriteCanvas(objId, seed) {
   objCache.set(key,c); return c;
 }
 
-// Generate building roof canvas at w*20 x h*20 pixels
+// Generate building canvas from stored cell metadata (used for editor rendering)
+function getBldgCanvasFromMeta(meta, seed) {
+  if(!MF||!MF.ROOF_STYLES) return null;
+  const cacheKey = `bldgmeta_${JSON.stringify({t:meta.bldgType,pw:meta.bldgPxW,ph:meta.bldgPxH,rs:meta.roofStyle,rsh:meta.roofShape,p:meta.bldgPattern,fp:meta.bldgFootprint,y:meta.bldgYard})}_${seed}`;
+  if(objCache.has(cacheKey)) return objCache.get(cacheKey);
+  const w=meta.bldgPxW||meta.bldgW*20;
+  const h=meta.bldgPxH||meta.bldgH*20;
+  const type=meta.bldgType||'standard';
+  const footprint=meta.bldgFootprint||'rect';
+  const shape=meta.roofShape||'hip';
+  const pattern=meta.bldgPattern||'default';
+  const styleId=meta.roofStyle||'brown';
+  const yard=meta.bldgYard||'none';
+  const rs=MF.ROOF_STYLES.find(s=>s.id===styleId)||MF.ROOF_STYLES[0];
+  const{RL,RM,RD,RS}=rs;
+  const yardStrip=20;
+  const rW=(yard==='left'||yard==='right')?w-yardStrip:w;
+  const rH=(yard==='top'||yard==='bottom')?h-yardStrip:h;
+  const numCh=rW>=60?2:1;
+  const chimneys=MF.autoChimneys?MF.autoChimneys(rW,rH,numCh):[];
+  const effectiveShape=(shape==='hip'&&rW>rH*1.4)?'ridge':shape;
+  let grid=null;
+  try{
+    if(type==='watchtower')       grid=MF.makeWatchtower(seed);
+    else if(type==='windmill')    grid=MF.makeWindmill(seed);
+    else if(type==='gate')        grid=MF.makeGate(seed);
+    else if(type==='castle_wall') grid=MF.makeCastleWall('straight_h',seed);
+    else if(type==='dungeon_ent') grid=MF.makeDungeonEntrance(seed);
+    else if(type==='ruins')       grid=rs.isThatch?MF.makeThatchRoof(rW,rH,'hip',chimneys,seed):MF.makeRuins(rW,rH,RL,RM,RD,RS,seed,pattern);
+    else if(type==='l_shape'||footprint==='L')  grid=rs.isThatch?MF.makeIrregularThatch('L',rW,rH,chimneys,seed):MF.makeIrregularRoof('L',rW,rH,pattern,RL,RM,RD,RS,chimneys,seed);
+    else if(type==='t_shape'||footprint==='T')  grid=rs.isThatch?MF.makeIrregularThatch('T',rW,rH,chimneys,seed):MF.makeIrregularRoof('T',rW,rH,pattern,RL,RM,RD,RS,chimneys,seed);
+    else if(type==='irregular'||footprint==='irregular') grid=rs.isThatch?MF.makeIrregularThatch('irregular',rW,rH,chimneys,seed):MF.makeIrregularRoof('irregular',rW,rH,pattern,RL,RM,RD,RS,chimneys,seed);
+    else if(rs.isThatch) grid=MF.makeThatchRoof(rW,rH,effectiveShape,chimneys,seed);
+    else grid=MF.makeRoofByShape(rW,rH,effectiveShape,pattern,RL,RM,RD,RS,chimneys,seed);
+    if(grid&&yard!=='none') grid=MF.composeWithYard(grid,rW,rH,yard,w,h,styleId,seed);
+  }catch(e){return null;}
+  if(!grid)return null;
+  const c=document.createElement('canvas'); MF.renderGridToCanvas(grid,c,1);
+  objCache.set(cacheKey,c); return c;
+}
+
+// Generate building canvas from cellW/cellH/shape/styleId (used for redrawAnchorGroup and legacy)
 function getBldgSprite(cellW, cellH, shape, styleId, chimneys, seed) {
   if(!MF.ROOF_STYLES)return null;
   const pw=cellW*20, ph=cellH*20;
@@ -658,12 +746,13 @@ function renderAll() {
         drawSprite(sc,px,py,def.w,def.h,cw,ch,def.snap,rot);
       }
     } else if (meta.type==='building' && meta.bldgW) {
-      // Full building roof
-      const sc=getBldgSprite(meta.bldgW,meta.bldgH,meta.roofShape||'hip',meta.roofStyle||'brown',meta.chimneys||1,seed);
-      if(sc) ctx.drawImage(sc,px,py,meta.bldgW*tileSize,meta.bldgH*tileSize);
+      // Editor-placed building — use full config to generate roof
+      const sc = getBldgCanvasFromMeta(meta, seed);
+      if(sc) ctx.drawImage(sc, px, py, meta.bldgW*tileSize, meta.bldgH*tileSize);
     } else if (meta.type==='building') {
       // Legacy single-cell building
-      const sc=getBldgSprite(1,1,meta.roofShape||'hip',meta.roofStyle||(({inn:'brown',shop:'terra',house:'dkbrown',chapel:'slate',blacksmith:'darkslate',default:'brown'})[meta.interiorType]||'brown'),1,seed);
+      const styleId = ({inn:'brown',shop:'terra',house:'dkbrown',chapel:'slate',blacksmith:'darkslate',default:'brown'})[meta.interiorType]||'brown';
+      const sc=getBldgSprite(1,1,'hip',styleId,1,seed);
       if(sc) ctx.drawImage(sc,px,py,tileSize,tileSize);
     }
   }
@@ -727,9 +816,7 @@ function redrawCell(x,y){
 }
 
 function redrawAnchorGroup(ax,ay){
-  // Clear and redraw all cells covered by this anchor
-  const meta=map[`${ax},${ay}`];
-  if(!meta)return;
+  const meta=map[`${ax},${ay}`]; if(!meta)return;
   const cellW=meta.bldgW||1, cellH=meta.bldgH||1;
   for(let dx=0;dx<cellW;dx++) for(let dy=0;dy<cellH;dy++){
     const{px,py}=cellToCanvas(ax+dx,ay+dy);
@@ -737,11 +824,10 @@ function redrawAnchorGroup(ax,ay){
     const cm=map[`${ax+dx},${ay+dy}`];
     if(cm)_drawCellTerrain(ax+dx,ay+dy,cm);
   }
-  // Draw roof
   const{px,py}=cellToCanvas(ax,ay);
   const seed=(((ax&0xffff)<<16)|(ay&0xffff))>>>0;
-  const sc=getBldgSprite(cellW,cellH,meta.roofShape||'hip',meta.roofStyle||'brown',meta.chimneys||1,seed);
-  if(sc)ctx.drawImage(sc,px,py,cellW*tileSize,cellH*tileSize);
+  const sc = meta.bldgType ? getBldgCanvasFromMeta(meta,seed) : getBldgSprite(cellW,cellH,meta.roofShape||'hip',meta.roofStyle||'brown',1,seed);
+  if(sc) ctx.drawImage(sc,px,py,cellW*tileSize,cellH*tileSize);
   if(selectedCell&&selectedCell.x===ax&&selectedCell.y===ay)_drawSel(ax,ay);
 }
 
@@ -793,31 +879,37 @@ function eraseAnchorGroup(ax,ay){
 }
 
 function placeBuilding(ax,ay){
-  const{w,h,shape,styleId,interiorType,name,chimneys}=bldgConfig;
-  // Check all target cells are in bounds
-  for(let dx=0;dx<w;dx++) for(let dy=0;dy<h;dy++) if(!inBounds(ax+dx,ay+dy))return;
-  // Erase any existing building at these cells
-  for(let dx=0;dx<w;dx++) for(let dy=0;dy<h;dy++){
-    const k=`${ax+dx},${ay+dy}`;
-    const ex=definedMap[k];
+  const{type,w,h,footprint,shape,pattern,styleId,yard,interiorType,name}=bldgConfig;
+  // Cell dimensions: w/h are pixel dimensions (20px=1 cell)
+  const cellW=Math.ceil(w/20), cellH=Math.ceil(h/20);
+  // Check all target cells in bounds
+  for(let dx=0;dx<cellW;dx++) for(let dy=0;dy<cellH;dy++) if(!inBounds(ax+dx,ay+dy))return;
+  // Erase existing buildings at these cells
+  for(let dx=0;dx<cellW;dx++) for(let dy=0;dy<cellH;dy++){
+    const k=`${ax+dx},${ay+dy}`;const ex=definedMap[k];
     if(ex&&ex.object==='_part'&&ex.anchor)eraseAnchorGroup(...parseKey(ex.anchor));
     else if(ex&&ex.bldgW)eraseAnchorGroup(ax+dx,ay+dy);
   }
-  // Write anchor
-  const anchorK=`${ax},${ay}`;
-  const anchorMeta={type:'building',name:name||'',interiorType:interiorType||'house',
-    roofStyle:styleId,roofShape:shape,chimneys,bldgW:w,bldgH:h};
-  pushUndo(ax,ay);definedMap[anchorK]=anchorMeta;map[anchorK]=Object.assign({},anchorMeta);
+  // Write anchor with full config so engine can regenerate the roof
+  const seed=(((ax&0xffff)<<16)|(ay&0xffff))>>>0;
+  const anchorMeta={
+    type:'building', name:name||'', interiorType:interiorType||'house',
+    bldgType:type, bldgW:cellW, bldgH:cellH,
+    bldgPxW:w, bldgPxH:h,
+    roofStyle:styleId, roofShape:shape, bldgPattern:pattern,
+    bldgFootprint:footprint, bldgYard:yard,
+  };
+  pushUndo(ax,ay); definedMap[`${ax},${ay}`]=anchorMeta; map[`${ax},${ay}`]=Object.assign({},anchorMeta);
   // Write span cells
-  for(let dx=0;dx<w;dx++) for(let dy=0;dy<h;dy++){
+  for(let dx=0;dx<cellW;dx++) for(let dy=0;dy<cellH;dy++){
     if(dx===0&&dy===0)continue;
     const k=`${ax+dx},${ay+dy}`;
     const partMeta={type:'building',object:'_part',anchor:`${ax},${ay}`};
-    pushUndo(ax+dx,ay+dy);definedMap[k]=partMeta;map[k]=Object.assign({},partMeta);
+    pushUndo(ax+dx,ay+dy); definedMap[k]=partMeta; map[k]=Object.assign({},partMeta);
   }
   redrawAnchorGroup(ax,ay);
   updateExport();
-  statusMsg(`Placed ${w}x${h} building`);
+  statusMsg(`Placed ${cellW}x${cellH} building`);
 }
 
 function floodFill(startX,startY){
@@ -927,13 +1019,19 @@ function cellToJS(k,meta){
   if(meta.doors&&meta.doors.length)ex.doors=meta.doors;
   if(meta.object)ex.object=meta.object;
   if(meta.object==='_part'&&meta.anchor)ex.anchor=meta.anchor;
-  if(meta.roofStyle)ex.roofStyle=meta.roofStyle;
-  if(meta.roofShape)ex.roofShape=meta.roofShape;
+  if(meta.bldgType)ex.bldgType=meta.bldgType;
   if(meta.bldgW)ex.bldgW=meta.bldgW;
   if(meta.bldgH)ex.bldgH=meta.bldgH;
-  if(meta.chimneys!=null)ex.chimneys=meta.chimneys;
+  if(meta.bldgPxW)ex.bldgPxW=meta.bldgPxW;
+  if(meta.bldgPxH)ex.bldgPxH=meta.bldgPxH;
+  if(meta.roofStyle)ex.roofStyle=meta.roofStyle;
+  if(meta.roofShape)ex.roofShape=meta.roofShape;
+  if(meta.bldgPattern)ex.bldgPattern=meta.bldgPattern;
+  if(meta.bldgFootprint&&meta.bldgFootprint!=='rect')ex.bldgFootprint=meta.bldgFootprint;
+  if(meta.bldgYard&&meta.bldgYard!=='none')ex.bldgYard=meta.bldgYard;
   if(meta.rotation)ex.rotation=meta.rotation;
   if(meta.variant!=null)ex.variant=meta.variant;
+  if(meta.objVariant!=null)ex.objVariant=meta.objVariant;
   const es=Object.keys(ex).length?', '+JSON.stringify(ex).replace(/"(\w+)":/g,'$1:'):'';
   const n=(meta.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   return `t(${x},${y},'${meta.type||''}','${n}'${es});`;
@@ -1087,59 +1185,114 @@ function buildObjPalette(){
 }
 
 // ── Building palette ───────────────────────────────────────────
+function makeBtnGroup(containerId, items, getValue, setValue) {
+  const c = document.getElementById(containerId); if(!c) return; c.innerHTML='';
+  for(const item of items){
+    const id = item.id||item; const label = item.l||item;
+    const btn = document.createElement('button');
+    btn.textContent = label; btn.style.cssText='font-size:10px;padding:2px 5px;';
+    btn.classList.toggle('active', getValue()===id);
+    btn.addEventListener('click',()=>{ setValue(id); buildBldgPalette(); });
+    c.appendChild(btn);
+  }
+}
+
 function buildBldgPalette(){
-  // Size buttons
-  const sb=document.getElementById('bldg-size-btns');sb.innerHTML='';
-  for(const sz of BLDG_SIZES){
-    const[w,h]=sz.split('x').map(Number);
-    const btn=document.createElement('button');btn.textContent=sz;
-    btn.style.cssText='font-size:10px;padding:2px 5px;';
-    btn.classList.toggle('active',bldgConfig.w===w&&bldgConfig.h===h);
-    btn.addEventListener('click',()=>{bldgConfig.w=w;bldgConfig.h=h;buildBldgPalette();});
-    sb.appendChild(btn);
-  }
-  // Shape buttons
-  const shb=document.getElementById('bldg-shape-btns');shb.innerHTML='';
-  for(const sh of BLDG_SHAPES){
-    const btn=document.createElement('button');btn.textContent=sh;
-    btn.style.cssText='font-size:10px;padding:2px 5px;';
-    btn.classList.toggle('active',bldgConfig.shape===sh);
-    btn.addEventListener('click',()=>{bldgConfig.shape=sh;buildBldgPalette();});
-    shb.appendChild(btn);
-  }
+  const isSpecial = BLDG_SPECIAL.has(bldgConfig.type);
+
+  // Building type
+  makeBtnGroup('bldg-type-btns', BLDG_TYPES, ()=>bldgConfig.type, v=>{bldgConfig.type=v;});
+
+  // W/H dropdowns already in HTML — sync values
+  document.getElementById('bldg-w').value = String(bldgConfig.w);
+  document.getElementById('bldg-h').value = String(bldgConfig.h);
+
+  // Footprint (only for standard/ruins/shapes)
+  const showFootprint = !isSpecial;
+  document.getElementById('bldg-footprint-sec').style.display = showFootprint?'':'none';
+  if(showFootprint) makeBtnGroup('bldg-footprint-btns', BLDG_FOOTPRINTS, ()=>bldgConfig.footprint, v=>{bldgConfig.footprint=v;});
+
+  // Roof shape (not for special types or L/T/irregular footprint)
+  const showShape = !isSpecial && bldgConfig.footprint==='rect' && bldgConfig.type==='standard';
+  document.getElementById('bldg-shape-sec').style.display = showShape?'':'none';
+  if(showShape) makeBtnGroup('bldg-shape-btns', BLDG_SHAPES, ()=>bldgConfig.shape, v=>{bldgConfig.shape=v;});
+
+  // Tile pattern (not for special, not for thatch, not for watchtower etc)
+  const rs = MF&&MF.ROOF_STYLES ? MF.ROOF_STYLES.find(s=>s.id===bldgConfig.styleId) : null;
+  const showPattern = !isSpecial && !(rs&&rs.isThatch);
+  document.getElementById('bldg-pattern-sec').style.display = showPattern?'':'none';
+  if(showPattern) makeBtnGroup('bldg-pattern-btns', BLDG_PATTERNS, ()=>bldgConfig.pattern, v=>{bldgConfig.pattern=v;});
+
   // Roof style swatches
-  const rg=document.getElementById('bldg-roof-grid');rg.innerHTML='';
-  if(MF&&MF.ROOF_STYLES){
-    for(const rs of MF.ROOF_STYLES){
-      const sw=document.createElement('canvas');
-      sw.className='roof-swatch'+(rs.id===bldgConfig.styleId?' sel':'');
-      sw.title=rs.label;sw.width=28;sw.height=28;
-      // Generate small preview
+  const rg = document.getElementById('bldg-roof-grid'); rg.innerHTML='';
+  if(MF&&MF.ROOF_STYLES&&!isSpecial){
+    for(const style of MF.ROOF_STYLES){
+      const sw = document.createElement('canvas');
+      sw.className = 'roof-swatch'+(style.id===bldgConfig.styleId?' sel':'');
+      sw.title = style.label; sw.width=28; sw.height=28;
       try{
-        const g=rs.isThatch?MF.makeThatchRoof(20,20,'hip',[],12345):MF.makeRoofByShape(20,20,'hip',rs,[],12345);
+        const seed=12345;
+        const g = style.isThatch
+          ? MF.makeThatchRoof(20,20,'hip',[],seed)
+          : MF.makeRoofByShape(20,20,'hip','default',style.RL,style.RM,style.RD,style.RS,[],seed);
         if(g){const tc=document.createElement('canvas');MF.renderGridToCanvas(g,tc,1);sw.getContext('2d').drawImage(tc,0,0,28,28);}
       }catch(e){}
-      sw.addEventListener('click',()=>{bldgConfig.styleId=rs.id;buildBldgPalette();});
+      sw.addEventListener('click',()=>{ bldgConfig.styleId=style.id; buildBldgPalette(); });
       rg.appendChild(sw);
     }
   }
+
+  // Yard
+  makeBtnGroup('bldg-yard-btns', BLDG_YARDS.map(y=>({id:y,l:y==='none'?'No Yard':y.charAt(0).toUpperCase()+y.slice(1)})),
+    ()=>bldgConfig.yard, v=>{bldgConfig.yard=v;});
+
   updateBldgPreview();
 }
 
+function generateBldgGrid(seed){
+  if(!MF) return null;
+  const{type,w,h,footprint,shape,pattern,styleId,yard}=bldgConfig;
+  // Yard strip is always 20px; roof fills the rest
+  const yardStrip = 20;
+  const rW = (yard==='left'||yard==='right') ? w-yardStrip : w;
+  const rH = (yard==='top'||yard==='bottom') ? h-yardStrip : h;
+  const rs = MF.ROOF_STYLES.find(s=>s.id===styleId)||MF.ROOF_STYLES[0];
+  const{RL,RM,RD,RS} = rs;
+  const numCh = rW>=60?2:1;
+  const chimneys = MF.autoChimneys ? MF.autoChimneys(rW,rH,numCh) : [];
+  const effectiveShape = (shape==='hip'&&rW>rH*1.4)?'ridge':shape;
+  let grid = null;
+  try{
+    if(type==='watchtower')   grid=MF.makeWatchtower(seed);
+    else if(type==='windmill')grid=MF.makeWindmill(seed);
+    else if(type==='gate')    grid=MF.makeGate(seed);
+    else if(type==='castle_wall') grid=MF.makeCastleWall('straight_h',seed);
+    else if(type==='dungeon_ent') grid=MF.makeDungeonEntrance(seed);
+    else if(type==='ruins')   grid=rs.isThatch?MF.makeThatchRoof(rW,rH,'hip',chimneys,seed):MF.makeRuins(rW,rH,RL,RM,RD,RS,seed,pattern);
+    else if(type==='l_shape'||footprint==='L') grid=rs.isThatch?MF.makeIrregularThatch('L',rW,rH,chimneys,seed):MF.makeIrregularRoof('L',rW,rH,pattern,RL,RM,RD,RS,chimneys,seed);
+    else if(type==='t_shape'||footprint==='T') grid=rs.isThatch?MF.makeIrregularThatch('T',rW,rH,chimneys,seed):MF.makeIrregularRoof('T',rW,rH,pattern,RL,RM,RD,RS,chimneys,seed);
+    else if(type==='irregular'||footprint==='irregular') grid=rs.isThatch?MF.makeIrregularThatch('irregular',rW,rH,chimneys,seed):MF.makeIrregularRoof('irregular',rW,rH,pattern,RL,RM,RD,RS,chimneys,seed);
+    else if(rs.isThatch) grid=MF.makeThatchRoof(rW,rH,effectiveShape,chimneys,seed);
+    else grid=MF.makeRoofByShape(rW,rH,effectiveShape,pattern,RL,RM,RD,RS,chimneys,seed);
+    if(grid&&yard!=='none') grid=MF.composeWithYard(grid,rW,rH,yard,w,h,styleId,seed);
+  }catch(e){console.warn('bldg gen error',e);return null;}
+  return grid;
+}
+
 function updateBldgPreview(){
-  const pv=document.getElementById('bldg-preview');
-  const{w,h,shape,styleId,chimneys}=bldgConfig;
-  const seed=99999;
-  const sc=getBldgSprite(w,h,shape,styleId,parseInt(chimneys)||1,seed);
-  const pvCtx=pv.getContext('2d');
-  pvCtx.clearRect(0,0,80,80);
-  pvCtx.fillStyle='#1a1408';pvCtx.fillRect(0,0,80,80);
-  if(sc){
-    const scale=Math.min(80/(w*20),80/(h*20));
-    const dw=w*20*scale,dh=h*20*scale;
-    pvCtx.imageSmoothingEnabled=false;
-    pvCtx.drawImage(sc,(80-dw)/2,(80-dh)/2,dw,dh);
-  }
+  const pv = document.getElementById('bldg-preview');
+  const pvCtx = pv.getContext('2d');
+  pvCtx.clearRect(0,0,pv.width,pv.height);
+  pvCtx.fillStyle='#1a1408'; pvCtx.fillRect(0,0,pv.width,pv.height);
+  if(!MF||!MF.ROOF_STYLES) return;
+  const grid = generateBldgGrid(99999);
+  if(!grid) return;
+  const gW=grid[0].length, gH=grid.length;
+  const scale = Math.min(pv.width/gW, pv.height/gH);
+  const dw=gW*scale, dh=gH*scale;
+  const tc=document.createElement('canvas'); MF.renderGridToCanvas(grid,tc,1);
+  pvCtx.imageSmoothingEnabled=false;
+  pvCtx.drawImage(tc,(pv.width-dw)/2,(pv.height-dh)/2,dw,dh);
 }
 
 // ── Left panel tabs ────────────────────────────────────────────
@@ -1153,13 +1306,10 @@ document.querySelectorAll('#lp-tabs button').forEach(btn=>{
 });
 
 // Building detail inputs
-['bldg-interior','bldg-name'].forEach(id=>{
-  document.getElementById(id).addEventListener('input',()=>{
-    bldgConfig[id==='bldg-interior'?'interiorType':'name']=document.getElementById(id).value;
-    updateBldgPreview();
-  });
-});
-document.getElementById('bldg-chimneys').addEventListener('change',e=>{bldgConfig.chimneys=parseInt(e.target.value);updateBldgPreview();});
+document.getElementById('bldg-w').addEventListener('change',e=>{bldgConfig.w=parseInt(e.target.value);buildBldgPalette();});
+document.getElementById('bldg-h').addEventListener('change',e=>{bldgConfig.h=parseInt(e.target.value);buildBldgPalette();});
+document.getElementById('bldg-interior').addEventListener('input',e=>{bldgConfig.interiorType=e.target.value;});
+document.getElementById('bldg-name').addEventListener('input',e=>{bldgConfig.name=e.target.value;});
 document.getElementById('btn-place-bldg').addEventListener('click',()=>{
   if(!selectedCell){statusMsg('Pick a cell first (I key)');return;}
   placeBuilding(selectedCell.x,selectedCell.y);

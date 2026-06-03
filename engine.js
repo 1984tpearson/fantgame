@@ -1594,24 +1594,52 @@ const TERRAIN_TO_MF = {
   // Overworld
   plains:'grass', forest:'forest_floor', wilds:'forest_floor',
   ocean:'water', river:'shallow_water', shore:'sand',
-  farmland:'farmland', road:'dirt', mountain:'rocky', peaks:'rocky',
+  farmland:'farmland', road:'cobble', mountain:'rocky', peaks:'rocky',
   swamp:'swamp', bog:'swamp', fens:'swamp',
   snow:'snow', ruins:'rocky', castle:'rocky', keep:'rocky',
   city:'cobble', town:'grass', village:'grass',
+  lava:'lava', ice:'ice', corrupt:'corrupt', mud:'mud',
   // Settlement
-  street:'dirt', building:'farmland', courtyard:'grass',
+  street:'dirt', road_settle:'cobble', building:'farmland', courtyard:'grass',
   market:'sand', docks:'cobble', gate:'cobble',
-  interior:'cave', wall:'rocky', door:'dirt',
+  interior:'cave', wall:'rocky', door:'dirt', floor:'dirt', yard:'grass',
+  // Floor types handled specially in _getTile
+  floor_h:'floor_h', floor_v:'floor_v', floor_hbone:'floor_herringbone',
+  floor_diag:'floor_diagonal', floor_parq:'floor_parquet', floor_stone:'floor_stone',
+  cracked:'cracked',
 };
 // Cache: key = "mfType_seed" -> offscreen canvas
 const _tileCache = new Map();
-function _getTile(engineType, cx, cy) {
+function _variantSeed(type, variant) {
+  let h = variant * 7919;
+  for (let i = 0; i < type.length; i++) h = (h * 31 + type.charCodeAt(i)) & 0x7fffffff;
+  return h || 1;
+}
+
+
+function _getTile(engineType, cx, cy, variant) {
   if (!window.MapForge) return null;
+
+  // Floorboard types
+  const floorMap = {floor_h:'h',floor_v:'v',floor_hbone:'herringbone',floor_diag:'diagonal',floor_parq:'parquet',floor_stone:'stone'};
+  if (floorMap[engineType]) {
+    const seed = variant != null ? _variantSeed(engineType, variant) : (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
+    const key = 'fl_' + floorMap[engineType] + '_' + seed;
+    if (_tileCache.has(key)) return _tileCache.get(key);
+    try { const grid = MapForge.makeFloorboard(floorMap[engineType], seed); const c = document.createElement('canvas'); MapForge.renderGridToCanvas(grid, c, 1); _tileCache.set(key, c); return c; } catch(e) { return null; }
+  }
+  if (engineType === 'cracked') {
+    const seed = variant != null ? _variantSeed(engineType, variant) : (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
+    const key = 'crk_' + seed;
+    if (_tileCache.has(key)) return _tileCache.get(key);
+    try { const grid = MapForge.makeCrackedEarth(seed); const c = document.createElement('canvas'); MapForge.renderGridToCanvas(grid, c, 1); _tileCache.set(key, c); return c; } catch(e) { return null; }
+  }
+
   const mfType = TERRAIN_TO_MF[engineType] || 'grass';
-  const seed = ((cx & 0xffff) << 16) | (cy & 0xffff);
+  const seed = variant != null ? _variantSeed(engineType, variant) : (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
   const key = mfType + '_' + seed;
   if (_tileCache.has(key)) return _tileCache.get(key);
-  // Only blend neighbours on overworld — settlement/interior neighbours are unreliable
+  // Blend neighbours on overworld only
   const nb = {};
   if (state.layer === 'overworld') {
     [['top',cx,cy-1],['bottom',cx,cy+1],['left',cx-1,cy],['right',cx+1,cy]].forEach(([dir,nx,ny])=>{
@@ -1636,52 +1664,264 @@ const _BUILDING_STYLE = {
   castle:'blueslate', keep:'blueslate', tower:'slate', ruins:'blackened',
   default:'brown',
 };
-function _getObjectTile(meta, cx, cy) {
-  if (!window.MapForge) return null;
-  const seed = (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
-  // Non-building objects
-  const obj = meta.object;
-  if (obj) {
-    const key = 'obj_' + obj + '_' + seed;
-    if (_objCache.has(key)) return _objCache.get(key);
-    let grid = null;
-    if (obj === 'well')      grid = MapForge.makeWell(20, 20, seed);
-    else if (obj === 'anvil')    grid = MapForge.makeAnvil(seed);
-    else if (obj === 'barrels')  grid = MapForge.makeBarrelCluster(seed);
-    else if (obj === 'cart')     grid = MapForge.makeCart(seed);
-    else if (obj === 'haystack') grid = MapForge.makeHaystack(20, 20, seed);
-    else if (obj === 'trough')   grid = MapForge.makeTrough(seed);
-    else if (obj === 'signpost')   grid = MapForge.makeSignpost(seed);
-    else if (obj === 'noticeboard') grid = MapForge.makeNoticeboard(seed);
-    else if (obj === 'logpile')    grid = MapForge.makeLogPile(seed);
-    else if (obj === 'bush')       grid = MapForge.makeBushField('sm', seed);
-    else if (obj === 'stall')      grid = MapForge.makeMarketStall(seed);
-    if (grid) {
-      const c = document.createElement('canvas');
-      MapForge.renderGridToCanvas(grid, c, 1);
-      _objCache.set(key, c);
-      return c;
-    }
-  }
-  // Building rooftops
-  if (meta.type !== 'building') return null;
-  const styleId = _BUILDING_STYLE[meta.interiorType] || _BUILDING_STYLE[meta.name?.toLowerCase()] || _BUILDING_STYLE.default;
-  const key = 'obj_' + styleId + '_' + seed;
+function _getObjectCanvas(objId, seed) {
+  // Generate and cache a single object sprite canvas
+  const key = 'obj_' + objId + '_' + seed;
   if (_objCache.has(key)) return _objCache.get(key);
-  const style = MapForge.ROOF_STYLES.find(s => s.id === styleId) || MapForge.ROOF_STYLES[0];
-  const W = 20, H = 20;
-  // Pick roof shape from seed
-  const shapes = ['hip','ridge','pyramid','gambrel'];
-  const shape = shapes[seed % shapes.length];
-  const isThatch = style.isThatch;
-  const chimneys = MapForge.autoChimneys(W, H, seed % 3 === 0 ? 1 : 0);
-  const grid = isThatch
-    ? MapForge.makeThatchRoof(W, H, shape, chimneys, seed)
-    : MapForge.makeRoofByShape(W, H, shape, 'default', style.RL, style.RM, style.RD, style.RS, chimneys, seed);
+  const MF = MapForge;
+  let grid = null;
+  try {
+    if      (objId==='well')         grid = MF.makeWell(16,16,seed);
+    else if (objId==='haystack')     grid = MF.makeHaystack(18,14,seed);
+    else if (objId==='campfire')     grid = MF.makeCampfire(seed);
+    else if (objId==='signpost')     grid = MF.makeSignpost(seed);
+    else if (objId==='anvil')        grid = MF.makeAnvil(seed);
+    else if (objId==='logpile')      grid = MF.makeLogPile(seed);
+    else if (objId==='barrels')      grid = MF.makeBarrelCluster(seed);
+    else if (objId==='noticeboard')  grid = MF.makeNoticeboard(seed);
+    else if (objId==='trough')       grid = MF.makeTrough(seed);
+    else if (objId==='stall')        grid = MF.makeMarketStall(seed);
+    else if (objId==='cart')         grid = MF.makeCart(seed);
+    else if (objId==='chest')        grid = MF.makeChest(seed);
+    else if (objId==='campsite')     grid = MF.makeCampsite(seed);
+    else if (objId==='altar')        grid = MF.makeAltar(seed);
+    else if (objId==='stockade')     grid = MF.makeStockadeFence(seed);
+    else if (objId==='stocks')       grid = MF.makeStocks(seed);
+    else if (objId==='torch')        grid = MF.makeTorch(seed);
+    else if (objId==='dungeon_bars') grid = MF.makeDungeonBars(seed);
+    else if (objId==='catapult')     grid = MF.makeCatapult(seed);
+    else if (objId==='boat')         grid = MF.makeBoat(seed);
+    else if (objId==='bridge')       grid = MF.makeBridge(seed);
+    else if (objId==='magic_circle') grid = MF.makeMagicCircle(seed);
+    else if (objId==='shrine')       grid = MF.makeShrine(seed);
+    else if (objId==='gold_pile')    grid = MF.makeGoldPile(seed);
+    else if (objId==='tent')         grid = MF.makeTent(seed);
+    else if (objId==='trapdoor')     grid = MF.makeTrapdoor(seed);
+    else if (objId==='graveyard')    grid = MF.makeGraveyard(40,40,seed);
+    else if (objId==='coop')         grid = MF.makeChickenCoop(seed);
+    else if (objId==='garden')       grid = MF.makeGarden(seed);
+    else if (objId==='skeleton')     grid = MF.makeSkeleton(seed);
+    else if (objId==='dead_body')    grid = MF.makeDeadBody(seed);
+    else if (objId==='dirt_hole')    grid = MF.makeDirtHole(seed);
+    else if (objId==='blood')        grid = MF.makeBloodSpatter(seed);
+    else if (objId==='bones')        grid = MF.makeBonesPile(seed);
+    else if (objId==='bush')         grid = MF.makeBushField('sm',seed);
+    else if (objId==='bush_lg')      grid = MF.makeBushField('lg',seed);
+    else if (objId==='thicket')      grid = MF.makeThicket(seed);
+    else if (objId==='tree_oak')     grid = MF.makeTopDownTree(20,20,'oak',seed);
+    else if (objId==='tree_oak_lg')  grid = MF.makeTopDownTree(32,32,'oak',seed);
+    else if (objId==='tree_pine')    grid = MF.makeTopDownTree(20,20,'pine',seed);
+    else if (objId==='tree_pine_lg') grid = MF.makeTopDownTree(32,32,'pine',seed);
+    else if (objId==='tree_palm')    grid = MF.makeTopDownTree(24,24,'palm',seed);
+    else if (objId==='tree_dead')    grid = MF.makeTopDownTree(24,24,'dead',seed);
+    else if (objId==='rock')         grid = MF.makeRock(12,10,'small',seed);
+    else if (objId==='boulder')      grid = MF.makeRock(20,18,'boulder',seed);
+    else if (objId==='mossy_rock')   grid = MF.makeRock(18,16,'mossy',seed);
+    else if (objId==='pond')         grid = MF.makePond(24,20,seed);
+    else if (objId==='pond_lg')      grid = MF.makePond(40,32,seed);
+    else if (objId==='mushroom')     grid = MF.makeMushroom('sm',seed);
+    else if (objId==='mushroom_lg')  grid = MF.makeMushroom('lg',seed);
+    else if (objId==='log')          grid = MF.makeFallenLog(seed);
+    else if (objId==='flowers')      grid = MF.makeFlowerPatch(seed);
+    else if (objId==='fern')         grid = MF.makePlant('fern',seed);
+    else if (objId==='reeds')        grid = MF.makePlant('reeds',seed);
+    else if (objId==='lily')         grid = MF.makePlant('lily',seed);
+    else if (objId==='vine')         grid = MF.makePlant('vine',seed);
+    else if (objId==='cactus')       grid = MF.makePlant('cactus',seed);
+    else if (objId==='giant_roots')  grid = MF.makeGiantRoots(seed);
+    else if (objId==='crop_wheat')   grid = MF.makeCropRow('wheat',2,seed);
+    else if (objId==='crop_corn')    grid = MF.makeCropRow('corn',2,seed);
+    else if (objId==='crop_veg')     grid = MF.makeCropRow('vegetables',2,seed);
+    else if (objId==='path_h')       grid = MF.makePath('h','dirt',seed);
+    else if (objId==='path_v')       grid = MF.makePath('v','dirt',seed);
+    else if (objId==='path_cross')   grid = MF.makePath('cross','dirt',seed);
+    else if (objId==='path_cse')     grid = MF.makePath('corner_se','dirt',seed);
+    else if (objId==='path_csw')     grid = MF.makePath('corner_sw','dirt',seed);
+    else if (objId==='path_cne')     grid = MF.makePath('corner_ne','dirt',seed);
+    else if (objId==='path_cnw')     grid = MF.makePath('corner_nw','dirt',seed);
+    else if (objId==='path_ts')      grid = MF.makePath('t_south','dirt',seed);
+    else if (objId==='path_tn')      grid = MF.makePath('t_north','dirt',seed);
+    else if (objId==='path_te')      grid = MF.makePath('t_east','dirt',seed);
+    else if (objId==='path_tw')      grid = MF.makePath('t_west','dirt',seed);
+    else if (objId==='track_h')      grid = MF.makeCartTrack('h','dirt',seed);
+    else if (objId==='track_v')      grid = MF.makeCartTrack('v','dirt',seed);
+    else if (objId==='track_cross')  grid = MF.makeCartTrack('cross','dirt',seed);
+    else if (objId==='track_cse')    grid = MF.makeCartTrack('corner_se','dirt',seed);
+    else if (objId==='track_csw')    grid = MF.makeCartTrack('corner_sw','dirt',seed);
+    else if (objId==='track_cne')    grid = MF.makeCartTrack('corner_ne','dirt',seed);
+    else if (objId==='track_cnw')    grid = MF.makeCartTrack('corner_nw','dirt',seed);
+    else if (objId==='wall_h')       grid = MF.makeStoneWall('h',seed);
+    else if (objId==='wall_v')       grid = MF.makeStoneWall('v',seed);
+    else if (objId==='wall_cse')     grid = MF.makeStoneWall('corner_se',seed);
+    else if (objId==='fence_h')      grid = MF.makeWoodenFence('h','post',seed);
+    else if (objId==='fence_v')      grid = MF.makeWoodenFence('v','post',seed);
+    else if (objId==='hedge_h')      grid = MF.makeHedge('h',seed);
+    else if (objId==='hedge_v')      grid = MF.makeHedge('v',seed);
+    else if (objId==='hedge_cse')    grid = MF.makeHedge('corner_se',seed);
+    else if (objId==='gate_h')       grid = MF.makeGate(seed);
+    else if (objId==='dungeon')      grid = MF.makeDungeonEntrance(seed);
+    else if (objId==='ruins_obj')    grid = MF.makeRuins(seed);
+    else if (objId==='watchtower')   grid = MF.makeWatchtower(seed);
+    else if (objId==='windmill')     grid = MF.makeWindmill(seed);
+    else if (objId==='gallows')      grid = MF.makeGallows(seed);
+    else if (objId==='castle_wall_h')   grid = MF.makeCastleWall('straight_h',seed);
+    else if (objId==='castle_wall_v')   grid = MF.makeCastleWall('straight_v',seed);
+    else if (objId==='castle_wall_cse') grid = MF.makeCastleWall('corner_se',seed);
+    else if (objId==='castle_wall_csw') grid = MF.makeCastleWall('corner_sw',seed);
+    else if (objId==='castle_wall_cne') grid = MF.makeCastleWall('corner_ne',seed);
+    else if (objId==='castle_wall_cnw') grid = MF.makeCastleWall('corner_nw',seed);
+    else if (objId==='bed_s')        grid = MF.makeBed('single',seed);
+    else if (objId==='bed_d')        grid = MF.makeBed('double',seed);
+    else if (objId==='table_r')      grid = MF.makeTable('round',seed);
+    else if (objId==='table_l')      grid = MF.makeTable('long',seed);
+    else if (objId==='chair')        grid = MF.makeChair('chair',seed);
+    else if (objId==='throne')       grid = MF.makeChair('throne',seed);
+    else if (objId==='bookshelf')    grid = MF.makeBookshelf(seed);
+    else if (objId==='drawers')      grid = MF.makeDrawers(seed);
+    else if (objId==='cauldron')     grid = MF.makeCauldron(seed);
+    else if (objId==='weaponrack')   grid = MF.makeWeaponRack(seed);
+    else if (objId==='desk')         grid = MF.makeDesk(seed);
+    else if (objId==='stool')        grid = MF.makeStool(seed);
+    else if (objId==='wardrobe')     grid = MF.makeWardrobe(seed);
+    else if (objId==='stairs')       grid = MF.makeStairs(seed);
+    else if (objId==='basin')        grid = MF.makeBasin(seed);
+    else if (objId==='fireplace')    grid = MF.makeFireplace(seed);
+  } catch(e) { return null; }
+  if (!grid) return null;
   const c = document.createElement('canvas');
   MapForge.renderGridToCanvas(grid, c, 1);
   _objCache.set(key, c);
   return c;
+}
+
+
+// Native pixel dimensions for every object (20px = 1 cell)
+const _OBJ_DIMS = {
+  well:{w:16,h:16,snap:'center'}, haystack:{w:18,h:14,snap:'center'},
+  campfire:{w:16,h:16,snap:'center'}, signpost:{w:14,h:18,snap:'center'},
+  anvil:{w:16,h:14,snap:'south'}, logpile:{w:20,h:18,snap:'south'},
+  barrels:{w:18,h:16,snap:'south'}, noticeboard:{w:16,h:16,snap:'south'},
+  trough:{w:18,h:10,snap:'south'}, stall:{w:24,h:20,snap:'south'},
+  cart:{w:22,h:18,snap:'center'}, chest:{w:14,h:12,snap:'south'},
+  campsite:{w:24,h:20,snap:'center'}, altar:{w:20,h:20,snap:'center'},
+  stockade:{w:20,h:12,snap:'south'}, stocks:{w:20,h:14,snap:'center'},
+  torch:{w:10,h:10,snap:'south'}, dungeon_bars:{w:20,h:16,snap:'south'},
+  catapult:{w:24,h:20,snap:'center'}, boat:{w:28,h:14,snap:'center'},
+  bridge:{w:20,h:20,snap:'center'}, magic_circle:{w:20,h:20,snap:'center'},
+  shrine:{w:16,h:16,snap:'center'}, gold_pile:{w:16,h:12,snap:'center'},
+  tent:{w:24,h:20,snap:'center'}, trapdoor:{w:14,h:14,snap:'center'},
+  graveyard:{w:40,h:40,snap:'center'}, coop:{w:20,h:18,snap:'south'},
+  garden:{w:20,h:20,snap:'center'}, skeleton:{w:12,h:18,snap:'center'},
+  dead_body:{w:16,h:20,snap:'center'}, dirt_hole:{w:16,h:14,snap:'center'},
+  blood:{w:16,h:16,snap:'center'}, bones:{w:16,h:14,snap:'center'},
+  bush:{w:16,h:16,snap:'center'}, bush_lg:{w:24,h:24,snap:'center'},
+  thicket:{w:24,h:24,snap:'center'},
+  tree_oak:{w:20,h:20,snap:'center'}, tree_oak_lg:{w:32,h:32,snap:'center'},
+  tree_pine:{w:20,h:20,snap:'center'}, tree_pine_lg:{w:32,h:32,snap:'center'},
+  tree_palm:{w:24,h:24,snap:'center'}, tree_dead:{w:24,h:24,snap:'center'},
+  rock:{w:12,h:10,snap:'center'}, boulder:{w:20,h:18,snap:'center'},
+  mossy_rock:{w:18,h:16,snap:'center'}, pond:{w:24,h:20,snap:'center'},
+  pond_lg:{w:40,h:32,snap:'center'}, mushroom:{w:10,h:10,snap:'center'},
+  mushroom_lg:{w:16,h:16,snap:'center'}, log:{w:24,h:10,snap:'center'},
+  flowers:{w:16,h:16,snap:'center'}, fern:{w:14,h:14,snap:'center'},
+  reeds:{w:12,h:16,snap:'center'}, lily:{w:14,h:14,snap:'center'},
+  vine:{w:16,h:16,snap:'center'}, cactus:{w:12,h:18,snap:'center'},
+  giant_roots:{w:20,h:20,snap:'center'},
+  crop_wheat:{w:20,h:20,snap:'center'}, crop_corn:{w:20,h:20,snap:'center'}, crop_veg:{w:20,h:20,snap:'center'},
+  path_h:{w:20,h:20,snap:'center'}, path_v:{w:20,h:20,snap:'center'},
+  path_cross:{w:20,h:20,snap:'center'}, path_cse:{w:20,h:20,snap:'center'},
+  path_csw:{w:20,h:20,snap:'center'}, path_cne:{w:20,h:20,snap:'center'},
+  path_cnw:{w:20,h:20,snap:'center'}, path_ts:{w:20,h:20,snap:'center'},
+  path_tn:{w:20,h:20,snap:'center'}, path_te:{w:20,h:20,snap:'center'},
+  path_tw:{w:20,h:20,snap:'center'},
+  track_h:{w:20,h:20,snap:'center'}, track_v:{w:20,h:20,snap:'center'},
+  track_cross:{w:20,h:20,snap:'center'}, track_cse:{w:20,h:20,snap:'center'},
+  track_csw:{w:20,h:20,snap:'center'}, track_cne:{w:20,h:20,snap:'center'},
+  track_cnw:{w:20,h:20,snap:'center'},
+  wall_h:{w:20,h:20,snap:'center'}, wall_v:{w:20,h:20,snap:'center'},
+  wall_cse:{w:20,h:20,snap:'center'}, fence_h:{w:20,h:20,snap:'center'},
+  fence_v:{w:20,h:20,snap:'center'}, hedge_h:{w:20,h:20,snap:'center'},
+  hedge_v:{w:20,h:20,snap:'center'}, hedge_cse:{w:20,h:20,snap:'center'},
+  gate_h:{w:40,h:20,snap:'center'}, dungeon:{w:16,h:16,snap:'center'},
+  ruins_obj:{w:20,h:20,snap:'center'}, watchtower:{w:20,h:20,snap:'center'},
+  windmill:{w:40,h:40,snap:'center'}, gallows:{w:20,h:20,snap:'center'},
+  castle_wall_h:{w:20,h:20,snap:'center'}, castle_wall_v:{w:20,h:20,snap:'center'},
+  castle_wall_cse:{w:20,h:20,snap:'center'}, castle_wall_csw:{w:20,h:20,snap:'center'},
+  castle_wall_cne:{w:20,h:20,snap:'center'}, castle_wall_cnw:{w:20,h:20,snap:'center'},
+  bed_s:{w:14,h:24,snap:'south'}, bed_d:{w:20,h:24,snap:'south'},
+  table_r:{w:16,h:16,snap:'center'}, table_l:{w:24,h:16,snap:'center'},
+  chair:{w:12,h:14,snap:'south'}, throne:{w:18,h:20,snap:'south'},
+  bookshelf:{w:20,h:8,snap:'south'}, drawers:{w:16,h:10,snap:'south'},
+  cauldron:{w:14,h:14,snap:'center'}, weaponrack:{w:20,h:20,snap:'south'},
+  desk:{w:20,h:14,snap:'south'}, stool:{w:10,h:10,snap:'center'},
+  wardrobe:{w:18,h:12,snap:'south'}, stairs:{w:16,h:20,snap:'south'},
+  basin:{w:16,h:12,snap:'south'}, fireplace:{w:20,h:16,snap:'south'},
+}
+
+function _drawObjSprite(ctx, srcCanvas, sx, sy, cs, nativeW, nativeH, snap, rotation) {
+  // cs = cell size in screen pixels, nativeW/H in mapforge pixels (20px per cell)
+  const sprW = (nativeW / 20) * cs;
+  const sprH = (nativeH / 20) * cs;
+  const rotW = (rotation === 90 || rotation === 270) ? sprH : sprW;
+  const rotH = (rotation === 90 || rotation === 270) ? sprW : sprH;
+  let offX, offY;
+  if (snap === 'south') { offX = (cs - rotW) / 2; offY = cs - rotH; }
+  else if (snap === 'north') { offX = (cs - rotW) / 2; offY = 0; }
+  else { offX = (cs - rotW) / 2; offY = (cs - rotH) / 2; }
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.translate(sx + offX + rotW / 2, sy + offY + rotH / 2);
+  if (rotation) ctx.rotate(rotation * Math.PI / 180);
+  ctx.drawImage(srcCanvas, -sprW / 2, -sprH / 2, sprW, sprH);
+  ctx.restore();
+}
+
+
+function _getBldgCanvas(cellW, cellH, shape, styleId, chimneys, seed) {
+  if (!MapForge.ROOF_STYLES) return null;
+  const pw = cellW * 20, ph = cellH * 20;
+  const key = `bldg_${pw}x${ph}_${shape}_${styleId}_${seed}`;
+  if (_objCache.has(key)) return _objCache.get(key);
+  const style = MapForge.ROOF_STYLES.find(s => s.id === styleId) || MapForge.ROOF_STYLES[0];
+  if (!style) return null;
+  let grid = null;
+  try {
+    const ch = MapForge.autoChimneys ? MapForge.autoChimneys(pw, ph, chimneys || 1) : [];
+    grid = style.isThatch
+      ? MapForge.makeThatchRoof(pw, ph, shape, ch, seed)
+      : MapForge.makeRoofByShape(pw, ph, shape, 'default', style.RL, style.RM, style.RD, style.RS, ch, seed);
+  } catch(e) { return null; }
+  if (!grid) return null;
+  const c = document.createElement('canvas');
+  MapForge.renderGridToCanvas(grid, c, 1);
+  _objCache.set(key, c);
+  return c;
+}
+
+
+function _getObjectTile(meta, cx, cy) {
+  if (!window.MapForge) return null;
+  // _part cells render nothing themselves — handled by anchor
+  if (meta.object === '_part') return null;
+  const seed = meta.objVariant != null
+    ? _variantSeed(meta.object || meta.type, meta.objVariant)
+    : (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
+  // Named object
+  if (meta.object && meta.object !== '_part') {
+    return _getObjectCanvas(meta.object, seed);
+  }
+  // Building with editor-placed roof (has bldgW)
+  if (meta.type === 'building' && meta.bldgW) {
+    return _getBldgCanvas(meta.bldgW, meta.bldgH || meta.bldgW, meta.roofShape || 'hip', meta.roofStyle || 'brown', meta.chimneys || 1, seed);
+  }
+  // Legacy single-cell building
+  if (meta.type === 'building') {
+    const styleId = _BUILDING_STYLE[meta.interiorType] || _BUILDING_STYLE[meta.name?.toLowerCase()] || _BUILDING_STYLE.default;
+    const shapes = ['hip','ridge','pyramid','gambrel'];
+    const shape = shapes[seed % shapes.length];
+    return _getBldgCanvas(1, 1, shape, styleId, seed % 3 === 0 ? 1 : 0, seed);
+  }
+  return null;
 }
 
 const TERRAIN_HEX={ocean:'#1a2d3a',plains:'#3a4a2a',forest:'#1e3a1e',mountain:'#4a4040',city:'#6a5030',town:'#5a4525',village:'#4a3a20',road:'#3a4a2a',farmland:'#4a4a20',river:'#3a4a2a',unknown:'#181410',street:'#4a3e30',building:'#5a3a20',door:'#7a5030',wall:'#3a3030',courtyard:'#3a4228',market:'#5a4a28',docks:'#2a3a4a',gate:'#6a5540',interior:'#3a2a18',swamp:'#2a3a28',bog:'#2a3828',wilds:'#162a16',fens:'#263428',shore:'#3a4a40',peaks:'#4a4448',castle:'#5a4838',keep:'#604830',ruins:'#3a3228'};
@@ -1692,9 +1932,30 @@ const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;ctx.clearRect(
 
 for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){try{const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],seen=ss.has(`${cx},${cy}`),isCurrent=cx===px&&cy===py;const sx=ox+cx*cs,sy=oy+cy*cs;const isLinear=meta.type==='road'||meta.type==='river';const bgType=isLinear?'plains':meta.type;
 // Draw pixel art tile if large enough, else flat colour fallback
-ctx.shadowBlur=0;if(cs>=10){const tile=_getTile(bgType,cx,cy);if(tile){ctx.drawImage(tile,sx,sy,cs,cs);}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs,cs);}}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs,cs);}
-// Object sprites (buildings etc) on top of terrain
-if(cs>=10){const obj=_getObjectTile(meta,cx,cy);if(obj) ctx.drawImage(obj,sx,sy,cs,cs);}
+ctx.shadowBlur=0;if(cs>=10){const tile=_getTile(bgType,cx,cy,meta.variant);if(tile){ctx.drawImage(tile,sx,sy,cs,cs);}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs,cs);}}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs,cs);}
+// Object sprites on top of terrain
+if(cs>=10){
+  const obj=meta.object;
+  if(obj==='_part'){
+    // Span cell of a multi-cell building — skip, drawn by anchor
+  } else if(meta.type==='building'&&meta.bldgW&&meta.bldgW>1){
+    // Multi-cell building anchor — draw roof spanning multiple cells
+    const seed=(((cx&0xffff)<<16)|(cy&0xffff))>>>0;
+    const rc=_getObjectTile(meta,cx,cy);
+    if(rc) ctx.drawImage(rc,sx,sy,meta.bldgW*cs,meta.bldgH*cs);
+  } else {
+    const tile=_getObjectTile(meta,cx,cy);
+    if(tile){
+      if(meta.object&&meta.object!=='_part'){
+        const dims=_OBJ_DIMS[meta.object];
+        if(dims) _drawObjSprite(ctx,tile,sx,sy,cs,dims.w,dims.h,dims.snap,meta.rotation||0);
+        else ctx.drawImage(tile,sx,sy,cs,cs);
+      } else {
+        ctx.drawImage(tile,sx,sy,cs,cs);
+      }
+    }
+  }
+}
 if(isLinear){ctx.globalAlpha=0.9;const fn=meta.type==='river'?isRiverType:isRoadType;const conn=getConnectionsAt(cx,cy,fn);const cc=cs/2;ctx.strokeStyle=meta.type==='river'?'#5aaad4':'#c8a878';ctx.lineWidth=meta.type==='river'?cs*0.22:cs*0.16;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();const{n,s,e,w}=conn;const cnt=[n,s,e,w].filter(Boolean).length;if(cnt>0){if(n&&s&&!e&&!w){ctx.moveTo(sx+cc,sy);ctx.lineTo(sx+cc,sy+cs);}else if(e&&w&&!n&&!s){ctx.moveTo(sx,sy+cc);ctx.lineTo(sx+cs,sy+cc);}else if(n&&e&&!s&&!w){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(n&&w&&!s&&!e){ctx.moveTo(sx+cc,sy);ctx.bezierCurveTo(sx+cc,sy+cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else if(s&&e&&!n&&!w){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cs-cc*0.2,sy+cc,sx+cs,sy+cc);}else if(s&&w&&!n&&!e){ctx.moveTo(sx+cc,sy+cs);ctx.bezierCurveTo(sx+cc,sy+cs-cc*0.2,sx+cc*0.2,sy+cc,sx,sy+cc);}else{if(n||s){ctx.moveTo(sx+cc,n?sy:sy+cc);ctx.lineTo(sx+cc,s?sy+cs:sy+cc);}if(e||w){ctx.moveTo(w?sx:sx+cc,sy+cc);ctx.lineTo(e?sx+cs:sx+cc,sy+cc);}}ctx.stroke();}ctx.globalAlpha=1;}
 if(meta.type===T.DOOR||meta.type===T.GATE){ctx.globalAlpha=0.8;ctx.fillStyle='#e8b84b';ctx.fillRect(sx+cs*0.35,sy+cs*0.35,cs*0.3,cs*0.3);ctx.globalAlpha=1;}
 if(meta.type===T.BUILDING&&meta.name&&cs>=18){ctx.globalAlpha=0.7;ctx.fillStyle='#e8c87a';ctx.font=`${Math.max(7,Math.min(9,cs*0.3))}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';const label=meta.name.length>10?meta.name.slice(0,9)+'\u2026':meta.name;ctx.fillText(label,sx+cs/2,sy+cs/2);ctx.globalAlpha=1;}
