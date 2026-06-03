@@ -618,7 +618,7 @@ function composeWithYard(roofGrid, roofW, roofH, yardPos, totalW, totalH, roofSt
 }
 
 // ─── TREE GENERATORS ─────────────────────────────────────────────────────────
-function makeTopDownTree(w, h, type, seed) {
+function makeTopDownTree(w, h, type, seed, style) {
   const rng = mulberry32(seed);
   const grid = createPixelGrid(w, h);
   const cx=Math.floor(w/2), cy=Math.floor(h/2);
@@ -644,7 +644,7 @@ function makeTopDownTree(w, h, type, seed) {
     }
     setPixel(grid,cx,cy,p.m); setPixel(grid,cx+1,cy,p.m);
   } else if (type==='palm') {
-    const nf=6+Math.floor(rng()*4);
+    const nf=6+(style!=null?style%4:Math.floor(rng()*4));
     for (let i=0;i<nf;i++) {
       const angle=(i/nf)*Math.PI*2+rng()*0.3, len=Math.min(rx,ry)*0.85;
       for (let d=1;d<=len;d++) {
@@ -1253,7 +1253,7 @@ function makeHedge(shape, seed) {
 
 
 // ─── FLOORBOARD GENERATOR ────────────────────────────────────────────────────
-function makeFloorboard(pattern, seed) {
+function makeFloorboard(pattern, seed, style) {
   const W=20,H=20, rng=mulberry32(seed), grid=createPixelGrid(W,H);
   const rng2=mulberry32(seed+13337);
   const woodSpecies=[
@@ -1264,7 +1264,7 @@ function makeFloorboard(pattern, seed) {
     {PL:[178,128,65,255],PD:[138,92,38,255],PL2:[205,152,85,255]},   // maple — golden
     {PL:[158,108,55,255],PD:[118,75,30,255],PL2:[182,132,72,255]},   // standard oak
   ];
-  const ws=woodSpecies[Math.floor(rng2()*woodSpecies.length)];
+  const ws=woodSpecies[(style!=null?style%woodSpecies.length:Math.floor(rng2()*woodSpecies.length))];
   const PL=jitter(ws.PL,14,rng2), PD=jitter(ws.PD,12,rng2), PL2=jitter(ws.PL2,14,rng2);
   const PJ=jitter(lerp(ws.PD,[30,20,10,255],0.4),5,rng2);
   const grain=()=>rng()<0.15?jitter(PD,8,rng):jitter(PL,14,rng);
@@ -1328,7 +1328,7 @@ function makeFloorboard(pattern, seed) {
 }
 
 // ─── FURNITURE GENERATORS ────────────────────────────────────────────────────
-function makeBed(type, seed) {
+function makeBed(type, seed, style) {
   const W=type==='double'?20:14, H=24;
   const rng=mulberry32(seed), grid=createPixelGrid(W,H);
   const rngW=mulberry32(seed+4441);
@@ -1338,7 +1338,7 @@ function makeBed(type, seed) {
     {a:[185,148,88,255],b:[215,178,118,255],c:[155,118,62,255]}, // pine
     {a:[62,38,15,255],b:[82,52,22,255],c:[45,28,8,255]},      // ebony
     {a:[158,118,62,255],b:[188,148,88,255],c:[128,88,40,255]}, // maple
-  ][Math.floor(rngW()*5)];
+  ][(style!=null?style%5:Math.floor(rngW()*5))];
   const FR=jitter(woodF.a,12,rngW), FRL=jitter(woodF.b,12,rngW), FRD=jitter(woodF.c,10,rngW); // frame
   const SH=[188,168,128,255],SHL=[215,195,158,255],SHD=[148,125,88,255]; // sheets
   const PIL=[225,215,188,255]; // pillow
@@ -1468,7 +1468,7 @@ function makeTable(type, seed) {
   }
 }
 
-function makeChair(type, seed) {
+function makeChair(type, seed, style) {
   const W=type==='throne'?18:12, H=type==='throne'?20:14;
   const rng=mulberry32(seed), grid=createPixelGrid(W,H);
   const rngW3=mulberry32(seed+6663);
@@ -1477,7 +1477,7 @@ function makeChair(type, seed) {
     {a:[72,42,18,255],b:[95,58,28,255],c:[52,30,10,255]},     // walnut
     {a:[188,152,92,255],b:[218,182,122,255],c:[158,118,65,255]}, // pine
     {a:[145,102,48,255],b:[178,132,72,255],c:[115,75,28,255]}, // maple
-  ][Math.floor(rngW3()*4)];
+  ][(style!=null?style%4:Math.floor(rngW3()*4))];
   const FR=jitter(woodC.a,12,rngW3), FRL=jitter(woodC.b,12,rngW3), FRD=jitter(woodC.c,10,rngW3);
   const SEA=[148,118,68,255],SEAL=[175,145,88,255];
   const cushion=jitter([128,78,88,255],16,rng);
@@ -1511,7 +1511,7 @@ function makeChair(type, seed) {
   return grid;
 }
 
-function makeBookshelf(seed) {
+function makeBookshelf(seed, style) {
   const W=20,H=8, rng=mulberry32(seed), grid=createPixelGrid(W,H);
   const rngW=mulberry32(seed+1337);
   const woodSpec=[
@@ -1521,7 +1521,7 @@ function makeBookshelf(seed) {
     {l:[68,38,12,255],m:[50,28,8,255],d:[35,18,4,255],j:[22,12,2,255]},        // ebony
     {l:[182,142,72,255],m:[148,108,45,255],d:[108,75,25,255],j:[72,48,12,255]}, // maple
     {l:[158,112,52,255],m:[125,82,30,255],d:[90,58,18,255],j:[62,38,10,255]},  // oak
-  ][Math.floor(rngW()*6)];
+  ][(style!=null?style%6:Math.floor(rngW()*6))];
   const WL=jitter(woodSpec.l,14,rng), WM=jitter(woodSpec.m,12,rng), WD=jitter(woodSpec.d,10,rng), WJ=jitter(woodSpec.j,5,rng);
   for(let x=0;x<W;x++) for(let y=0;y<H;y++){
     const lt=(x/W*0.2+y/H*0.2);
@@ -1581,7 +1581,7 @@ function makeFireplace(seed) {
   return grid;
 }
 
-function makeDrawers(seed) {
+function makeDrawers(seed, style) {
   const W=16,H=10, rng=mulberry32(seed), grid=createPixelGrid(W,H);
   const rngW=mulberry32(seed+1337);
   const woodSpec=[
@@ -1591,7 +1591,7 @@ function makeDrawers(seed) {
     {l:[68,38,12,255],m:[50,28,8,255],d:[35,18,4,255],j:[22,12,2,255]},        // ebony
     {l:[182,142,72,255],m:[148,108,45,255],d:[108,75,25,255],j:[72,48,12,255]}, // maple
     {l:[158,112,52,255],m:[125,82,30,255],d:[90,58,18,255],j:[62,38,10,255]},  // oak
-  ][Math.floor(rngW()*6)];
+  ][(style!=null?style%6:Math.floor(rngW()*6))];
   const WL=jitter(woodSpec.l,14,rng), WM=jitter(woodSpec.m,12,rng), WD=jitter(woodSpec.d,10,rng), WJ=jitter(woodSpec.j,5,rng);
   const MT=[155,135,92,255];
   for(let x=0;x<W;x++) for(let y=0;y<H;y++){
@@ -1639,7 +1639,7 @@ function makeCauldron(seed) {
   return grid;
 }
 
-function makeWeaponRack(seed) {
+function makeWeaponRack(seed, style) {
   const W=20,H=20, rng=mulberry32(seed), grid=createPixelGrid(W,H);
   const rngW=mulberry32(seed+1337);
   const woodSpec=[
@@ -1649,7 +1649,7 @@ function makeWeaponRack(seed) {
     {l:[68,38,12,255],m:[50,28,8,255],d:[35,18,4,255],j:[22,12,2,255]},        // ebony
     {l:[182,142,72,255],m:[148,108,45,255],d:[108,75,25,255],j:[72,48,12,255]}, // maple
     {l:[158,112,52,255],m:[125,82,30,255],d:[90,58,18,255],j:[62,38,10,255]},  // oak
-  ][Math.floor(rngW()*6)];
+  ][(style!=null?style%6:Math.floor(rngW()*6))];
   const WL=jitter(woodSpec.l,14,rng), WM=jitter(woodSpec.m,12,rng), WD=jitter(woodSpec.d,10,rng), WJ=jitter(woodSpec.j,5,rng);
   const ST=[178,170,160,255],STL=[212,205,195,255],STD=[118,112,105,255];
   // rack bar
@@ -2244,7 +2244,7 @@ function makeCrackedEarth(seed) {
 }
 
 // TENT (top-down: triangular canvas roof seen from above)
-function makeTent(seed) {
+function makeTent(seed, style) {
   const W=24,H=20, rng=mulberry32(seed), grid=createPixelGrid(W,H);
   const canvasCols=[
     [185,165,120,255], // canvas tan
@@ -2252,7 +2252,7 @@ function makeTent(seed) {
     [95,118,85,255],   // green canvas
     [115,85,75,255],   // rust red
   ];
-  const base=jitter(canvasCols[Math.floor(rng()*canvasCols.length)],14,rng);
+  const base=jitter(canvasCols[(style!=null?style%canvasCols.length:Math.floor(rng()*canvasCols.length))],14,rng);
   const baseD=lerp(base,[20,15,10,255],0.4);
   const baseL=lerp(base,[255,245,220,255],0.2);
   const pole=[95,72,38,255];
@@ -2318,14 +2318,14 @@ function makeTrapdoor(seed) {
 }
 
 // DESK WITH PAPERS (top-down: rectangular desk, papers/quill/inkwell on surface)
-function makeDesk(seed) {
+function makeDesk(seed, style) {
   const W=20,H=14, rng=mulberry32(seed), grid=createPixelGrid(W,H);
   const rngW=mulberry32(seed+4441);
   const woodDesk=[
     {a:[108,78,38,255],b:[138,105,55,255],c:[82,55,22,255]},
     {a:[75,48,20,255],b:[98,65,32,255],c:[55,35,12,255]},
     {a:[188,152,88,255],b:[215,178,115,255],c:[158,118,62,255]},
-  ][Math.floor(rngW()*3)];
+  ][style!=null?style%3:Math.floor(rngW()*3)];
   const WD=jitter(woodDesk.a,12,rng), WL=jitter(woodDesk.b,12,rng), WD2=jitter(woodDesk.c,10,rng);
   // desk surface
   for(let x=0;x<W;x++) for(let y=0;y<H;y++){
@@ -2383,7 +2383,7 @@ function makeStool(seed) {
 }
 
 // WARDROBE (top-down: rectangular with two door panels and handles)
-function makeWardrobe(seed) {
+function makeWardrobe(seed, style) {
   // top-down: just a wooden rectangle — same principle as bookshelf/drawers
   const W=18,H=12, rng=mulberry32(seed);
   const rngW=mulberry32(seed+6663);
@@ -2392,7 +2392,7 @@ function makeWardrobe(seed) {
     {a:[68,42,18,255],b:[88,58,28,255],c:[48,30,10,255]},
     {a:[178,142,85,255],b:[208,172,115,255],c:[148,112,58,255]},
     {a:[145,102,48,255],b:[178,132,72,255],c:[115,78,28,255]},
-  ][Math.floor(rngW()*4)];
+  ][(style!=null?style%4:Math.floor(rngW()*4))];
   const grid=createPixelGrid(W,H);
   const FR=jitter(woodW.a,12,rng), FRL=jitter(woodW.b,12,rng), FRD=jitter(woodW.c,10,rng);
 
@@ -2413,14 +2413,14 @@ function makeWardrobe(seed) {
 }
 
 // STAIRS (top-down: parallel bands getting narrower = steps receding upward)
-function makeStairs(seed) {
+function makeStairs(seed, style) {
   const W=16,H=20, rng=mulberry32(seed);
   const rngW=mulberry32(seed+7774);
   const stairMats=[
     {l:[168,160,148,255],d:[72,68,62,255],j:[52,48,44,255]}, // stone
     {l:[188,152,88,255],d:[88,62,25,255],j:[62,42,15,255]},  // wood
     {l:[118,112,104,255],d:[48,44,40,255],j:[32,28,25,255]}, // dark stone
-  ][Math.floor(rngW()*3)];
+  ][(style!=null?style%3:Math.floor(rngW()*3))];
   const {l:SL,d:SD,j:SJ} = stairMats;
   const grid=createPixelGrid(W,H);
   const numSteps=5;
@@ -3154,14 +3154,14 @@ function makeFallenLog(seed) {
   return grid;
 }
 
-function makeFlowerPatch(seed) {
+function makeFlowerPatch(seed, style) {
   const W=16,H=16, rng=mulberry32(seed), grid=createPixelGrid(W,H);
   const flowerCols=[[172,142,88,255],[152,118,128,255],[128,148,98,255],[142,128,82,255],[118,138,148,255]];
   const stem=[52,82,38,255],stemD=[38,62,25,255];
   const numF=5+Math.floor(rng()*6);
   for(let i=0;i<numF;i++){
     const fx=1+Math.floor(rng()*(W-3)),fy=2+Math.floor(rng()*(H-4));
-    const fc=flowerCols[Math.floor(rng()*flowerCols.length)];
+    const fc=flowerCols[(style!=null?style%flowerCols.length:Math.floor(rng()*flowerCols.length))];
     // stem
     setPixel(grid,fx,fy+1,jitter(stem,8,rng));
     setPixel(grid,fx,fy+2,jitter(stemD,8,rng));

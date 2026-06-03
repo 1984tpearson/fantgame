@@ -291,7 +291,9 @@ const OBJECT_DEFS = {
   magic_circle: {l:'Magic Circle',   w:20, h:20, snap:'center', fn:s=>MF.makeMagicCircle(s)},
   shrine:       {l:'Shrine',         w:16, h:16, snap:'center', fn:s=>MF.makeShrine(s)},
   gold_pile:    {l:'Gold Pile',      w:16, h:12, snap:'center', fn:s=>MF.makeGoldPile(s)},
-  tent:         {l:'Tent',           w:24, h:20, snap:'center', fn:s=>MF.makeTent(s)},
+  tent:         {l:'Tent',           w:24, h:20, snap:'center',
+    styles:['Red','Blue','Green','Brown','Purple','Yellow','White'],
+    fn:(s,st)=>MF.makeTent(s,st)},
   trapdoor:     {l:'Trapdoor',       w:14, h:14, snap:'center', fn:s=>MF.makeTrapdoor(s)},
   graveyard:    {l:'Graveyard',      w:40, h:40, snap:'center', fn:s=>MF.makeGraveyard(40,40,s)},
   coop:         {l:'Chicken Coop',   w:20, h:18, snap:'south',  fn:s=>MF.makeChickenCoop(s)},
@@ -306,12 +308,18 @@ const OBJECT_DEFS = {
   bush:         {l:'Bush (sm)',      w:16, h:16, snap:'center', fn:s=>MF.makeBushField('sm',s)},
   bush_lg:      {l:'Bush (lg)',      w:24, h:24, snap:'center', fn:s=>MF.makeBushField('lg',s)},
   thicket:      {l:'Thicket',        w:24, h:24, snap:'center', fn:s=>MF.makeThicket(s)},
-  tree_oak:     {l:'Oak',            w:20, h:20, snap:'center', fn:s=>MF.makeTopDownTree(20,20,'oak',s)},
-  tree_oak_lg:  {l:'Oak (lg)',       w:32, h:32, snap:'center', fn:s=>MF.makeTopDownTree(32,32,'oak',s)},
-  tree_pine:    {l:'Pine',           w:20, h:20, snap:'center', fn:s=>MF.makeTopDownTree(20,20,'pine',s)},
-  tree_pine_lg: {l:'Pine (lg)',      w:32, h:32, snap:'center', fn:s=>MF.makeTopDownTree(32,32,'pine',s)},
-  tree_palm:    {l:'Palm',           w:24, h:24, snap:'center', fn:s=>MF.makeTopDownTree(24,24,'palm',s)},
-  tree_dead:    {l:'Dead Tree',      w:24, h:24, snap:'center', fn:s=>MF.makeTopDownTree(24,24,'dead',s)},
+  tree_oak:     {l:'Oak',            w:20, h:20, snap:'center', styles:['Summer','Autumn','Spring','Winter'],
+    fn:(s,st)=>MF.makeTopDownTree(20,20,'oak',s,st)},
+  tree_oak_lg:  {l:'Oak (lg)',       w:32, h:32, snap:'center', styles:['Summer','Autumn','Spring','Winter'],
+    fn:(s,st)=>MF.makeTopDownTree(32,32,'oak',s,st)},
+  tree_pine:    {l:'Pine',           w:20, h:20, snap:'center', styles:['Summer','Autumn','Spring','Winter'],
+    fn:(s,st)=>MF.makeTopDownTree(20,20,'pine',s,st)},
+  tree_pine_lg: {l:'Pine (lg)',      w:32, h:32, snap:'center', styles:['Summer','Autumn','Spring','Winter'],
+    fn:(s,st)=>MF.makeTopDownTree(32,32,'pine',s,st)},
+  tree_palm:    {l:'Palm',           w:24, h:24, snap:'center', styles:['Summer','Autumn','Spring','Winter'],
+    fn:(s,st)=>MF.makeTopDownTree(24,24,'palm',s,st)},
+  tree_dead:    {l:'Dead Tree',      w:24, h:24, snap:'center', styles:['Summer','Autumn','Spring','Winter'],
+    fn:(s,st)=>MF.makeTopDownTree(24,24,'dead',s,st)},
   rock:         {l:'Rock',           w:12, h:10, snap:'center', fn:s=>MF.makeRock(12,10,'small',s)},
   boulder:      {l:'Boulder',        w:20, h:18, snap:'center', fn:s=>MF.makeRock(20,18,'boulder',s)},
   mossy_rock:   {l:'Mossy Rock',     w:18, h:16, snap:'center', fn:s=>MF.makeRock(18,16,'mossy',s)},
@@ -320,7 +328,8 @@ const OBJECT_DEFS = {
   mushroom:     {l:'Mushroom',        w:10, h:10, snap:'center', fn:s=>MF.makeMushroom('sm',s)},
   mushroom_lg:  {l:'Mushroom (lg)',   w:16, h:16, snap:'center', fn:s=>MF.makeMushroom('lg',s)},
   log:          {l:'Fallen Log',      w:24, h:10, snap:'center', fn:s=>MF.makeFallenLog(s)},
-  flowers:      {l:'Flowers',         w:16, h:16, snap:'center', fn:s=>MF.makeFlowerPatch(s)},
+  flowers:      {l:'Flowers',         w:16, h:16, snap:'center', styles:['Red','Blue','Yellow','Purple','White','Pink','Orange'],
+    fn:(s,st)=>MF.makeFlowerPatch(s,st)},
   fern:         {l:'Fern',            w:14, h:14, snap:'center', fn:s=>MF.makePlant('fern',s)},
   reeds:        {l:'Reeds',           w:12, h:16, snap:'center', fn:s=>MF.makePlant('reeds',s)},
   lily:         {l:'Lily Pad',        w:14, h:14, snap:'center', fn:s=>MF.makePlant('lily',s)},
@@ -370,23 +379,43 @@ const OBJECT_DEFS = {
   castle_wall_csw:{l:'Castle Wall ┓', w:20, h:20, snap:'center', fn:s=>MF.makeCastleWall('corner_sw',s)},
   castle_wall_cne:{l:'Castle Wall ┗', w:20, h:20, snap:'center', fn:s=>MF.makeCastleWall('corner_ne',s)},
   castle_wall_cnw:{l:'Castle Wall ┛', w:20, h:20, snap:'center', fn:s=>MF.makeCastleWall('corner_nw',s)},
-  // Furniture
-  bed_s:        {l:'Bed (single)',   w:14, h:24, snap:'south', fn:s=>MF.makeBed('single',s)},
-  bed_d:        {l:'Bed (double)',   w:20, h:24, snap:'south', fn:s=>MF.makeBed('double',s)},
-  table_r:      {l:'Table (round)',  w:16, h:16, snap:'center', fn:s=>MF.makeTable('round',s)},
-  table_l:      {l:'Table (long)',   w:24, h:16, snap:'center', fn:s=>MF.makeTable('long',s)},
-  chair:        {l:'Chair',          w:12, h:14, snap:'south', fn:s=>MF.makeChair('chair',s)},
-  throne:       {l:'Throne',         w:18, h:20, snap:'south', fn:s=>MF.makeChair('throne',s)},
-  bookshelf:    {l:'Bookshelf',      w:20, h:8,  snap:'south', fn:s=>MF.makeBookshelf(s)},
-  drawers:      {l:'Drawers',        w:16, h:10, snap:'south', fn:s=>MF.makeDrawers(s)},
-  cauldron:     {l:'Cauldron',       w:14, h:14, snap:'center', fn:s=>MF.makeCauldron(s)},
-  weaponrack:   {l:'Weapon Rack',    w:20, h:20, snap:'south', fn:s=>MF.makeWeaponRack(s)},
-  desk:         {l:'Desk',           w:20, h:14, snap:'south', fn:s=>MF.makeDesk(s)},
-  stool:        {l:'Stool',          w:10, h:10, snap:'center', fn:s=>MF.makeStool(s)},
-  wardrobe:     {l:'Wardrobe',       w:18, h:12, snap:'south', fn:s=>MF.makeWardrobe(s)},
-  stairs:       {l:'Stairs',         w:16, h:20, snap:'south', fn:s=>MF.makeStairs(s)},
-  basin:        {l:'Stone Basin',    w:16, h:12, snap:'south', fn:s=>MF.makeBasin(s)},
-  fireplace:    {l:'Fireplace',      w:20, h:16, snap:'south', fn:s=>MF.makeFireplace(s)},
+  // Furniture — fn:(seed,style)=>sprite, styles=colour preset labels
+  bed_s:        {l:'Bed (single)',   w:14, h:24, snap:'south',
+    styles:['Oak','Walnut','Pine','Ebony','Maple'],
+    fn:(s,st)=>MF.makeBed('single',s,st)},
+  bed_d:        {l:'Bed (double)',   w:20, h:24, snap:'south',
+    styles:['Oak','Walnut','Pine','Ebony','Maple'],
+    fn:(s,st)=>MF.makeBed('double',s,st)},
+  table_r:      {l:'Table (round)',  w:16, h:16, snap:'center', fn:(s)=>MF.makeTable('round',s)},
+  table_l:      {l:'Table (long)',   w:24, h:16, snap:'center', fn:(s)=>MF.makeTable('long',s)},
+  chair:        {l:'Chair',          w:12, h:14, snap:'south',
+    styles:['Oak','Walnut','Pine','Ebony'],
+    fn:(s,st)=>MF.makeChair('chair',s,st)},
+  throne:       {l:'Throne',         w:18, h:20, snap:'south',
+    styles:['Oak','Walnut','Pine','Ebony'],
+    fn:(s,st)=>MF.makeChair('throne',s,st)},
+  bookshelf:    {l:'Bookshelf',      w:20, h:8,  snap:'south',
+    styles:['Pine','Walnut','Ash','Ebony','Maple','Oak'],
+    fn:(s,st)=>MF.makeBookshelf(s,st)},
+  drawers:      {l:'Drawers',        w:16, h:10, snap:'south',
+    styles:['Pine','Walnut','Ash','Ebony','Maple','Oak'],
+    fn:(s,st)=>MF.makeDrawers(s,st)},
+  cauldron:     {l:'Cauldron',       w:14, h:14, snap:'center', fn:(s)=>MF.makeCauldron(s)},
+  weaponrack:   {l:'Weapon Rack',    w:20, h:20, snap:'south',
+    styles:['Pine','Walnut','Ash','Ebony','Maple','Oak'],
+    fn:(s,st)=>MF.makeWeaponRack(s,st)},
+  desk:         {l:'Desk',           w:20, h:14, snap:'south',
+    styles:['Oak','Walnut','Ash'],
+    fn:(s,st)=>MF.makeDesk(s,st)},
+  stool:        {l:'Stool',          w:10, h:10, snap:'center', fn:(s)=>MF.makeStool(s)},
+  wardrobe:     {l:'Wardrobe',       w:18, h:12, snap:'south',
+    styles:['Oak','Walnut','Pine','Ebony'],
+    fn:(s,st)=>MF.makeWardrobe(s,st)},
+  stairs:       {l:'Stairs',         w:16, h:20, snap:'south',
+    styles:['Stone','Wood','Marble'],
+    fn:(s,st)=>MF.makeStairs(s,st)},
+  basin:        {l:'Stone Basin',    w:16, h:12, snap:'south', fn:(s)=>MF.makeBasin(s)},
+  fireplace:    {l:'Fireplace',      w:20, h:16, snap:'south', fn:(s)=>MF.makeFireplace(s)},
 };
 
 // Object palette categories referencing OBJECT_DEFS ids
@@ -460,6 +489,7 @@ let currentTerrainId = 'street';
 let currentVariant = 0;
 let currentObjId = null;          // null=no change, ''=clear, string=object id
 let currentObjVariant = 0;
+let currentObjStyle = null;  // null=random, number=locked colour preset
 let paintTerrain = true;
 let currentObjCat = 'extras';
 let currentLpTab = 'terrain';
@@ -598,10 +628,11 @@ function getTileCanvas(type, x, y, variant) {
   try{const g=MF.makeTerrain(mf,seed,{});const c=document.createElement('canvas');MF.renderGridToCanvas(g,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
 }
 
-function getObjSpriteCanvas(objId, seed) {
+function getObjSpriteCanvas(objId, seed, style) {
   const def = OBJECT_DEFS[objId]; if(!def||!def.fn)return null;
-  const key=objId+'_'+seed; if(objCache.has(key))return objCache.get(key);
-  let g; try{g=def.fn(seed);}catch(e){return null;}
+  const styleVal = (def.styles && style!=null) ? style : null;
+  const key=objId+'_'+seed+'_s'+(styleVal??'x'); if(objCache.has(key))return objCache.get(key);
+  let g; try{g=def.fn(seed,styleVal);}catch(e){return null;}
   if(!g)return null;
   const c=document.createElement('canvas'); MF.renderGridToCanvas(g,c,1);
   objCache.set(key,c); return c;
@@ -673,9 +704,21 @@ function drawSprite(srcCanvas, px, py, nativeW, nativeH, cellW, cellH, snap, rot
   if(!srcCanvas)return;
   const dstW = cellW * tileSize;
   const dstH = cellH * tileSize;
-  // Scaled sprite size in destination pixels
-  const sprW = (nativeW / 20) * tileSize;
-  const sprH = (nativeH / 20) * tileSize;
+
+  // Native scaled size
+  let sprW = (nativeW / 20) * tileSize;
+  let sprH = (nativeH / 20) * tileSize;
+
+  // For single-cell objects, scale down to fit within the cell
+  // Allow up to 15% overflow for a slight overlap effect (e.g. beds)
+  if(cellW===1 && cellH===1){
+    const maxW = tileSize * 1.15;
+    const maxH = tileSize * 1.15;
+    if(sprW > maxW || sprH > maxH){
+      const scale = Math.min(maxW/sprW, maxH/sprH);
+      sprW *= scale; sprH *= scale;
+    }
+  }
 
   // After rotation, effective sprite dimensions
   const rotW = (rotation===90||rotation===270) ? sprH : sprW;
@@ -742,7 +785,7 @@ function renderAll() {
         const cw=Math.ceil(def.w/20), ch=Math.ceil(def.h/20);
         const rot=meta.rotation||0;
         const objSeed = meta.objVariant!=null ? variantSeed(meta.object,meta.objVariant) : seed;
-        const sc=getObjSpriteCanvas(meta.object,objSeed);
+        const sc=getObjSpriteCanvas(meta.object,objSeed,meta.objStyle);
         drawSprite(sc,px,py,def.w,def.h,cw,ch,def.snap,rot);
       }
     } else if (meta.type==='building' && meta.bldgW) {
@@ -804,7 +847,7 @@ function redrawCell(x,y){
     const def=getObjDef(meta.object);
     if(def){
       const objSeed=meta.objVariant!=null?variantSeed(meta.object,meta.objVariant):posSeed;
-      const sc=getObjSpriteCanvas(meta.object,objSeed);
+      const sc=getObjSpriteCanvas(meta.object,objSeed,meta.objStyle);
       drawSprite(sc,px,py,def.w,def.h,Math.ceil(def.w/20),Math.ceil(def.h/20),def.snap,meta.rotation||0);
     }
   } else if(meta&&meta.type==='building'){
@@ -860,7 +903,7 @@ function applyPaint(x,y){
     const ex=definedMap[k]?Object.assign({},definedMap[k]):Object.assign({},inferBg(x,y));
     if(paintTerrain){ex.type=currentTerrainId;ex.variant=currentVariant;}
     if(currentObjId==='')delete ex.object;
-    else if(currentObjId!==null){ex.object=currentObjId;ex.objVariant=currentObjVariant;}
+    else if(currentObjId!==null){ex.object=currentObjId;ex.objVariant=currentObjVariant;if(currentObjStyle!=null)ex.objStyle=currentObjStyle;else delete ex.objStyle;}
     pushUndo(x,y);definedMap[k]=ex;map[k]=ex;
     redrawCell(x,y);
   }
@@ -1104,22 +1147,60 @@ function buildVariantPicker(typeId){
 function buildObjVariantPicker(objId){
   const wrap=document.getElementById('obj-variant-wrap');
   const vp=document.getElementById('obj-variant-picker');
-  if(!objId){wrap.style.display='none';vp.innerHTML='';return;}
+  if(!objId||objId===''){wrap.style.display='none';vp.innerHTML='';currentObjStyle=null;return;}
   const def=OBJECT_DEFS[objId];
   if(!def||!def.fn){wrap.style.display='none';return;}
   wrap.style.display='';
   vp.innerHTML='';
-  for(let v=0;v<8;v++){
-    const seed=variantSeed(objId,v);
-    const sw=document.createElement('div');
-    sw.style.cssText=`width:20px;height:20px;border-radius:2px;cursor:pointer;border:2px solid ${v===currentObjVariant?'#e8c870':'#2a1e10'};overflow:hidden;flex-shrink:0;background:#1a1208;`;
-    try{
-      const g=def.fn(seed);
-      if(g){const pc=document.createElement('canvas');MF.renderGridToCanvas(g,pc,1);const c=document.createElement('canvas');c.width=20;c.height=20;c.style.cssText='width:20px;height:20px;image-rendering:pixelated;display:block;';c.getContext('2d').drawImage(pc,0,0,20,20);sw.appendChild(c);}
-    }catch(e){}
-    sw.title=`Variant ${v}`;
-    sw.addEventListener('click',()=>{currentObjVariant=v;buildObjVariantPicker(objId);});
-    vp.appendChild(sw);
+
+  if(def.styles){
+    // Named colour presets — show labelled buttons
+    const label=document.createElement('div');
+    label.style.cssText='width:100%;font-size:9px;color:#5a4820;letter-spacing:1px;margin-bottom:3px;';
+    label.textContent='COLOUR';
+    vp.appendChild(label);
+    // "Random" option first
+    const rnd=document.createElement('button');
+    rnd.textContent='Rnd';rnd.style.cssText='font-size:9px;padding:1px 4px;margin:1px;';
+    rnd.classList.toggle('active',currentObjStyle===null);
+    rnd.addEventListener('click',()=>{currentObjStyle=null;buildObjVariantPicker(objId);});
+    vp.appendChild(rnd);
+    def.styles.forEach((name,i)=>{
+      // Generate a preview swatch
+      const sw=document.createElement('div');
+      sw.style.cssText=`display:inline-flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;margin:1px;opacity:${currentObjStyle===i?1:0.65};`;
+      const cv=document.createElement('canvas');cv.width=20;cv.height=20;
+      cv.style.cssText=`width:20px;height:20px;image-rendering:pixelated;border:2px solid ${currentObjStyle===i?'#e8c870':'#2a1e10'};border-radius:2px;`;
+      try{
+        const g=def.fn(12345,i);
+        if(g){const pc=document.createElement('canvas');MF.renderGridToCanvas(g,pc,1);cv.getContext('2d').drawImage(pc,0,0,20,20);}
+      }catch(e){}
+      const lbl=document.createElement('div');
+      lbl.style.cssText='font-size:8px;color:#8a7050;white-space:nowrap;';
+      lbl.textContent=name;
+      sw.appendChild(cv);sw.appendChild(lbl);
+      sw.addEventListener('click',()=>{currentObjStyle=i;buildObjVariantPicker(objId);});
+      vp.appendChild(sw);
+    });
+  } else {
+    // No colour presets — show random seed variant swatches
+    const label=document.createElement('div');
+    label.style.cssText='width:100%;font-size:9px;color:#5a4820;letter-spacing:1px;margin-bottom:3px;';
+    label.textContent='VARIANT';
+    vp.appendChild(label);
+    currentObjStyle=null;
+    for(let v=0;v<8;v++){
+      const seed=variantSeed(objId,v);
+      const sw=document.createElement('div');
+      sw.style.cssText=`width:20px;height:20px;border-radius:2px;cursor:pointer;border:2px solid ${v===currentObjVariant?'#e8c870':'#2a1e10'};overflow:hidden;flex-shrink:0;background:#1a1208;`;
+      try{
+        const g=def.fn(seed,null);
+        if(g){const pc=document.createElement('canvas');MF.renderGridToCanvas(g,pc,1);const c=document.createElement('canvas');c.width=20;c.height=20;c.style.cssText='width:20px;height:20px;image-rendering:pixelated;display:block;';c.getContext('2d').drawImage(pc,0,0,20,20);sw.appendChild(c);}
+      }catch(e){}
+      sw.title=`Variant ${v}`;
+      sw.addEventListener('click',()=>{currentObjVariant=v;buildObjVariantPicker(objId);});
+      vp.appendChild(sw);
+    }
   }
 }
 

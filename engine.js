@@ -1664,9 +1664,9 @@ const _BUILDING_STYLE = {
   castle:'blueslate', keep:'blueslate', tower:'slate', ruins:'blackened',
   default:'brown',
 };
-function _getObjectCanvas(objId, seed) {
+function _getObjectCanvas(objId, seed, style) {
   // Generate and cache a single object sprite canvas
-  const key = 'obj_' + objId + '_' + seed;
+  const key = 'obj_' + objId + '_' + seed + '_s' + (style??'x');
   if (_objCache.has(key)) return _objCache.get(key);
   const MF = MapForge;
   let grid = null;
@@ -1695,7 +1695,7 @@ function _getObjectCanvas(objId, seed) {
     else if (objId==='magic_circle') grid = MF.makeMagicCircle(seed);
     else if (objId==='shrine')       grid = MF.makeShrine(seed);
     else if (objId==='gold_pile')    grid = MF.makeGoldPile(seed);
-    else if (objId==='tent')         grid = MF.makeTent(seed);
+    else if (objId==='tent')         grid = MF.makeTent(seed,style);
     else if (objId==='trapdoor')     grid = MF.makeTrapdoor(seed);
     else if (objId==='graveyard')    grid = MF.makeGraveyard(40,40,seed);
     else if (objId==='coop')         grid = MF.makeChickenCoop(seed);
@@ -1708,12 +1708,12 @@ function _getObjectCanvas(objId, seed) {
     else if (objId==='bush')         grid = MF.makeBushField('sm',seed);
     else if (objId==='bush_lg')      grid = MF.makeBushField('lg',seed);
     else if (objId==='thicket')      grid = MF.makeThicket(seed);
-    else if (objId==='tree_oak')     grid = MF.makeTopDownTree(20,20,'oak',seed);
-    else if (objId==='tree_oak_lg')  grid = MF.makeTopDownTree(32,32,'oak',seed);
-    else if (objId==='tree_pine')    grid = MF.makeTopDownTree(20,20,'pine',seed);
-    else if (objId==='tree_pine_lg') grid = MF.makeTopDownTree(32,32,'pine',seed);
-    else if (objId==='tree_palm')    grid = MF.makeTopDownTree(24,24,'palm',seed);
-    else if (objId==='tree_dead')    grid = MF.makeTopDownTree(24,24,'dead',seed);
+    else if (objId==='tree_oak')     grid = MF.makeTopDownTree(20,20,'oak',seed,style);
+    else if (objId==='tree_oak_lg')  grid = MF.makeTopDownTree(32,32,'oak',seed,style);
+    else if (objId==='tree_pine')    grid = MF.makeTopDownTree(20,20,'pine',seed,style);
+    else if (objId==='tree_pine_lg') grid = MF.makeTopDownTree(32,32,'pine',seed,style);
+    else if (objId==='tree_palm')    grid = MF.makeTopDownTree(24,24,'palm',seed,style);
+    else if (objId==='tree_dead')    grid = MF.makeTopDownTree(24,24,'dead',seed,style);
     else if (objId==='rock')         grid = MF.makeRock(12,10,'small',seed);
     else if (objId==='boulder')      grid = MF.makeRock(20,18,'boulder',seed);
     else if (objId==='mossy_rock')   grid = MF.makeRock(18,16,'mossy',seed);
@@ -1722,7 +1722,7 @@ function _getObjectCanvas(objId, seed) {
     else if (objId==='mushroom')     grid = MF.makeMushroom('sm',seed);
     else if (objId==='mushroom_lg')  grid = MF.makeMushroom('lg',seed);
     else if (objId==='log')          grid = MF.makeFallenLog(seed);
-    else if (objId==='flowers')      grid = MF.makeFlowerPatch(seed);
+    else if (objId==='flowers')      grid = MF.makeFlowerPatch(seed,style);
     else if (objId==='fern')         grid = MF.makePlant('fern',seed);
     else if (objId==='reeds')        grid = MF.makePlant('reeds',seed);
     else if (objId==='lily')         grid = MF.makePlant('lily',seed);
@@ -1770,20 +1770,20 @@ function _getObjectCanvas(objId, seed) {
     else if (objId==='castle_wall_csw') grid = MF.makeCastleWall('corner_sw',seed);
     else if (objId==='castle_wall_cne') grid = MF.makeCastleWall('corner_ne',seed);
     else if (objId==='castle_wall_cnw') grid = MF.makeCastleWall('corner_nw',seed);
-    else if (objId==='bed_s')        grid = MF.makeBed('single',seed);
-    else if (objId==='bed_d')        grid = MF.makeBed('double',seed);
+    else if (objId==='bed_s')        grid = MF.makeBed('single',seed,style);
+    else if (objId==='bed_d')        grid = MF.makeBed('double',seed,style);
     else if (objId==='table_r')      grid = MF.makeTable('round',seed);
     else if (objId==='table_l')      grid = MF.makeTable('long',seed);
-    else if (objId==='chair')        grid = MF.makeChair('chair',seed);
-    else if (objId==='throne')       grid = MF.makeChair('throne',seed);
-    else if (objId==='bookshelf')    grid = MF.makeBookshelf(seed);
-    else if (objId==='drawers')      grid = MF.makeDrawers(seed);
+    else if (objId==='chair')        grid = MF.makeChair('chair',seed,style);
+    else if (objId==='throne')       grid = MF.makeChair('throne',seed,style);
+    else if (objId==='bookshelf')    grid = MF.makeBookshelf(seed,style);
+    else if (objId==='drawers')      grid = MF.makeDrawers(seed,style);
     else if (objId==='cauldron')     grid = MF.makeCauldron(seed);
-    else if (objId==='weaponrack')   grid = MF.makeWeaponRack(seed);
-    else if (objId==='desk')         grid = MF.makeDesk(seed);
+    else if (objId==='weaponrack')   grid = MF.makeWeaponRack(seed,style);
+    else if (objId==='desk')         grid = MF.makeDesk(seed,style);
     else if (objId==='stool')        grid = MF.makeStool(seed);
-    else if (objId==='wardrobe')     grid = MF.makeWardrobe(seed);
-    else if (objId==='stairs')       grid = MF.makeStairs(seed);
+    else if (objId==='wardrobe')     grid = MF.makeWardrobe(seed,style);
+    else if (objId==='stairs')       grid = MF.makeStairs(seed,style);
     else if (objId==='basin')        grid = MF.makeBasin(seed);
     else if (objId==='fireplace')    grid = MF.makeFireplace(seed);
   } catch(e) { return null; }
@@ -1860,8 +1860,14 @@ const _OBJ_DIMS = {
 
 function _drawObjSprite(ctx, srcCanvas, sx, sy, cs, nativeW, nativeH, snap, rotation) {
   // cs = cell size in screen pixels, nativeW/H in mapforge pixels (20px per cell)
-  const sprW = (nativeW / 20) * cs;
-  const sprH = (nativeH / 20) * cs;
+  let sprW = (nativeW / 20) * cs;
+  let sprH = (nativeH / 20) * cs;
+  // Single-cell objects: scale to fit with up to 15% overlap
+  const maxD = cs * 1.15;
+  if(sprW > maxD || sprH > maxD){
+    const scale = Math.min(maxD/sprW, maxD/sprH);
+    sprW *= scale; sprH *= scale;
+  }
   const rotW = (rotation === 90 || rotation === 270) ? sprH : sprW;
   const rotH = (rotation === 90 || rotation === 270) ? sprW : sprH;
   let offX, offY;
@@ -1908,7 +1914,7 @@ function _getObjectTile(meta, cx, cy) {
     : (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
   // Named object
   if (meta.object && meta.object !== '_part') {
-    return _getObjectCanvas(meta.object, seed);
+    return _getObjectCanvas(meta.object, seed, meta.objStyle);
   }
   // Building with editor-placed roof (has bldgW)
   if (meta.type === 'building' && meta.bldgW) {
