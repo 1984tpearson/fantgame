@@ -131,40 +131,100 @@ button.save-btn:hover { border-color: #8ac060; color: #b0e070; }
 'use strict';
 
 // ── Terrain→MapForge type map ──────────────────────────────────
+// Valid MF terrain types: grass sand swamp farmland dirt cobble snow
+//   water mud forest_floor lava ice corrupt rocky cave shallow_water
 const TERRAIN_TO_MF = {
-  street:'dirt', building:'farmland', courtyard:'grass', market:'sand',
-  docks:'cobble', gate:'cobble', interior:'cave', wall:'rocky', door:'dirt',
-  road:'dirt', floor:'farmland', yard:'grass',
-  plains:'grass', forest:'forest_floor', wilds:'forest_floor', ocean:'water',
-  river:'shallow_water', shore:'sand', farmland:'farmland', mountain:'rocky',
-  peaks:'rocky', swamp:'swamp', bog:'swamp', fens:'swamp', snow:'snow',
-  city:'cobble', town:'grass', village:'grass', ruins:'rocky', castle:'rocky', keep:'rocky',
+  // Settlement
+  street:'dirt',          // dirt path
+  road:'cobble',          // cobblestone road
+  building:'farmland',    // brown earth (roof drawn on top)
+  courtyard:'grass',      // open grass areas
+  market:'sand',          // sandy market ground
+  docks:'cobble',         // stone docks
+  gate:'cobble',
+  wall:'rocky',           // stone wall
+  door:'dirt',
+  interior:'cave',        // dark cave floor (building interior)
+  floor:'dirt',           // plank floor — closest is dirt
+  yard:'grass',
+  mud:'mud',
+  // Overworld
+  plains:'grass',
+  forest:'forest_floor',
+  wilds:'forest_floor',
+  ocean:'water',
+  river:'shallow_water',
+  shore:'sand',
+  farmland:'farmland',
+  mountain:'rocky',
+  peaks:'rocky',
+  swamp:'swamp',
+  bog:'swamp',
+  fens:'swamp',
+  snow:'snow',
+  lava:'lava',
+  ice:'ice',
+  corrupt:'corrupt',
+  // Settlements on overworld (rendered with their own tile)
+  city:'cobble',
+  town:'grass',
+  village:'grass',
+  ruins:'rocky',
+  castle:'rocky',
+  keep:'rocky',
 };
 
+// Settlement terrain palette — id is what gets written to aerdorn.js
+// label shows what it looks like in the editor
 const SETTLE_TERRAIN = [
-  {id:'street',l:'Street',c:'#a07850'},{id:'building',l:'Building',c:'#8a6840'},
-  {id:'courtyard',l:'Courtyard',c:'#70904a'},{id:'market',l:'Market',c:'#c0a860'},
-  {id:'docks',l:'Docks',c:'#506878'},{id:'gate',l:'Gate',c:'#706050'},
-  {id:'wall',l:'Wall',c:'#584838'},{id:'door',l:'Door',c:'#8a5030'},
-  {id:'road',l:'Road',c:'#9a8060'},{id:'interior',l:'Interior',c:'#383028'},
-  {id:'floor',l:'Floor',c:'#786050'},{id:'yard',l:'Yard',c:'#506838'},
+  {id:'street',   l:'Street (dirt)',    mf:'dirt'},
+  {id:'road',     l:'Road (cobble)',    mf:'cobble'},
+  {id:'courtyard',l:'Courtyard (grass)',mf:'grass'},
+  {id:'building', l:'Building',        mf:'farmland'},
+  {id:'market',   l:'Market (sand)',   mf:'sand'},
+  {id:'docks',    l:'Docks (cobble)',  mf:'cobble'},
+  {id:'wall',     l:'Wall (stone)',    mf:'rocky'},
+  {id:'gate',     l:'Gate (stone)',    mf:'cobble'},
+  {id:'door',     l:'Door (dirt)',     mf:'dirt'},
+  {id:'interior', l:'Interior (cave)', mf:'cave'},
+  {id:'floor',    l:'Floor (dirt)',    mf:'dirt'},
+  {id:'yard',     l:'Yard (grass)',    mf:'grass'},
+  {id:'mud',      l:'Mud',            mf:'mud'},
 ];
+
 const OW_TERRAIN = [
-  {id:'plains',l:'Plains',c:'#789060'},{id:'forest',l:'Forest',c:'#2a6030'},
-  {id:'wilds',l:'Wilds',c:'#1a5028'},{id:'ocean',l:'Ocean',c:'#204878'},
-  {id:'river',l:'River',c:'#3060a0'},{id:'shore',l:'Shore',c:'#c8b870'},
-  {id:'farmland',l:'Farmland',c:'#a0b850'},{id:'mountain',l:'Mountain',c:'#706858'},
-  {id:'peaks',l:'Peaks',c:'#908880'},{id:'swamp',l:'Swamp',c:'#405838'},
-  {id:'bog',l:'Bog',c:'#384830'},{id:'fens',l:'Fens',c:'#303c28'},
-  {id:'city',l:'City',c:'#806040'},{id:'town',l:'Town',c:'#907050'},
-  {id:'village',l:'Village',c:'#786040'},{id:'road',l:'Road',c:'#9a8060'},
-  {id:'ruins',l:'Ruins',c:'#605040'},{id:'castle',l:'Castle',c:'#504838'},
-  {id:'snow',l:'Snow',c:'#d8e0e8'},
+  {id:'plains',   l:'Plains',     mf:'grass'},
+  {id:'forest',   l:'Forest',     mf:'forest_floor'},
+  {id:'wilds',    l:'Wilds',      mf:'forest_floor'},
+  {id:'ocean',    l:'Ocean',      mf:'water'},
+  {id:'river',    l:'River',      mf:'shallow_water'},
+  {id:'shore',    l:'Shore',      mf:'sand'},
+  {id:'farmland', l:'Farmland',   mf:'farmland'},
+  {id:'mountain', l:'Mountain',   mf:'rocky'},
+  {id:'peaks',    l:'Peaks',      mf:'rocky'},
+  {id:'swamp',    l:'Swamp',      mf:'swamp'},
+  {id:'bog',      l:'Bog',        mf:'swamp'},
+  {id:'fens',     l:'Fens',       mf:'swamp'},
+  {id:'snow',     l:'Snow',       mf:'snow'},
+  {id:'lava',     l:'Lava',       mf:'lava'},
+  {id:'ice',      l:'Ice',        mf:'ice'},
+  {id:'corrupt',  l:'Corrupted',  mf:'corrupt'},
+  {id:'city',     l:'City',       mf:'cobble'},
+  {id:'town',     l:'Town',       mf:'grass'},
+  {id:'village',  l:'Village',    mf:'grass'},
+  {id:'road',     l:'Road',       mf:'cobble'},
+  {id:'ruins',    l:'Ruins',      mf:'rocky'},
+  {id:'castle',   l:'Castle',     mf:'rocky'},
 ];
+
 const INT_TERRAIN = [
-  {id:'interior',l:'Floor (cave)',c:'#383028'},{id:'floor',l:'Floor (planks)',c:'#786050'},
-  {id:'wall',l:'Wall',c:'#584838'},{id:'door',l:'Door',c:'#8a5030'},
-  {id:'courtyard',l:'Yard',c:'#70904a'},{id:'street',l:'Street',c:'#a07850'},
+  {id:'interior', l:'Cave Floor',     mf:'cave'},
+  {id:'floor',    l:'Dirt Floor',     mf:'dirt'},
+  {id:'wall',     l:'Stone Wall',     mf:'rocky'},
+  {id:'door',     l:'Door',          mf:'dirt'},
+  {id:'courtyard',l:'Yard (grass)',   mf:'grass'},
+  {id:'street',   l:'Street (dirt)',  mf:'dirt'},
+  {id:'mud',      l:'Mud',           mf:'mud'},
 ];
 
 // ── Object catalogue ───────────────────────────────────────────
@@ -705,7 +765,7 @@ function buildTerrainPalette(){
     const sw=document.createElement('div');sw.className='swatch';
     const tc=getTileCanvas(t.id,99,99);
     if(tc){const c=document.createElement('canvas');c.width=16;c.height=16;c.getContext('2d').drawImage(tc,0,0,16,16);sw.appendChild(c);}
-    else sw.style.background=t.c;
+    else sw.style.background='#3a2a10';
     const span=document.createElement('span');span.textContent=t.l;
     div.appendChild(sw);div.appendChild(span);
     div.addEventListener('click',()=>{
