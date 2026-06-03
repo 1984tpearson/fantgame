@@ -882,12 +882,12 @@ function redrawCell(x,y){
 }
 
 function redrawAnchorGroup(ax,ay){
-  const meta=map[`${ax},${ay}`]; if(!meta)return;
+  const meta=definedMap[`${ax},${ay}`]; if(!meta)return;
   const cellW=meta.bldgW||1, cellH=meta.bldgH||1;
   for(let dx=0;dx<cellW;dx++) for(let dy=0;dy<cellH;dy++){
     const{px,py}=cellToCanvas(ax+dx,ay+dy);
     ctx.fillStyle='#050402';ctx.fillRect(px,py,tileSize,tileSize);
-    const cm=map[`${ax+dx},${ay+dy}`];
+    const cm=definedMap[`${ax+dx},${ay+dy}`]||inferBg(ax+dx,ay+dy);
     if(cm)_drawCellTerrain(ax+dx,ay+dy,cm);
   }
   const{px,py}=cellToCanvas(ax,ay);
@@ -924,7 +924,7 @@ function applyPaint(x,y){
     else{pushUndo(x,y);delete definedMap[k];map[k]=inferBg(x,y);redrawCell(x,y);}
   } else {
     const ex=definedMap[k]?Object.assign({},definedMap[k]):Object.assign({},inferBg(x,y));
-    if(paintTerrain){ex.type=currentTerrainId;ex.variant=currentVariant;if(currentTerrainStyle!=null)ex.terrainStyle=currentTerrainStyle;else delete ex.terrainStyle;}
+    if(paintTerrain){ex.type=currentTerrainId;delete ex.variant;if(currentTerrainStyle!=null){ex.terrainStyle=currentTerrainStyle;}else delete ex.terrainStyle;}
     if(currentObjId==='')delete ex.object;
     else if(currentObjId!==null){ex.object=currentObjId;ex.objVariant=currentObjVariant;if(currentObjStyle!=null)ex.objStyle=currentObjStyle;else delete ex.objStyle;if(currentObjLinen!=null)ex.objLinen=currentObjLinen;else delete ex.objLinen;}
     pushUndo(x,y);definedMap[k]=ex;map[k]=ex;
@@ -970,7 +970,7 @@ function placeBuilding(ax,ay){
   for(let dx=0;dx<cellW;dx++) for(let dy=0;dy<cellH;dy++){
     if(dx===0&&dy===0)continue;
     const k=`${ax+dx},${ay+dy}`;
-    const partMeta={type:'building',object:'_part',anchor:`${ax},${ay}`};
+    const partMeta={type:'courtyard',object:'_part',anchor:`${ax},${ay}`};
     pushUndo(ax+dx,ay+dy); definedMap[k]=partMeta; map[k]=Object.assign({},partMeta);
   }
   redrawAnchorGroup(ax,ay);
@@ -985,7 +985,7 @@ function floodFill(startX,startY){
   while(queue.length){
     const[cx,cy]=queue.shift();
     const ex=definedMap[`${cx},${cy}`]?Object.assign({},definedMap[`${cx},${cy}`]):Object.assign({},inferBg(cx,cy));
-    if(paintTerrain){ex.type=currentTerrainId;ex.variant=currentVariant;if(currentTerrainStyle!=null)ex.terrainStyle=currentTerrainStyle;else delete ex.terrainStyle;}
+    if(paintTerrain){ex.type=currentTerrainId;delete ex.variant;if(currentTerrainStyle!=null){ex.terrainStyle=currentTerrainStyle;}else delete ex.terrainStyle;}
     if(currentObjId==='')delete ex.object;
     else if(currentObjId!==null)ex.object=currentObjId;
     pushUndo(cx,cy);definedMap[`${cx},${cy}`]=ex;map[`${cx},${cy}`]=ex;
