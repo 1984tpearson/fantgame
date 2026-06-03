@@ -1641,7 +1641,7 @@ function _getObjectTile(meta, cx, cy) {
   const seed = (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
   // Non-building objects
   const obj = meta.object;
-  if (obj && obj !== 'stall') {
+  if (obj) {
     const key = 'obj_' + obj + '_' + seed;
     if (_objCache.has(key)) return _objCache.get(key);
     let grid = null;
@@ -1651,7 +1651,11 @@ function _getObjectTile(meta, cx, cy) {
     else if (obj === 'cart')     grid = MapForge.makeCart(seed);
     else if (obj === 'haystack') grid = MapForge.makeHaystack(20, 20, seed);
     else if (obj === 'trough')   grid = MapForge.makeTrough(seed);
-    else if (obj === 'signpost') grid = MapForge.makeSignpost(seed);
+    else if (obj === 'signpost')   grid = MapForge.makeSignpost(seed);
+    else if (obj === 'noticeboard') grid = MapForge.makeNoticeboard(seed);
+    else if (obj === 'logpile')    grid = MapForge.makeLogPile(seed);
+    else if (obj === 'bush')       grid = MapForge.makeBushField('sm', seed);
+    else if (obj === 'stall')      grid = MapForge.makeMarketStall(seed);
     if (grid) {
       const c = document.createElement('canvas');
       MapForge.renderGridToCanvas(grid, c, 1);
