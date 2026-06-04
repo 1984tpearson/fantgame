@@ -1,6 +1,4 @@
-// EAST-PORT — full settlement map
-// 28x28 tiles, 20m/tile. No walls.
-// x: -14(west) to +14(east/harbour). y: 0(south) to 28(north).
+// EAST-PORT — settlement map
 (function(){
   window.SETTLEMENTS = window.SETTLEMENTS || {};
   const m = {};
@@ -9,141 +7,601 @@
     for(let x=x1;x<=x2;x++) for(let y=y1;y<=y2;y++) t(x,y,type,name,extra);
   }
 
-  // Streets
-  for(let x=-14;x<=12;x++) t(x,14,'street','Harbour Street')
-  for(let y=0;y<=28;y++) t(0,y,'street',"Fisher's Way");
-  for(let y=0;y<=28;y++) t(5,y,'street',"Tanner's Lane");
-  for(let y=0;y<=28;y++) t(-5,y,'street',"Chapel Lane");
-  for(let x=-14;x<=12;x++) t(x,22,'street','Quay Road')
-  for(let x=-14;x<=12;x++) t(x,6,'street',"Chandler's Walk")
-  for(let y=14;y<=22;y++) t(3,y,'street','Rope Lane');
-  for(let y=6;y<=14;y++) t(-3,y,'street','Salt Lane');
-  for(let y=14;y<=22;y++) t(8,y,'street','Smoker Lane');
-  for(let y=6;y<=14;y++) t(10,y,'street','Pier Lane');
+  // MAP CELLS
+  t(5,-2,'mud','');
+  t(6,-2,'mud','');
+  t(7,-2,'mud','');
+  t(8,-2,'mud','');
+  t(9,-2,'mud','');
+  t(10,-2,'mud','');
+  t(11,-2,'mud','');
+  t(12,-2,'mud','', {object:"tree_palm",objVariant:0});
+  t(13,-2,'shallow_water','');
+  t(14,-2,'shallow_water','');
+  t(15,-2,'water','');
+  t(-13,-1,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-12,-1,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-11,-1,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(4,-1,'mud','');
+  t(5,-1,'mud','');
+  t(6,-1,'mud','');
+  t(7,-1,'mud','');
+  t(8,-1,'mud','');
+  t(9,-1,'mud','');
+  t(10,-1,'mud','');
+  t(11,-1,'mud','');
+  t(12,-1,'mud','');
+  t(13,-1,'shallow_water','');
+  t(14,-1,'water','');
+  t(15,-1,'water','');
+  t(-14,0,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-13,0,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-12,0,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-11,0,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-5,0,'street','Chapel Lane');
+  t(0,0,'road','Fisher\'s Way');
+  t(5,0,'street','Tanner\'s Lane');
+  t(6,0,'mud','');
+  t(7,0,'mud','');
+  t(8,0,'mud','');
+  t(9,0,'mud','');
+  t(10,0,'mud','');
+  t(11,0,'mud','');
+  t(12,0,'shallow_water','');
+  t(13,0,'shallow_water','', {object:"lily",objVariant:0});
+  t(14,0,'water','');
+  t(15,0,'water','');
+  t(-14,1,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-12,1,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-5,1,'street','Chapel Lane');
+  t(0,1,'street','Fisher\'s Way');
+  t(5,1,'street','Tanner\'s Lane');
+  t(6,1,'mud','');
+  t(7,1,'mud','');
+  t(8,1,'mud','');
+  t(9,1,'mud','');
+  t(10,1,'mud','');
+  t(11,1,'mud','');
+  t(12,1,'mud','');
+  t(13,1,'shallow_water','');
+  t(14,1,'water','');
+  t(15,1,'water','');
+  t(-5,2,'street','Chapel Lane');
+  t(-3,2,'courtyard','', {object:"flowers",objVariant:0});
+  t(-2,2,'courtyard','', {object:"flowers",objVariant:0});
+  t(0,2,'street','Fisher\'s Way');
+  t(5,2,'street','Tanner\'s Lane');
+  t(6,2,'mud','');
+  t(7,2,'mud','');
+  t(8,2,'mud','');
+  t(9,2,'mud','');
+  t(10,2,'mud','');
+  t(11,2,'mud','');
+  t(12,2,'mud','');
+  t(13,2,'shallow_water','');
+  t(14,2,'water','');
+  t(15,2,'water','');
+  t(-13,3,'building','House', {interiorType:"house",doors:["north"],enter:{layer:"interior",id:"ep_house_sw10",entryPos:{x:1,y:1}}});
+  t(-11,3,'building','House', {interiorType:"house",doors:["north"],enter:{layer:"interior",id:"ep_house_sw9",entryPos:{x:1,y:1}}});
+  t(-9,3,'building','House', {interiorType:"house",doors:["north"],enter:{layer:"interior",id:"ep_house_sw8",entryPos:{x:1,y:1}}});
+  t(-7,3,'building','House', {interiorType:"house",doors:["east"],enter:{layer:"interior",id:"ep_house_sw7",entryPos:{x:1,y:1}}});
+  t(-6,3,'building','House', {interiorType:"house",doors:["east"],enter:{layer:"interior",id:"ep_house_sw6",entryPos:{x:1,y:1}}});
+  t(-5,3,'street','Chapel Lane');
+  t(-3,3,'courtyard','', {object:"flowers",objVariant:0});
+  t(-1,3,'courtyard','', {object:"flowers",objVariant:0});
+  t(0,3,'street','Fisher\'s Way');
+  t(5,3,'street','Tanner\'s Lane');
+  t(6,3,'building','House', {interiorType:"house",doors:["west"],enter:{layer:"interior",id:"ep_house_se1",entryPos:{x:1,y:1}}});
+  t(7,3,'building','House', {interiorType:"house",doors:["west"],enter:{layer:"interior",id:"ep_house_se2",entryPos:{x:1,y:1}}});
+  t(8,3,'mud','');
+  t(9,3,'building','House', {interiorType:"house",doors:["west"],enter:{layer:"interior",id:"ep_house_se3",entryPos:{x:1,y:1}}});
+  t(10,3,'mud','');
+  t(11,3,'building','House', {interiorType:"house",doors:["west"],enter:{layer:"interior",id:"ep_house_se4",entryPos:{x:1,y:1}}});
+  t(12,3,'mud','');
+  t(13,3,'building','House', {interiorType:"house",doors:["west"],enter:{layer:"interior",id:"ep_house_se5",entryPos:{x:1,y:1}}});
+  t(14,3,'water','');
+  t(15,3,'water','');
+  t(-5,4,'street','Chapel Lane');
+  t(-4,4,'courtyard','', {object:"flowers",objVariant:0});
+  t(0,4,'street','Fisher\'s Way');
+  t(5,4,'street','Tanner\'s Lane');
+  t(6,4,'mud','');
+  t(7,4,'mud','');
+  t(8,4,'mud','');
+  t(9,4,'mud','');
+  t(10,4,'mud','');
+  t(11,4,'mud','');
+  t(12,4,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,4,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,4,'water','');
+  t(15,4,'water','');
+  t(-5,5,'street','Chapel Lane');
+  t(-4,5,'courtyard','', {object:"flowers",objVariant:0});
+  t(-2,5,'courtyard','', {object:"flowers",objVariant:0});
+  t(0,5,'street','Fisher\'s Way');
+  t(5,5,'street','Tanner\'s Lane');
+  t(6,5,'mud','');
+  t(7,5,'mud','');
+  t(8,5,'mud','');
+  t(9,5,'mud','');
+  t(10,5,'mud','');
+  t(11,5,'mud','');
+  t(12,5,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,5,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,5,'water','');
+  t(15,5,'water','');
+  t(-14,6,'street','Quay Road');
+  t(-13,6,'street','Quay Road');
+  t(-12,6,'street','Quay Road');
+  t(-11,6,'street','Quay Road');
+  t(-10,6,'street','Quay Road');
+  t(-9,6,'street','Quay Road');
+  t(-8,6,'street','Quay Road');
+  t(-7,6,'street','Quay Road');
+  t(-6,6,'street','Quay Road');
+  t(-5,6,'street','Quay Road');
+  t(-4,6,'street','Quay Road');
+  t(-3,6,'street','Quay Road');
+  t(-2,6,'street','Quay Road');
+  t(-1,6,'street','Quay Road');
+  t(0,6,'street','Quay Road');
+  t(1,6,'street','Quay Road');
+  t(2,6,'street','Quay Road');
+  t(3,6,'street','Quay Road', {object:"barrels"});
+  t(4,6,'street','Quay Road');
+  t(5,6,'street','Quay Road');
+  t(6,6,'street','Quay Road');
+  t(7,6,'street','Quay Road');
+  t(8,6,'street','Smoker Lane');
+  t(9,6,'street','Quay Road');
+  t(10,6,'street','Quay Road');
+  t(11,6,'street','Quay Road');
+  t(12,6,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,6,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,6,'water','');
+  t(15,6,'water','');
+  t(-13,7,'building','House', {interiorType:"house",doors:["east"],enter:{layer:"interior",id:"ep_house_sw5",entryPos:{x:1,y:1}}});
+  t(-11,7,'building','House', {interiorType:"house",doors:["east"],enter:{layer:"interior",id:"ep_house_sw4",entryPos:{x:1,y:1}}});
+  t(-10,7,'courtyard','', {object:"mushroom",objVariant:0});
+  t(-9,7,'building','House', {interiorType:"house",doors:["east"],enter:{layer:"interior",id:"ep_house_sw3",entryPos:{x:1,y:1}}});
+  t(-8,7,'courtyard','', {object:"mushroom",objVariant:0});
+  t(-7,7,'building','House', {interiorType:"house",doors:["east"],enter:{layer:"interior",id:"ep_house_sw2",entryPos:{x:1,y:1}}});
+  t(-6,7,'building','House', {interiorType:"house",doors:["east"],enter:{layer:"interior",id:"ep_house_sw1",entryPos:{x:1,y:1}}});
+  t(-5,7,'street','Chapel Lane');
+  t(0,7,'street','Fisher\'s Way');
+  t(3,7,'street','Rope Lane');
+  t(5,7,'street','Tanner\'s Lane');
+  t(6,7,'building','Tannery', {interiorType:"shop",doors:["west"],enter:{layer:"interior",id:"ep_tannery",entryPos:{x:1,y:1}}});
+  t(7,7,'mud','');
+  t(8,7,'street','Smoker Lane');
+  t(9,7,'building','Carpenter', {interiorType:"shop",doors:["west"],enter:{layer:"interior",id:"ep_carpenter",entryPos:{x:1,y:1}}});
+  t(10,7,'mud','');
+  t(11,7,'mud','');
+  t(12,7,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,7,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,7,'water','');
+  t(15,7,'water','');
+  t(-5,8,'street','Chapel Lane');
+  t(-3,8,'street','Quay Road', {object:"stall"});
+  t(0,8,'street','Fisher\'s Way');
+  t(1,8,'street','Quay Road', {object:"stall"});
+  t(3,8,'street','Rope Lane');
+  t(5,8,'street','Tanner\'s Lane');
+  t(6,8,'building','House', {interiorType:"house",doors:["west"],enter:{layer:"interior",id:"ep_house_se6",entryPos:{x:1,y:1}}});
+  t(7,8,'mud','');
+  t(8,8,'street','Smoker Lane');
+  t(9,8,'building','House', {interiorType:"house",doors:["west"],enter:{layer:"interior",id:"ep_house_se7",entryPos:{x:1,y:1}}});
+  t(10,8,'mud','');
+  t(11,8,'building','House', {interiorType:"house",doors:["west"],enter:{layer:"interior",id:"ep_house_se8",entryPos:{x:1,y:1}}});
+  t(12,8,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,8,'building','House', {interiorType:"house",doors:["west"],enter:{layer:"interior",id:"ep_house_se9",entryPos:{x:1,y:1}}});
+  t(14,8,'water','');
+  t(15,8,'water','');
+  t(-5,9,'street','Chapel Lane');
+  t(-2,9,'building','Fletcher\'s Stall', {interiorType:"shop",doors:["north"],enter:{layer:"interior",id:"ep_fletcher",entryPos:{x:1,y:1}}});
+  t(0,9,'street','Fisher\'s Way');
+  t(2,9,'building','Grain Exchange', {interiorType:"shop",doors:["north"],enter:{layer:"interior",id:"ep_grain",entryPos:{x:1,y:1}}});
+  t(3,9,'street','Rope Lane');
+  t(5,9,'street','Tanner\'s Lane');
+  t(6,9,'mud','');
+  t(7,9,'mud','');
+  t(8,9,'street','Smoker Lane');
+  t(9,9,'mud','');
+  t(10,9,'mud','');
+  t(11,9,'mud','');
+  t(12,9,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,9,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,9,'water','');
+  t(15,9,'water','');
+  t(-13,10,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-12,10,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-11,10,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-8,10,'courtyard','Chapel Yard', {object:"bush"});
+  t(-7,10,'building','Chapel of the Tides', {interiorType:"chapel"});
+  t(-6,10,'building','Chapel of the Tides', {interiorType:"chapel",doors:["east"],enter:{layer:"interior",id:"ep_chapel",entryPos:{x:1,y:1}}});
+  t(-5,10,'street','Chapel Lane');
+  t(-4,10,'market','Market Square');
+  t(-3,10,'market','Market Square');
+  t(-2,10,'market','Market Square');
+  t(-1,10,'market','Market Square');
+  t(0,10,'market','Market Square');
+  t(1,10,'market','Market Square');
+  t(2,10,'market','Market Square');
+  t(3,10,'market','Market Square');
+  t(5,10,'street','Tanner\'s Lane');
+  t(6,10,'building','Blacksmith', {interiorType:"blacksmith"});
+  t(7,10,'building','Blacksmith', {interiorType:"blacksmith"});
+  t(8,10,'street','Smoker Lane');
+  t(9,10,'building','Bathhouse', {interiorType:"bathhouse"});
+  t(10,10,'mud','');
+  t(11,10,'mud','');
+  t(12,10,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,10,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,10,'water','');
+  t(15,10,'water','');
+  t(-14,11,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-13,11,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-8,11,'courtyard','Chapel Yard', {object:"bush"});
+  t(-7,11,'building','Chapel of the Tides', {interiorType:"chapel"});
+  t(-6,11,'building','Chapel of the Tides', {interiorType:"chapel"});
+  t(-5,11,'street','Chapel Lane');
+  t(-4,11,'market','Market Square');
+  t(-3,11,'market','Market Square');
+  t(-2,11,'market','Market Square');
+  t(-1,11,'market','Market Square');
+  t(0,11,'market','Market Square');
+  t(1,11,'market','Market Square');
+  t(2,11,'market','Market Square');
+  t(3,11,'market','Market Square');
+  t(5,11,'street','Tanner\'s Lane');
+  t(6,11,'building','Blacksmith', {interiorType:"blacksmith",doors:["west"],enter:{layer:"interior",id:"ep_blacksmith",entryPos:{x:1,y:1}}});
+  t(7,11,'building','Blacksmith', {interiorType:"blacksmith"});
+  t(8,11,'street','Smoker Lane');
+  t(9,11,'building','Bathhouse', {interiorType:"bathhouse",doors:["west"],enter:{layer:"interior",id:"ep_bathhouse",entryPos:{x:1,y:1}}});
+  t(10,11,'mud','');
+  t(11,11,'mud','');
+  t(12,11,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,11,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,11,'water','');
+  t(15,11,'water','');
+  t(-5,12,'building','The Salt & Sail Inn', {interiorType:"inn",doors:["east"],enter:{layer:"interior",id:"salt_and_sail",entryPos:{x:1,y:1}}});
+  t(-4,12,'market','Market Square');
+  t(-3,12,'market','Market Square');
+  t(-2,12,'market','Market Square');
+  t(-1,12,'market','Market Square');
+  t(0,12,'market','Market Square');
+  t(1,12,'market','Market Square');
+  t(2,12,'market','Market Square');
+  t(3,12,'market','Market Square');
+  t(4,12,'building','Chandler & Rope', {interiorType:"shop",doors:["west"],enter:{layer:"interior",id:"ep_chandler",entryPos:{x:1,y:1}}});
+  t(5,12,'street','Tanner\'s Lane');
+  t(6,12,'mud','');
+  t(7,12,'mud','');
+  t(8,12,'mud','Dockside Yard');
+  t(9,12,'mud','Dockside Yard');
+  t(10,12,'mud','Dockside Yard');
+  t(11,12,'mud','Dockside Yard');
+  t(12,12,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,12,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,12,'water','');
+  t(15,12,'water','');
+  t(-7,13,'courtyard','', {object:"mushroom",objVariant:0});
+  t(-5,13,'street','Chapel Lane');
+  t(-4,13,'market','Market Square');
+  t(-3,13,'market','Market Square');
+  t(-2,13,'market','Market Square');
+  t(-1,13,'courtyard','Town Crossing');
+  t(0,13,'courtyard','Town Crossing');
+  t(1,13,'courtyard','Town Crossing');
+  t(2,13,'market','Market Square');
+  t(3,13,'market','Market Square');
+  t(5,13,'street','Tanner\'s Lane');
+  t(6,13,'mud','');
+  t(7,13,'mud','');
+  t(8,13,'mud','Dockside Yard');
+  t(9,13,'mud','Dockside Yard');
+  t(10,13,'mud','Dockside Yard');
+  t(11,13,'mud','Dockside Yard', {objVariant:0});
+  t(12,13,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,13,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,13,'water','');
+  t(15,13,'water','');
+  t(-14,14,'road','Harbour Street');
+  t(-13,14,'street','Harbour Street');
+  t(-12,14,'street','Harbour Street');
+  t(-11,14,'street','Harbour Street');
+  t(-10,14,'street','Harbour Street');
+  t(-9,14,'street','Harbour Street');
+  t(-8,14,'street','Harbour Street', {object:"cart"});
+  t(-7,14,'street','Harbour Street');
+  t(-6,14,'street','Harbour Street');
+  t(-5,14,'street','Chapel Lane');
+  t(-4,14,'street','Harbour Street', {object:"trough"});
+  t(-3,14,'street','Salt Lane');
+  t(-2,14,'street','Harbour Street');
+  t(-1,14,'courtyard','Town Crossing', {object:"noticeboard"});
+  t(0,14,'courtyard','Town Crossing', {object:"well"});
+  t(1,14,'courtyard','Town Crossing');
+  t(2,14,'street','Harbour Street');
+  t(3,14,'street','Rope Lane');
+  t(4,14,'street','Harbour Street', {object:"signpost"});
+  t(5,14,'street','Tanner\'s Lane');
+  t(6,14,'street','Harbour Street');
+  t(7,14,'street','Harbour Street');
+  t(8,14,'street','Smoker Lane');
+  t(9,14,'street','Harbour Street');
+  t(10,14,'building','Harbormaster', {interiorType:"harbormaster",doors:["west"],enter:{layer:"interior",id:"ep_harbormaster",entryPos:{x:1,y:1}}});
+  t(11,14,'building','Harbormaster', {interiorType:"harbormaster"});
+  t(12,14,'street','Harbour Street');
+  t(13,14,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,14,'water','');
+  t(15,14,'water','');
+  t(-5,15,'street','Chapel Lane');
+  t(-4,15,'market','Market Square');
+  t(-3,15,'market','Market Square');
+  t(-2,15,'market','Market Square');
+  t(-1,15,'courtyard','Town Crossing');
+  t(0,15,'courtyard','Town Crossing', {object:"flowers",objVariant:0});
+  t(1,15,'courtyard','Town Crossing');
+  t(2,15,'market','Market Square');
+  t(3,15,'market','Market Square');
+  t(5,15,'street','Tanner\'s Lane');
+  t(6,15,'building','Smokehouse', {interiorType:"shop",doors:["west"],enter:{layer:"interior",id:"ep_smokehouse",entryPos:{x:1,y:1}}});
+  t(7,15,'mud','');
+  t(8,15,'mud','Dockside Yard');
+  t(9,15,'mud','Dockside Yard', {object:"cart"});
+  t(10,15,'mud','Dockside Yard');
+  t(11,15,'mud','Dockside Yard');
+  t(12,15,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,15,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,15,'water','');
+  t(15,15,'water','');
+  t(-7,16,'courtyard','', {object:"tree_oak_lg",objVariant:0});
+  t(-5,16,'building','Market Hall', {interiorType:"market_hall",doors:["east"],enter:{layer:"interior",id:"ep_market_hall",entryPos:{x:1,y:1}}});
+  t(-4,16,'market','Market Square');
+  t(-3,16,'market','Market Square');
+  t(-2,16,'market','Market Square');
+  t(-1,16,'market','Market Square');
+  t(0,16,'market','Market Square');
+  t(1,16,'market','Market Square');
+  t(2,16,'market','Market Square');
+  t(3,16,'market','Market Square');
+  t(4,16,'building','Spice Merchant', {interiorType:"shop",doors:["west"],enter:{layer:"interior",id:"ep_spice",entryPos:{x:1,y:1}}});
+  t(5,16,'street','Tanner\'s Lane');
+  t(6,16,'building','Fisher\'s Cottage', {interiorType:"house",doors:["south"],enter:{layer:"interior",id:"ep_cottage_5",entryPos:{x:1,y:1}}});
+  t(7,16,'building','Fisher\'s Cottage', {interiorType:"house",doors:["south"],enter:{layer:"interior",id:"ep_cottage_6",entryPos:{x:1,y:1}}});
+  t(8,16,'mud','Dockside Yard', {object:"tree_oak",objVariant:0});
+  t(9,16,'mud','Dockside Yard');
+  t(10,16,'mud','Dockside Yard');
+  t(11,16,'mud','Dockside Yard');
+  t(12,16,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,16,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,16,'water','');
+  t(15,16,'water','');
+  t(-5,17,'street','Chapel Lane');
+  t(-4,17,'market','Market Square');
+  t(-3,17,'market','Market Square');
+  t(-2,17,'market','Market Square');
+  t(-1,17,'market','Market Square');
+  t(0,17,'market','Market Square');
+  t(1,17,'market','Market Square');
+  t(2,17,'market','Market Square');
+  t(3,17,'market','Market Square');
+  t(5,17,'street','Tanner\'s Lane');
+  t(6,17,'mud','');
+  t(7,17,'mud','');
+  t(8,17,'mud','');
+  t(9,17,'mud','');
+  t(10,17,'street','Pier Lane');
+  t(11,17,'mud','');
+  t(12,17,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,17,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,17,'water','');
+  t(15,17,'water','');
+  t(-15,18,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-8,18,'courtyard','', {object:"mushroom",objVariant:0});
+  t(-5,18,'street','Chapel Lane');
+  t(-4,18,'market','Market Square');
+  t(-3,18,'market','Market Square');
+  t(-2,18,'market','Market Square');
+  t(-1,18,'market','Market Square');
+  t(0,18,'market','Market Square');
+  t(1,18,'market','Market Square');
+  t(2,18,'market','Market Square');
+  t(3,18,'market','Market Square');
+  t(5,18,'street','Tanner\'s Lane');
+  t(6,18,'mud','', {object:"pond",objVariant:0});
+  t(7,18,'mud','');
+  t(8,18,'mud','');
+  t(9,18,'mud','');
+  t(10,18,'street','Pier Lane');
+  t(11,18,'mud','');
+  t(12,18,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,18,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,18,'water','');
+  t(15,18,'water','');
+  t(-15,19,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-14,19,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-13,19,'building','Merchant House', {interiorType:"house",doors:["east"],enter:{layer:"interior",id:"ep_merchant_12",entryPos:{x:1,y:1}}});
+  t(-11,19,'building','Merchant House', {interiorType:"house",doors:["east"],enter:{layer:"interior",id:"ep_merchant_11",entryPos:{x:1,y:1}}});
+  t(-9,19,'building','Merchant House', {interiorType:"house",doors:["east"],enter:{layer:"interior",id:"ep_merchant_10",entryPos:{x:1,y:1}}});
+  t(-6,19,'building','Notary & Scribe', {interiorType:"shop",doors:["east"],enter:{layer:"interior",id:"ep_notary",entryPos:{x:1,y:1}}});
+  t(-5,19,'street','Chapel Lane');
+  t(-3,19,'street','Salt Lane');
+  t(-2,19,'building','Apothecary', {interiorType:"shop",doors:["south"],enter:{layer:"interior",id:"ep_apothecary",entryPos:{x:1,y:1}}});
+  t(0,19,'street','Fisher\'s Way');
+  t(2,19,'building','Moneylender', {interiorType:"shop",doors:["south"],enter:{layer:"interior",id:"ep_moneylender",entryPos:{x:1,y:1}}});
+  t(5,19,'street','Tanner\'s Lane');
+  t(6,19,'building','Fisher\'s Cottage', {interiorType:"house",doors:["south"],enter:{layer:"interior",id:"ep_cottage_1",entryPos:{x:1,y:1}}});
+  t(7,19,'building','Fisher\'s Cottage', {interiorType:"house",doors:["south"],enter:{layer:"interior",id:"ep_cottage_2",entryPos:{x:1,y:1}}});
+  t(8,19,'mud','');
+  t(9,19,'building','Fisher\'s Cottage', {interiorType:"house",doors:["south"],enter:{layer:"interior",id:"ep_cottage_3",entryPos:{x:1,y:1}}});
+  t(10,19,'street','Pier Lane');
+  t(11,19,'building','Fisher\'s Cottage', {interiorType:"house",doors:["west"],enter:{layer:"interior",id:"ep_cottage_4",entryPos:{x:1,y:1}}});
+  t(12,19,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,19,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,19,'water','');
+  t(15,19,'water','');
+  t(-14,20,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-13,20,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-12,20,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-5,20,'street','Chapel Lane');
+  t(-3,20,'street','Salt Lane');
+  t(-1,20,'street','Chandler\'s Walk', {object:"stall"});
+  t(0,20,'street','Fisher\'s Way');
+  t(3,20,'courtyard','', {object:"flowers",objVariant:0});
+  t(5,20,'street','Tanner\'s Lane');
+  t(6,20,'mud','');
+  t(7,20,'mud','');
+  t(8,20,'mud','Dockside Yard', {object:"logpile"});
+  t(9,20,'mud','');
+  t(10,20,'street','Pier Lane');
+  t(11,20,'mud','');
+  t(12,20,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,20,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,20,'water','');
+  t(15,20,'water','');
+  t(-12,21,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-11,21,'courtyard','', {object:"bush_lg",objVariant:0});
+  t(-5,21,'street','Chapel Lane');
+  t(-3,21,'street','Salt Lane');
+  t(0,21,'street','Fisher\'s Way');
+  t(5,21,'street','Tanner\'s Lane');
+  t(6,21,'mud','');
+  t(7,21,'mud','');
+  t(8,21,'mud','');
+  t(9,21,'mud','');
+  t(10,21,'street','Pier Lane');
+  t(11,21,'mud','');
+  t(12,21,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,21,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,21,'water','');
+  t(15,21,'water','');
+  t(-14,22,'street','Chandler\'s Walk');
+  t(-13,22,'street','Chandler\'s Walk');
+  t(-12,22,'street','Chandler\'s Walk');
+  t(-11,22,'street','Chandler\'s Walk');
+  t(-10,22,'street','Chandler\'s Walk');
+  t(-9,22,'street','Chandler\'s Walk');
+  t(-8,22,'street','Chandler\'s Walk');
+  t(-7,22,'street','Chandler\'s Walk');
+  t(-6,22,'street','Chandler\'s Walk');
+  t(-5,22,'street','Chandler\'s Walk');
+  t(-4,22,'street','Chandler\'s Walk');
+  t(-3,22,'street','Chandler\'s Walk', {object:"haystack"});
+  t(-2,22,'street','Chandler\'s Walk');
+  t(-1,22,'street','Chandler\'s Walk');
+  t(0,22,'street','Chandler\'s Walk');
+  t(1,22,'street','Chandler\'s Walk');
+  t(2,22,'street','Chandler\'s Walk');
+  t(3,22,'street','Chandler\'s Walk');
+  t(4,22,'street','Chandler\'s Walk');
+  t(5,22,'street','Chandler\'s Walk');
+  t(6,22,'street','Chandler\'s Walk');
+  t(7,22,'street','Chandler\'s Walk', {object:"haystack"});
+  t(8,22,'street','Chandler\'s Walk');
+  t(9,22,'street','Chandler\'s Walk');
+  t(10,22,'street','Pier Lane');
+  t(11,22,'street','Chandler\'s Walk');
+  t(12,22,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,22,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,22,'water','');
+  t(15,22,'water','');
+  t(-13,23,'building','Merchant House', {interiorType:"house",doors:["south"],enter:{layer:"interior",id:"ep_merchant_5",entryPos:{x:1,y:1}}});
+  t(-12,23,'courtyard','', {object:"haystack",objVariant:0});
+  t(-11,23,'building','Merchant House', {interiorType:"house",doors:["south"],enter:{layer:"interior",id:"ep_merchant_4",entryPos:{x:1,y:1}}});
+  t(-9,23,'building','Merchant House', {interiorType:"house",doors:["south"],enter:{layer:"interior",id:"ep_merchant_3",entryPos:{x:1,y:1}}});
+  t(-8,23,'courtyard','', {object:"haystack",objVariant:0});
+  t(-7,23,'building','Merchant House', {interiorType:"house",doors:["south"],enter:{layer:"interior",id:"ep_merchant_2",entryPos:{x:1,y:1}}});
+  t(-6,23,'building','Merchant House', {interiorType:"house",doors:["south"],enter:{layer:"interior",id:"ep_merchant_1",entryPos:{x:1,y:1}}});
+  t(-5,23,'street','Chapel Lane');
+  t(0,23,'street','Fisher\'s Way');
+  t(5,23,'street','Tanner\'s Lane');
+  t(6,23,'building','Net Shed', {interiorType:"house",doors:["south"],enter:{layer:"interior",id:"ep_netshed_1",entryPos:{x:1,y:1}}});
+  t(7,23,'building','Net Shed', {interiorType:"house"});
+  t(8,23,'building','Net Shed', {interiorType:"house"});
+  t(9,23,'building','Net Shed', {interiorType:"house",doors:["south"],enter:{layer:"interior",id:"ep_netshed_2",entryPos:{x:1,y:1}}});
+  t(10,23,'building','Net Shed', {interiorType:"house"});
+  t(11,23,'building','Net Shed', {interiorType:"house"});
+  t(12,23,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,23,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,23,'water','');
+  t(15,23,'water','');
+  t(-5,24,'street','Chapel Lane');
+  t(-2,24,'courtyard','', {object:"pond_lg",objVariant:0});
+  t(0,24,'street','Fisher\'s Way');
+  t(3,24,'courtyard','', {object:"tree_oak_lg",objVariant:0});
+  t(5,24,'street','Tanner\'s Lane');
+  t(6,24,'building','Net Shed', {interiorType:"house"});
+  t(7,24,'building','Net Shed', {interiorType:"house"});
+  t(8,24,'building','Net Shed', {interiorType:"house"});
+  t(9,24,'building','Net Shed', {interiorType:"house"});
+  t(10,24,'building','Net Shed', {interiorType:"house"});
+  t(11,24,'building','Net Shed', {interiorType:"house"});
+  t(12,24,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(13,24,'floor_diag','East-Port Harbour', {terrainStyle:0});
+  t(14,24,'water','');
+  t(15,24,'water','');
+  t(-5,25,'street','Chapel Lane');
+  t(-3,25,'courtyard','', {object:"tree_oak",objVariant:0});
+  t(0,25,'street','Fisher\'s Way');
+  t(4,25,'courtyard','', {object:"fence_v",objVariant:0});
+  t(5,25,'street','Tanner\'s Lane');
+  t(6,25,'building','Net Shed', {interiorType:"house"});
+  t(7,25,'building','Net Shed', {interiorType:"house"});
+  t(8,25,'building','Net Shed', {interiorType:"house"});
+  t(9,25,'building','Net Shed', {interiorType:"house"});
+  t(10,25,'building','Net Shed', {interiorType:"house"});
+  t(11,25,'building','Net Shed', {interiorType:"house"});
+  t(13,25,'shallow_water','');
+  t(14,25,'water','');
+  t(15,25,'water','');
+  t(-13,26,'building','Merchant House', {interiorType:"house",doors:["east"],enter:{layer:"interior",id:"ep_merchant_9",entryPos:{x:1,y:1}}});
+  t(-11,26,'building','Merchant House', {interiorType:"house",doors:["east"],enter:{layer:"interior",id:"ep_merchant_8",entryPos:{x:1,y:1}}});
+  t(-9,26,'building','Merchant House', {interiorType:"house",doors:["east"],enter:{layer:"interior",id:"ep_merchant_7",entryPos:{x:1,y:1}}});
+  t(-6,26,'building','Merchant House', {interiorType:"house",doors:["east"],enter:{layer:"interior",id:"ep_merchant_6",entryPos:{x:1,y:1}}});
+  t(-5,26,'street','Chapel Lane');
+  t(0,26,'street','Fisher\'s Way');
+  t(4,26,'courtyard','', {object:"fence_v",objVariant:0});
+  t(5,26,'street','Tanner\'s Lane');
+  t(6,26,'building','Net Shed', {interiorType:"house"});
+  t(7,26,'building','Net Shed', {interiorType:"house"});
+  t(8,26,'building','Net Shed', {interiorType:"house"});
+  t(9,26,'building','Net Shed', {interiorType:"house"});
+  t(10,26,'building','Net Shed', {interiorType:"house"});
+  t(11,26,'building','Net Shed', {interiorType:"house"});
+  t(13,26,'shallow_water','');
+  t(14,26,'water','');
+  t(15,26,'water','');
+  t(-5,27,'street','Chapel Lane');
+  t(0,27,'street','Fisher\'s Way');
+  t(4,27,'courtyard','', {object:"fence_v",objVariant:0});
+  t(5,27,'street','Tanner\'s Lane');
+  t(6,27,'building','Net Shed', {interiorType:"house"});
+  t(7,27,'building','Net Shed', {interiorType:"house"});
+  t(8,27,'building','Net Shed', {interiorType:"house"});
+  t(9,27,'building','Net Shed', {interiorType:"house"});
+  t(10,27,'building','Net Shed', {interiorType:"house"});
+  t(11,27,'building','Net Shed', {interiorType:"house"});
+  t(13,27,'shallow_water','');
+  t(14,27,'shallow_water','', {object:"lily",objVariant:0});
+  t(15,27,'water','');
+  t(-5,28,'street','Chapel Lane');
+  t(-4,28,'courtyard','', {object:"tree_oak_lg",objVariant:0});
+  t(0,28,'road','Fisher\'s Way');
+  t(5,28,'street','Tanner\'s Lane');
+  t(11,28,'courtyard','', {object:"bones",objVariant:0});
+  t(14,28,'shallow_water','');
+  t(15,28,'shallow_water','', {object:"lily",objVariant:0});
+  t(15,29,'shallow_water','');
+  t(15,30,'shallow_water','');
 
-  // Road entries
-  t(0,28,'road',"Fisher's Way")
-  t(0,0,'road',"Fisher's Way")
-  t(-14,14,'road','Harbour Street')
-
-  // Harbour
-  rect(12,4,13,24,'docks','East-Port Harbour')
-  t(12,14,'street','Harbour Street')
-
-  // Market District
-  rect(-4,15,3,18,'market','Market Square')
-  rect(-4,10,3,13,'market','Market Square')
-  t(-5,16,'building','The Salt & Sail Inn',{interiorType:'inn',doors:['east'],enter:{layer:'interior',id:'salt_and_sail',entryPos:{x:1,y:1}}})
-  t(-5,12,'building','Market Hall',{interiorType:'market_hall',doors:['east'],enter:{layer:'interior',id:'ep_market_hall',entryPos:{x:1,y:1}}})
-  t(4,16,'building','Chandler & Rope',{interiorType:'shop',doors:['west'],enter:{layer:'interior',id:'ep_chandler',entryPos:{x:1,y:1}}})
-  t(4,12,'building','Spice Merchant',{interiorType:'shop',doors:['west'],enter:{layer:'interior',id:'ep_spice',entryPos:{x:1,y:1}}})
-  t(-2,19,'building',"Fletcher's Stall",{interiorType:'shop',doors:['north'],enter:{layer:'interior',id:'ep_fletcher',entryPos:{x:1,y:1}}})
-  t(2,19,'building','Grain Exchange',{interiorType:'shop',doors:['north'],enter:{layer:'interior',id:'ep_grain',entryPos:{x:1,y:1}}})
-  t(-2,9,'building','Apothecary',{interiorType:'shop',doors:['south'],enter:{layer:'interior',id:'ep_apothecary',entryPos:{x:1,y:1}}})
-  t(2,9,'building','Moneylender',{interiorType:'shop',doors:['south'],enter:{layer:'interior',id:'ep_moneylender',entryPos:{x:1,y:1}}})
-
-  // Fishermen's Quarter
-  rect(6,1,8,5,'building','Net Shed',{interiorType:'house'})
-  t(6,5,'building','Net Shed',{interiorType:'house',doors:['south'],enter:{layer:'interior',id:'ep_netshed_1',entryPos:{x:1,y:1}}})
-  rect(9,1,11,5,'building','Net Shed',{interiorType:'house'})
-  t(9,5,'building','Net Shed',{interiorType:'house',doors:['south'],enter:{layer:'interior',id:'ep_netshed_2',entryPos:{x:1,y:1}}})
-  t(6,9,'building',"Fisher's Cottage",{interiorType:'house',doors:['south'],enter:{layer:'interior',id:'ep_cottage_1',entryPos:{x:1,y:1}}})
-  t(7,9,'building',"Fisher's Cottage",{interiorType:'house',doors:['south'],enter:{layer:'interior',id:'ep_cottage_2',entryPos:{x:1,y:1}}})
-  t(9,9,'building',"Fisher's Cottage",{interiorType:'house',doors:['south'],enter:{layer:'interior',id:'ep_cottage_3',entryPos:{x:1,y:1}}})
-  t(11,9,'building',"Fisher's Cottage",{interiorType:'house',doors:['west'],enter:{layer:'interior',id:'ep_cottage_4',entryPos:{x:1,y:1}}})
-  t(6,12,'building',"Fisher's Cottage",{interiorType:'house',doors:['south'],enter:{layer:'interior',id:'ep_cottage_5',entryPos:{x:1,y:1}}})
-  t(7,12,'building',"Fisher's Cottage",{interiorType:'house',doors:['south'],enter:{layer:'interior',id:'ep_cottage_6',entryPos:{x:1,y:1}}})
-  t(9,12,'building',"Fisher's Cottage",{interiorType:'house',doors:['south'],enter:{layer:'interior',id:'ep_cottage_7',entryPos:{x:1,y:1}}})
-  t(6,13,'building','Smokehouse',{interiorType:'shop',doors:['west'],enter:{layer:'interior',id:'ep_smokehouse',entryPos:{x:1,y:1}}})
-
-  // Merchant Quarter
-  t(-6,5,'building','Merchant House',{interiorType:'house',doors:['south'],enter:{layer:'interior',id:'ep_merchant_1',entryPos:{x:1,y:1}}})
-  t(-7,5,'building','Merchant House',{interiorType:'house',doors:['south'],enter:{layer:'interior',id:'ep_merchant_2',entryPos:{x:1,y:1}}})
-  t(-9,5,'building','Merchant House',{interiorType:'house',doors:['south'],enter:{layer:'interior',id:'ep_merchant_3',entryPos:{x:1,y:1}}})
-  t(-11,5,'building','Merchant House',{interiorType:'house',doors:['south'],enter:{layer:'interior',id:'ep_merchant_4',entryPos:{x:1,y:1}}})
-  t(-13,5,'building','Merchant House',{interiorType:'house',doors:['south'],enter:{layer:'interior',id:'ep_merchant_5',entryPos:{x:1,y:1}}})
-  t(-6,2,'building','Merchant House',{interiorType:'house',doors:['east'],enter:{layer:'interior',id:'ep_merchant_6',entryPos:{x:1,y:1}}})
-  t(-9,2,'building','Merchant House',{interiorType:'house',doors:['east'],enter:{layer:'interior',id:'ep_merchant_7',entryPos:{x:1,y:1}}})
-  t(-11,2,'building','Merchant House',{interiorType:'house',doors:['east'],enter:{layer:'interior',id:'ep_merchant_8',entryPos:{x:1,y:1}}})
-  t(-13,2,'building','Merchant House',{interiorType:'house',doors:['east'],enter:{layer:'interior',id:'ep_merchant_9',entryPos:{x:1,y:1}}})
-  t(-6,9,'building','Notary & Scribe',{interiorType:'shop',doors:['east'],enter:{layer:'interior',id:'ep_notary',entryPos:{x:1,y:1}}})
-  t(-9,9,'building','Merchant House',{interiorType:'house',doors:['east'],enter:{layer:'interior',id:'ep_merchant_10',entryPos:{x:1,y:1}}})
-  t(-11,9,'building','Merchant House',{interiorType:'house',doors:['east'],enter:{layer:'interior',id:'ep_merchant_11',entryPos:{x:1,y:1}}})
-  t(-13,9,'building','Merchant House',{interiorType:'house',doors:['east'],enter:{layer:'interior',id:'ep_merchant_12',entryPos:{x:1,y:1}}})
-
-  // Residential
-  t(-6,17,'building','Chapel of the Tides',{interiorType:'chapel'})
-  t(-7,17,'building','Chapel of the Tides',{interiorType:'chapel'})
-  t(-6,18,'building','Chapel of the Tides',{interiorType:'chapel',doors:['east'],enter:{layer:'interior',id:'ep_chapel',entryPos:{x:1,y:1}}})
-  t(-7,18,'building','Chapel of the Tides',{interiorType:'chapel'})
-  t(-6,21,'building','House',{interiorType:'house',doors:['east'],enter:{layer:'interior',id:'ep_house_sw1',entryPos:{x:1,y:1}}})
-  t(-7,21,'building','House',{interiorType:'house',doors:['east'],enter:{layer:'interior',id:'ep_house_sw2',entryPos:{x:1,y:1}}})
-  t(-9,21,'building','House',{interiorType:'house',doors:['east'],enter:{layer:'interior',id:'ep_house_sw3',entryPos:{x:1,y:1}}})
-  t(-11,21,'building','House',{interiorType:'house',doors:['east'],enter:{layer:'interior',id:'ep_house_sw4',entryPos:{x:1,y:1}}})
-  t(-13,21,'building','House',{interiorType:'house',doors:['east'],enter:{layer:'interior',id:'ep_house_sw5',entryPos:{x:1,y:1}}})
-  t(-6,25,'building','House',{interiorType:'house',doors:['east'],enter:{layer:'interior',id:'ep_house_sw6',entryPos:{x:1,y:1}}})
-  t(-7,25,'building','House',{interiorType:'house',doors:['east'],enter:{layer:'interior',id:'ep_house_sw7',entryPos:{x:1,y:1}}})
-  t(-9,25,'building','House',{interiorType:'house',doors:['north'],enter:{layer:'interior',id:'ep_house_sw8',entryPos:{x:1,y:1}}})
-  t(-11,25,'building','House',{interiorType:'house',doors:['north'],enter:{layer:'interior',id:'ep_house_sw9',entryPos:{x:1,y:1}}})
-  t(-13,25,'building','House',{interiorType:'house',doors:['north'],enter:{layer:'interior',id:'ep_house_sw10',entryPos:{x:1,y:1}}})
-
-  // Tradesmen's Row
-  t(6,17,'building','Blacksmith',{interiorType:'blacksmith',doors:['west'],enter:{layer:'interior',id:'ep_blacksmith',entryPos:{x:1,y:1}}})
-  t(7,17,'building','Blacksmith',{interiorType:'blacksmith'})
-  t(6,18,'building','Blacksmith',{interiorType:'blacksmith'})
-  t(7,18,'building','Blacksmith',{interiorType:'blacksmith'})
-  t(9,17,'building','Bathhouse',{interiorType:'bathhouse',doors:['west'],enter:{layer:'interior',id:'ep_bathhouse',entryPos:{x:1,y:1}}})
-  t(9,18,'building','Bathhouse',{interiorType:'bathhouse'})
-  t(6,21,'building','Tannery',{interiorType:'shop',doors:['west'],enter:{layer:'interior',id:'ep_tannery',entryPos:{x:1,y:1}}})
-  t(9,21,'building','Carpenter',{interiorType:'shop',doors:['west'],enter:{layer:'interior',id:'ep_carpenter',entryPos:{x:1,y:1}}})
-  t(6,25,'building','House',{interiorType:'house',doors:['west'],enter:{layer:'interior',id:'ep_house_se1',entryPos:{x:1,y:1}}})
-  t(7,25,'building','House',{interiorType:'house',doors:['west'],enter:{layer:'interior',id:'ep_house_se2',entryPos:{x:1,y:1}}})
-  t(9,25,'building','House',{interiorType:'house',doors:['west'],enter:{layer:'interior',id:'ep_house_se3',entryPos:{x:1,y:1}}})
-  t(11,25,'building','House',{interiorType:'house',doors:['west'],enter:{layer:'interior',id:'ep_house_se4',entryPos:{x:1,y:1}}})
-  t(13,25,'building','House',{interiorType:'house',doors:['west'],enter:{layer:'interior',id:'ep_house_se5',entryPos:{x:1,y:1}}})
-  t(6,20,'building','House',{interiorType:'house',doors:['west'],enter:{layer:'interior',id:'ep_house_se6',entryPos:{x:1,y:1}}})
-  t(9,20,'building','House',{interiorType:'house',doors:['west'],enter:{layer:'interior',id:'ep_house_se7',entryPos:{x:1,y:1}}})
-  t(11,20,'building','House',{interiorType:'house',doors:['west'],enter:{layer:'interior',id:'ep_house_se8',entryPos:{x:1,y:1}}})
-  t(13,20,'building','House',{interiorType:'house',doors:['west'],enter:{layer:'interior',id:'ep_house_se9',entryPos:{x:1,y:1}}})
-
-  // Harbormaster
-  t(10,14,'building','Harbormaster',{interiorType:'harbormaster',doors:['west'],enter:{layer:'interior',id:'ep_harbormaster',entryPos:{x:1,y:1}}})
-  t(11,14,'building','Harbormaster',{interiorType:'harbormaster'})
-  t(10,13,'building','Harbormaster',{interiorType:'harbormaster'})
-  t(11,13,'building','Harbormaster',{interiorType:'harbormaster'})
-
-  // Courtyards
-  rect(-1,13,1,15,'courtyard','Town Crossing')
-  t(0,14,'courtyard','Town Crossing',{object:'well'})
-  rect(8,15,11,16,'courtyard','Dockside Yard')
-  t(9,16,'courtyard','Dockside Yard',{object:'barrels'})
-  rect(8,12,11,13,'courtyard','Dockside Yard')
-  t(9,13,'courtyard','Dockside Yard',{object:'cart'})
-  t(12,18,'docks','East-Port Harbour',{object:'barrels'})
-  t(13,10,'docks','East-Port Harbour',{object:'cart'})
-
-  // Outdoor objects
-  t(-3,20,'street','Quay Road',{object:'stall'})
-  t(1,20,'street','Quay Road',{object:'stall'})
-  t(-1,8,'street',"Chandler's Walk",{object:'stall'})
-  t(-1,14,'courtyard','Town Crossing',{object:'noticeboard'})
-  t(10,16,'courtyard','Dockside Yard',{object:'logpile'})
-  t(-4,14,'street','Harbour Street',{object:'trough'})
-  t(4,14,'street','Harbour Street',{object:'signpost'})
-  t(-8,14,'street','Harbour Street',{object:'cart'})
-  t(3,22,'street','Quay Road',{object:'barrels'})
-  t(-3,6,'street',"Chandler's Walk",{object:'haystack'})
-  t(8,8,'courtyard','Dockside Yard',{object:'logpile'})
-  t(7,6,'street',"Chandler's Walk",{object:'haystack'})
-  t(-8,18,'courtyard','Chapel Yard',{object:'bush'})
-  t(-8,17,'courtyard','Chapel Yard',{object:'bush'})
-
-  window.SETTLEMENTS['frilar_town'] = {
+  window.SETTLEMENTS["frilar_town"] = {
     map: m,
-    name: 'East-Port',
+    name: "East-Port",
     hasWalls: false,
-    entryPos: {x:0, y:2},
-    overworldCell: {x:346, y:556},
-    description: 'A natural harbour town on the east coast. Smells of salt, smoke, and fish. The kind of place where you can find passage east if you have coin — or find trouble if you do not.',
+    entryPos: {"x":0,"y":2},
+    overworldCell: {"x":346,"y":556},
+    description: "A natural harbour town on the east coast. Smells of salt, smoke, and fish. The kind of place where you can find passage east if you have coin — or find trouble if you do not.",
   };
 })();
