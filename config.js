@@ -24,7 +24,7 @@ const CONFIG = {
   NPC_IMAGE_WIDTH:    768,
   NPC_IMAGE_HEIGHT:   1024,
   NPC_IMAGE_GUIDANCE: 2.0,
-  NPC_IMAGE_SAMPLER:  'ddim',
+  NPC_IMAGE_SAMPLER:  'auto',
   NPC_IMAGE_STYLE_SUFFIX: 'gritty fantasy+++, Full body shot++, (Comic realism style+, black ink outlines, flat cell shading, painterly colouring)++:',
   NPC_IMAGE_NEGATIVE: 'realistic, photo, modern, manga, anime, japanese comic style, young, pretty , Smooth shading, texture, extra cloth--, loose fabric--, monochrome, sketch, tattoos, big mouth, big smile, sci-fi, superhero, muscles, muscular, extra limbs, badly drawn hands',
 
