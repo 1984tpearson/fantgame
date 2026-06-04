@@ -1537,7 +1537,27 @@ function isTraversable(type){return type!==T.OCEAN&&type!==T.WALL&&type!==T.BUIL
 // ═══════════════════════════════════════════════════
 let _suppressTransitions=false, _inTransition=false;
 
-function getCellTransition(x,y){if(_suppressTransitions)return null;if(state.layer==='overworld'){const sid=OVERWORLD_TO_SETTLEMENT[`${x},${y}`];if(sid&&SETTLEMENTS[sid])return{type:'enter_settlement',id:sid};return null;}if(state.layer==='settlement'){const cell=SETTLEMENTS[state.settlementId]?.map[`${x},${y}`];if(cell?.enter)return{type:'enter_interior',...cell.enter};return null;}return null;}
+function getCellTransition(x,y){
+  if(_suppressTransitions)return null;
+  if(state.layer==='overworld'){
+    const sid=OVERWORLD_TO_SETTLEMENT[`${x},${y}`];
+    if(sid&&SETTLEMENTS[sid])return{type:'enter_settlement',id:sid};
+    return null;
+  }
+  if(state.layer==='settlement'||state.layer==='interior'){
+    const smap = state.layer==='settlement'
+      ? SETTLEMENTS[state.settlementId]?.map
+      : SETTLEMENTS[state.interiorId]?.map;
+    const cell=smap?.[`${x},${y}`];
+    if(!cell)return null;
+    // Door mode — handled in move(), not here
+    if(cell.doors&&cell.doors.length)return null;
+    // Auto or prompt mode — return enter data for move() to decide
+    if(cell.enter)return{type:'enter_link',...cell.enter,enterMode:cell.enterMode||'auto',destName:cell.name||''};
+    return null;
+  }
+  return null;
+}
 
 async function enterSettlement(id){const s=SETTLEMENTS[id];if(!s)return;
   const ow=state.pos;const prev=state.lastOverworldPos;
@@ -2394,6 +2414,10 @@ async function enterCell(x, y) {
   if (transition) {
     if (transition.type === 'enter_settlement') { await enterSettlement(transition.id); return; }
     if (transition.type === 'enter_interior') { await enterInterior(transition.id, transition.entryPos||{x:1,y:1}); return; }
+    if (transition.type === 'enter_link') {
+      await doLayerMove({layer: transition.layer, id: transition.id, x: transition.entryPos?.x??1, y: transition.entryPos?.y??1});
+      return;
+    }
   }
 
   const key = cellKey(x, y);
@@ -2537,8 +2561,22 @@ async function enterCell(x, y) {
 // ═══════════════════════════════════════════════════
 // DOOR / BUILDING ENTRY
 // ═══════════════════════════════════════════════════
+function showEnterPrompt(destName, onConfirm, nx, ny) {
+  document.getElementById('enter-prompt')?.remove();
+  const div = document.createElement('div');
+  div.id = 'enter-prompt';
+  div.style.cssText = 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:rgba(10,8,6,0.92);border:1px solid rgba(201,148,58,0.5);color:var(--gold);font-family:"Cinzel Decorative",serif;font-size:0.72rem;padding:10px 16px;border-radius:4px;z-index:200;display:flex;gap:10px;align-items:center;';
+  div.innerHTML = `<span>Enter ${destName}?</span>
+    <button id="enter-yes" style="background:#3a2808;border:1px solid #c8a43a;color:#e8c870;padding:4px 12px;border-radius:3px;cursor:pointer;font-family:inherit;">Yes</button>
+    <button id="enter-no" style="background:#1a1008;border:1px solid #5a4020;color:#8a7040;padding:4px 12px;border-radius:3px;cursor:pointer;font-family:inherit;">No</button>`;
+  document.body.appendChild(div);
+  div.querySelector('#enter-yes').addEventListener('click', () => { div.remove(); onConfirm(); });
+  div.querySelector('#enter-no').addEventListener('click', () => { div.remove(); });
+  // Also allow moving away to dismiss
+  setTimeout(() => { if (document.getElementById('enter-prompt') === div) div.remove(); }, 8000);
+}
+
 async function enterBuilding(bx, by) {
-  document.getElementById('door-prompt')?.remove();
   const meta = getCellMeta(bx, by);
   const itype = meta.interiorType || 'house';
   const bname = meta.name || 'building';
@@ -2592,15 +2630,37 @@ async function move(dx, dy) {
   if (state.inCombat) return;
   const nx = state.pos.x + dx, ny = state.pos.y + dy;
   const meta = getCellMeta(nx, ny);
-  // Door entry
-  if (meta.type === T.BUILDING && meta.doors && Array.isArray(meta.doors)) {
+
+  // Door-based entry — works on any cell type with doors[] and enter
+  if (meta.doors && Array.isArray(meta.doors) && meta.doors.length && meta.enter) {
+    const doorNeeded = dx===1?'west':dx===-1?'east':dy===1?'north':dy===-1?'south':null;
+    if (doorNeeded && meta.doors.includes(doorNeeded)) {
+      await doLayerMove({layer:meta.enter.layer, id:meta.enter.id, x:meta.enter.entryPos?.x??1, y:meta.enter.entryPos?.y??1});
+      return;
+    }
+    // Wrong side — don't enter
+    if (meta.doors.length && !isTraversable(meta.type)) return;
+  }
+
+  // Legacy building door handling
+  if (meta.type === T.BUILDING && meta.doors && Array.isArray(meta.doors) && !meta.enter) {
     const doorNeeded = dx===1?'west':dx===-1?'east':dy===1?'north':dy===-1?'south':null;
     if (doorNeeded && meta.doors.includes(doorNeeded)) {
       await enterBuilding(nx, ny);
       return;
     }
   }
+
   if (!isTraversable(meta.type)) return;
+
+  // Prompt mode — intercept before moving
+  if (meta.enter && meta.enterMode === 'prompt') {
+    showEnterPrompt(meta.name || 'here', async () => {
+      await doLayerMove({layer:meta.enter.layer, id:meta.enter.id, x:meta.enter.entryPos?.x??1, y:meta.enter.entryPos?.y??1});
+    }, nx, ny);
+    return;
+  }
+
   // Gate cells trigger exit
   if ((state.layer === 'settlement' || state.layer === 'interior') && meta.type === T.GATE) {
     if (meta.exit) { await doLayerMove(meta.exit); } else { await exitLayer(); }

@@ -199,6 +199,13 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
       <div class="cprop"><label>object</label><input id="prop-object" type="text"></div>
       <div id="row-enter" style="display:none;border-top:1px solid #2a1e10;margin-top:4px;padding-top:4px;">
         <div class="plabel" style="margin-bottom:4px;">ENTER / LINK</div>
+        <div class="cprop"><label>Mode</label>
+          <select id="prop-enter-mode" style="width:100%;font-size:10px;">
+            <option value="auto">Auto (step on)</option>
+            <option value="door">Door (directional)</option>
+            <option value="prompt">Prompt (ask first)</option>
+          </select>
+        </div>
         <div class="cprop"><label>Destination</label>
           <select id="prop-enter-id" style="width:100%;font-size:10px;">
             <option value="">(none)</option>
@@ -1156,6 +1163,7 @@ function populateInspector(x,y){
   document.getElementById('row-enter').style.display = '';
   populateEnterDropdown();
   const enter = meta.enter || {};
+  document.getElementById('prop-enter-mode').value = meta.enterMode || (meta.doors&&meta.doors.length ? 'door' : 'auto');
   document.getElementById('prop-enter-id').value = enter.id || '';
   document.getElementById('prop-enter-x').value = enter.entryPos ? enter.entryPos.x : 1;
   document.getElementById('prop-enter-y').value = enter.entryPos ? enter.entryPos.y : 1;
@@ -1196,7 +1204,13 @@ document.getElementById('btn-apply').addEventListener('click',()=>{
   if(obj!==undefined){if(obj==='')delete meta.object;else meta.object=obj;}
 
   // Enter link
+  const enterMode = document.getElementById('prop-enter-mode').value;
   const enterId = document.getElementById('prop-enter-id').value;
+  if (enterId) {
+    meta.enterMode = enterMode;
+  } else {
+    delete meta.enterMode;
+  }
   if(enterId){
     const ex = parseInt(document.getElementById('prop-enter-x').value)||1;
     const ey = parseInt(document.getElementById('prop-enter-y').value)||1;
@@ -1253,6 +1267,7 @@ function cellToJS(k, meta) {
   if (meta.doors && meta.doors.length) ex.doors = meta.doors;
   if (meta.enter)         ex.enter         = meta.enter;
   if (meta.exit)          ex.exit          = meta.exit;
+  if (meta.enterMode && meta.enterMode !== 'auto') ex.enterMode = meta.enterMode;
   if (meta.object)        ex.object        = meta.object;
   if (meta.object === '_part' && meta.anchor) ex.anchor = meta.anchor;
   if (meta.bldgType)      ex.bldgType      = meta.bldgType;
@@ -1276,8 +1291,16 @@ function cellToJS(k, meta) {
 
 function cellToOWJS(k, meta) {
   const [x,y] = parseKey(k);
+  const ex = {};
+  if (meta.object)        ex.object      = meta.object;
+  if (meta.objVariant != null) ex.objVariant = meta.objVariant;
+  if (meta.objStyle != null)   ex.objStyle  = meta.objStyle;
+  if (meta.enter)         ex.enter       = meta.enter;
+  if (meta.exit)          ex.exit        = meta.exit;
+  if (meta.enterMode && meta.enterMode !== 'auto') ex.enterMode = meta.enterMode;
+  const es = Object.keys(ex).length ? ', ' + JSON.stringify(ex).replace(/"(\w+)":/g,'$1:') : '';
   const n = (meta.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-  return `defCell(${x},${y},'${meta.type||''}','${n}');`;
+  return `  t(${x},${y},'${meta.type||''}','${n}'${es});`;
 }
 
 function buildDiff() {
@@ -1337,9 +1360,8 @@ function getSettlementFileContent() {
       `// Edit in map-editor.html (Overworld mode) and save via Save to GitHub`,
       `(function(){`,
       `  window.WORLD_META = window.WORLD_META || {};`,
-      `  function defCell(x,y,type,name=''){window.WORLD_META[\`\${x},\${y}\`]={type,name};}`,
-      `  function defLine(pts,type,name){for(const[x,y]of pts)defCell(x,y,type,name);}`,
-      `  function defRect(x1,y1,x2,y2,type,name=''){for(let x=x1;x<=x2;x++)for(let y=y1;y<=y2;y++)window.WORLD_META[\`\${x},\${y}\`]={type,name};}`,
+      `  window.WORLD_START = window.WORLD_START || {x:346, y:558};`,
+      `  function t(x,y,type,name,extra={}){ window.WORLD_META[\`\${x},\${y}\`] = Object.assign({type,name},extra); }`,
       ``,
       `  // MAP CELLS`,
       ...cellLines,
