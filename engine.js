@@ -1604,6 +1604,7 @@ const TERRAIN_TO_MF = {
   market:'sand', docks:'cobble', gate:'cobble',
   interior:'cave', wall:'rocky', door:'dirt', floor:'dirt', yard:'grass',
   water:'water',
+  shallow_water:'shallow_water',
   // Floor types handled specially in _getTile
   floor_h:'floor_h', floor_v:'floor_v', floor_hbone:'floor_herringbone',
   floor_diag:'floor_diagonal', floor_parq:'floor_parquet', floor_stone:'floor_stone',
