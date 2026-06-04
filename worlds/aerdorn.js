@@ -72,65 +72,8 @@ function inferTerrain(x,y){
   return{type:'plains',name:''};
 }
 
-const WORLD_META={};
-function defCell(x,y,type,name=''){WORLD_META[`${x},${y}`]={type,name};}
-function defLine(pts,type,name){for(const[x,y]of pts)defCell(x,y,type,name);}
-function defRect(x1,y1,x2,y2,type,name=''){for(let x=x1;x<=x2;x++)for(let y=y1;y<=y2;y++)WORLD_META[`${x},${y}`]={type,name};}
-
-defCell(139,262,'city','Aethel-Keep');
-defCell(260,148,'town',"Weaver's Deep");
-defCell(169,289,'village','Wheatstone');
-defCell(253,396,'castle','High-Crown Castle');
-defCell(311,210,'town','Gladehome');
-defCell(338,414,'town','Sylvanis-Root');
-defCell(400,439,'town','Briar-Town');
-defCell(346,556,'town','East-Port');
-defCell(250,544,'village','Theatfields');
-defCell(190,644,'town','Harvestfell');
-defCell(166,416,'village','Dunesedge');
-defCell(139,462,'village','Saltwell');
-defCell(275,254,'ruins','The Forgotten Archives');
-defCell(305,234,'village','The Weeping Falls');
-
-// ── SETTLEMENT FOOTPRINTS (multi-square overworld presence) ──
-// Each settlement takes up a rect of squares on the overworld map.
-// The type is set to match the settlement tier so the map colours correctly.
-const _fp=[
-  ['aethel_keep',  136,258,142,266,'city'],
-  ['weavers_deep', 258,145,262,151,'town'],
-  ['high_crown',   251,393,255,399,'castle'],
-  ['gladehome',    310,208,312,212,'town'],
-  ['sylvanis_root',337,412,339,416,'town'],
-  ['briar_town',   400,439,401,440,'town'],
-  ['frilar_town',  346,556,347,557,'town'],
-  ['harvestfell',  188,642,192,646,'town'],
-  ['theatfields',  249,543,251,545,'village'],
-  ['dunesedge',    165,415,167,417,'village'],
-  ['saltwell',     138,461,140,463,'village'],
-  ['wheatstone',   168,288,170,290,'village'],
-];
-for(const[sid,x1,y1,x2,y2,t]of _fp)
-  for(let _x=x1;_x<=x2;_x++)for(let _y=y1;_y<=y2;_y++)
-    WORLD_META[`${_x},${_y}`]={type:t,name:sid};
-
-(function(){const pts=[];for(let y=162;y<=375;y++){const bend=(y>300)?((y-300)*0.08):0;pts.push([Math.round(226+bend+Math.sin(y*0.14)*2),y]);}defLine(pts,'river','Serpent River');})();
-(function(){const pts=[];for(let y=138;y<=588;y++)pts.push([Math.round(256+Math.sin(y*0.024)*8-(y>312?(y-312)*0.015:0)),y]);defLine(pts,'road',"The Sun King's Highway");})();
-(function(){const s=[226,216],e=[139,262];const pts=[];for(let i=0;i<=40;i++){const t=i/40;pts.push([Math.round(s[0]+(e[0]-s[0])*t+Math.sin(t*Math.PI*2)*4),Math.round(s[1]+(e[1]-s[1])*t)]);}defLine(pts,'road',"The Serpent's Path");})();
-(function(){const pts=[];for(let x=256;x<=311;x++)pts.push([x,Math.round(210+(x-256)*0.3+Math.sin(x*0.4)*2)]);defLine(pts,'road','Gladehome Road');})();
-(function(){const s=[253,396],e=[338,414];const pts=[];for(let i=0;i<=50;i++){const t=i/50;pts.push([Math.round(s[0]+(e[0]-s[0])*t),Math.round(s[1]+(e[1]-s[1])*t+Math.sin(t*Math.PI*3)*3)]);}defLine(pts,'road','Marsh Road');})();
-(function(){const s=[338,414],e=[402,441];const pts=[];for(let i=0;i<=40;i++){const t=i/40;pts.push([Math.round(s[0]+(e[0]-s[0])*t),Math.round(s[1]+(e[1]-s[1])*t+Math.sin(t*Math.PI*2)*3)]);}defLine(pts,'road','Morak Road');})();
-(function(){const pts=[];for(let y=441;y<=525;y++)pts.push([Math.round(402-(y-441)*0.08+Math.sin(y*0.16)*2),y]);defLine(pts,'road',"Kyester's Path");})();
-(function(){const pts=[];for(let x=150;x<=338;x++)pts.push([x,Math.round(606+Math.sin(x*0.06)*10+Math.cos(x*0.12)*5)]);defLine(pts,'road','Shore Road');})();
-(function(){const s=[244,585],e=[190,644];const pts=[];for(let i=0;i<=40;i++){const t=i/40;pts.push([Math.round(s[0]+(e[0]-s[0])*t+Math.sin(t*Math.PI*4)*3),Math.round(s[1]+(e[1]-s[1])*t)]);}defLine(pts,'road','The Little Thread');})();
-(function(){const pts=[];for(let y=262;y<=462;y++)pts.push([Math.round(131+Math.sin(y*0.04)*10+Math.cos(y*0.08)*5),y]);defLine(pts,'road','Trade Route');})();
-
-defRect(175,108,312,118,'ocean','The Whispering Sea');
-defRect(150,750,350,775,'ocean','The Sea of Storms');
-defRect(0,250,50,500,'ocean','Aetherial Ocean');
-defRect(450,250,500,500,'ocean','Aetherial Ocean');
-// East-Port harbour — 1 wide, 2 tall, immediately east of 2x2 town (x=348, y=556-557)
-defRect(348,556,348,557,'docks','East-Port Harbour');
-
+// Overworld cells are loaded from worlds/overworld.js before this file.
+const WORLD_META = window.WORLD_META || {};
 
 // Settlements are loaded from worlds/settlements/*/map.js before this file.
 // Interiors are loaded from worlds/settlements/*/interiors/*.js

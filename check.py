@@ -1,19 +1,26 @@
-import sys, os, re
+import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
-base = r'C:/Users/1984t/OneDrive/Documents/GitHub/fantgame/worlds/settlements'
-targets = ['dunesedge', 'gladehome', 'harvestfell', 'sylvanis_root', 'theatfields', 'wheatstone', 'saltwell']
+with open(r'worlds/aerdorn.js', encoding='utf-8') as f:
+    lines = f.readlines()
 
-for sid in targets:
-    path = os.path.join(base, sid, 'map.js')
-    with open(path, encoding='utf-8') as f:
-        content = f.read()
-    # Add semicolon to any t(...) line that doesn't already end with one
-    fixed = re.sub(r"(  t\([^)]+\))$", r"\1;", content, flags=re.MULTILINE)
-    changed = content.count('\n') - fixed.count('\n') == 0
-    added = fixed.count(';') - content.count(';')
-    with open(path, 'w', encoding='utf-8') as f:
-        f.write(fixed)
-    print(f'{sid}: added {added} semicolons')
+# Lines 75-134 (0-indexed 74-133) are the WORLD_META + defCell/defLine/defRect + data block
+before = lines[:74]   # up to but not including const WORLD_META
+after  = lines[134:]  # after the last defRect line (blank line at 133)
 
-print('Done.')
+replacement = [
+    '// Overworld cells are loaded from worlds/overworld.js before this file.\n',
+    'const WORLD_META = window.WORLD_META || {};\n',
+    '\n',
+]
+
+new_lines = before + replacement + after
+
+with open(r'worlds/aerdorn.js', 'w', encoding='utf-8') as f:
+    f.writelines(new_lines)
+
+print(f'Done. {len(lines)} -> {len(new_lines)} lines')
+# Verify
+for i, line in enumerate(new_lines, 1):
+    if 'WORLD_META' in line or 'defCell' in line:
+        print(f'  {i}: {line.rstrip()[:80]}')

@@ -229,6 +229,7 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
 <script src="worlds/settlements/dunesedge/map.js"></script>
 <script src="worlds/settlements/saltwell/map.js"></script>
 <script src="worlds/settlements/wheatstone/map.js"></script>
+<script src="worlds/overworld.js"></script>
 <script src="worlds/aerdorn.js"></script>
 <script>
 'use strict';
@@ -1194,12 +1195,32 @@ function getSettlementFilePath() {
     wheatstone:   'wheatstone',
   };
   const folder = folderMap[settlementId] || settlementId;
+  if (editorMode === 'overworld') return 'worlds/overworld.js';
   if (editorMode === 'interior') return `worlds/settlements/${folder}/interiors/${interiorId}.js`;
-  if (editorMode === 'overworld') return null;
   return `worlds/settlements/${folder}/map.js`;
 }
 
 function getSettlementFileContent() {
+  // ── Overworld ─────────────────────────────────────────────────────────────
+  if (editorMode === 'overworld') {
+    const cellLines = Object.entries(definedMap)
+      .sort(([a],[b]) => { const [ax,ay]=parseKey(a),[bx,by]=parseKey(b); return ay!==by?ay-by:ax-bx; })
+      .map(([k,m]) => cellToOWJS(k, m));
+    return [
+      `// AERDORN — overworld cell definitions`,
+      `// Edit in map-editor.html (Overworld mode) and save via Save to GitHub`,
+      `(function(){`,
+      `  window.WORLD_META = window.WORLD_META || {};`,
+      `  function defCell(x,y,type,name=''){window.WORLD_META[\`\${x},\${y}\`]={type,name};}`,
+      `  function defLine(pts,type,name){for(const[x,y]of pts)defCell(x,y,type,name);}`,
+      `  function defRect(x1,y1,x2,y2,type,name=''){for(let x=x1;x<=x2;x++)for(let y=y1;y<=y2;y++)window.WORLD_META[\`\${x},\${y}\`]={type,name};}`,
+      ``,
+      `  // MAP CELLS`,
+      ...cellLines,
+      `})();`,
+      ``,
+    ].join('\n');
+  }
   const sid = settlementId;
   const s = window.SETTLEMENTS && window.SETTLEMENTS[sid];
   const name       = s ? s.name        : sid;
@@ -1286,10 +1307,6 @@ function statusMsg(msg) {
 }
 
 async function saveToGame() {
-  if (editorMode === 'overworld') {
-    statusMsg('Overworld save not supported yet — use Diff to copy changes.');
-    return;
-  }
   const token = (document.getElementById('github-token')||{}).value || localStorage.getItem('gh_token_map_editor') || '';
   if (!token) {
     statusMsg('Enter GitHub token first.');
