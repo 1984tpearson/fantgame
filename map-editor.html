@@ -307,8 +307,8 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
 // ═══════════════════════════════════════════════════════════════
 const TERRAIN_TO_MF = {
   street:'dirt', road:'cobble', building:'farmland', grass:'grass', courtyard:'grass',
-  market:'sand', docks:'cobble', gate:'cobble', wall:'rocky', door:'dirt',
-  interior:'cave', floor:'dirt', yard:'grass', mud:'mud',
+  market:'sand', gate:'cobble', wall:'rocky', door:'dirt',
+  interior:'cave', floor:'dirt', yard:'grass', mud:'mud', cliff:'cliff',
   water:'water', shallow_water:'shallow_water',
   floor_h:'floor_h', floor_v:'floor_v', floor_hbone:'floor_herringbone',
   floor_diag:'floor_diagonal', floor_parq:'floor_parquet', floor_stone:'floor_stone',
@@ -319,10 +319,11 @@ const TERRAIN_TO_MF = {
   city:'cobble', town:'grass', village:'grass', ruins:'rocky', castle:'rocky', keep:'rocky',
 };
 const SETTLE_TERRAIN = [
-  {id:'grass',l:'Courtyard (grass)',mf:'grass'},{id:'street',l:'Street (dirt)',mf:'dirt'},
+  {id:'grass',l:'Grass',mf:'grass'},{id:'street',l:'Street (dirt)',mf:'dirt'},
   {id:'road',l:'Road (cobble)',mf:'cobble'},{id:'market',l:'Market (sand)',mf:'sand'},
-  {id:'mud',l:'Mud',mf:'mud'},{id:'docks',l:'Docks (cobble)',mf:'cobble'},
+  {id:'mud',l:'Mud',mf:'mud'},
   {id:'building',l:'Building',mf:'farmland'},{id:'wall',l:'Wall (stone)',mf:'rocky'},
+  {id:'cliff',l:'Cliff',mf:'cliff'},
   {id:'gate',l:'Gate',mf:'cobble'},{id:'door',l:'Door',mf:'dirt'},
   {id:'interior',l:'Interior (cave)',mf:'cave'},{id:'floor',l:'Floor (dirt)',mf:'dirt'},
   {id:'floor_h',l:'Planks H',mf:'floor_h',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},{id:'floor_v',l:'Planks V',mf:'floor_v',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},
@@ -342,6 +343,7 @@ const OW_TERRAIN = [
   {id:'lava',l:'Lava',mf:'lava'},{id:'ice',l:'Ice',mf:'ice'},
   {id:'corrupt',l:'Corrupted',mf:'corrupt'},{id:'mud',l:'Mud',mf:'mud'},
   {id:'cracked',l:'Cracked Earth',mf:'cracked'},
+  {id:'cliff',l:'Cliff',mf:'cliff'},
   {id:'city',l:'City',mf:'cobble'},{id:'town',l:'Town',mf:'grass'},
   {id:'village',l:'Village',mf:'grass'},{id:'castle',l:'Castle',mf:'rocky'},
   {id:'ruins',l:'Ruins',mf:'rocky'},{id:'road',l:'Road',mf:'cobble'},
@@ -471,6 +473,17 @@ const OBJECT_DEFS = {
   watchtower:   {l:'Watchtower',     w:20, h:20, snap:'center', fn:s=>MF.makeWatchtower(s)},
   windmill:     {l:'Windmill',       w:40, h:40, snap:'center', fn:s=>MF.makeWindmill(s)},
   gallows:      {l:'Gallows',        w:20, h:20, snap:'center', fn:s=>MF.makeGallows(s)},
+  // Settlement markers (overworld)
+  'settlement_city_0':     {l:'City (stone)',    w:20, h:20, snap:'center', fn:(s)=>MF.makeSettlementMarker('city',0,s)},
+  'settlement_city_1':     {l:'City (warm)',     w:20, h:20, snap:'center', fn:(s)=>MF.makeSettlementMarker('city',1,s)},
+  'settlement_city_2':     {l:'City (slate)',    w:20, h:20, snap:'center', fn:(s)=>MF.makeSettlementMarker('city',2,s)},
+  'settlement_town_0':     {l:'Town (stone)',    w:20, h:20, snap:'center', fn:(s)=>MF.makeSettlementMarker('town',0,s)},
+  'settlement_town_1':     {l:'Town (warm)',     w:20, h:20, snap:'center', fn:(s)=>MF.makeSettlementMarker('town',1,s)},
+  'settlement_town_2':     {l:'Town (slate)',    w:20, h:20, snap:'center', fn:(s)=>MF.makeSettlementMarker('town',2,s)},
+  'settlement_village_0':  {l:'Village (stone)', w:20, h:20, snap:'center', fn:(s)=>MF.makeSettlementMarker('village',0,s)},
+  'settlement_village_1':  {l:'Village (warm)',  w:20, h:20, snap:'center', fn:(s)=>MF.makeSettlementMarker('village',1,s)},
+  'settlement_building_0': {l:'Building (stone)',w:20, h:20, snap:'center', fn:(s)=>MF.makeSettlementMarker('building',0,s)},
+  'settlement_building_1': {l:'Building (warm)', w:20, h:20, snap:'center', fn:(s)=>MF.makeSettlementMarker('building',1,s)},
   castle_wall_h:  {l:'Castle Wall ━', w:20, h:20, snap:'center', fn:s=>MF.makeCastleWall('straight_h',s)},
   castle_wall_v:  {l:'Castle Wall ┃', w:20, h:20, snap:'center', fn:s=>MF.makeCastleWall('straight_v',s)},
   castle_wall_cse:{l:'Castle Wall ┏', w:20, h:20, snap:'center', fn:s=>MF.makeCastleWall('corner_se',s)},
@@ -525,6 +538,7 @@ const OBJ_CATS = [
   {id:'nature',  label:'Nature',  ids:['bush','bush_lg','thicket','tree_oak','tree_oak_lg','tree_pine','tree_pine_lg','tree_palm','tree_dead','rock','boulder','mossy_rock','pond','pond_lg','mushroom','mushroom_lg','log','flowers','fern','reeds','lily','vine','cactus','giant_roots','crop_wheat','crop_corn','crop_veg']},
   {id:'paths',   label:'Paths',   ids:['path_h','path_v','path_cross','path_cse','path_csw','path_cne','path_cnw','path_ts','path_tn','path_te','path_tw','track_h','track_v','track_cross','track_cse','track_csw','track_cne','track_cnw']},
   {id:'struct',  label:'Struct.', ids:['wall_h','wall_v','wall_cse','fence_h','fence_v','hedge_h','hedge_v','hedge_cse','gate_h','dungeon','ruins_obj','watchtower','windmill','gallows','castle_wall_h','castle_wall_v','castle_wall_cse','castle_wall_csw','castle_wall_cne','castle_wall_cnw']},
+  {id:'settle',  label:'Settle.', ids:['settlement_city_0','settlement_city_1','settlement_city_2','settlement_town_0','settlement_town_1','settlement_town_2','settlement_village_0','settlement_village_1','settlement_building_0','settlement_building_1']},
   {id:'furn',    label:'Furn.',   ids:['bed_s','bed_d','table_r','table_l','chair','throne','bookshelf','drawers','cauldron','weaponrack','desk','stool','wardrobe','stairs','basin','fireplace']},
 ];
 

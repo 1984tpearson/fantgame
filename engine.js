@@ -1530,7 +1530,7 @@ async function loadState() {
 function getCellMeta(x,y){if(state.layer==='interior'){const si=SETTLEMENTS[state.interiorId];if(si&&si.map){if(si.map[`${x},${y}`])return si.map[`${x},${y}`];if(!si._bounds){const ks=Object.keys(si.map);const xs=ks.map(k=>parseInt(k.split(',')[0])),ys=ks.map(k=>parseInt(k.split(',')[1]));si._bounds={minX:Math.min(...xs),maxX:Math.max(...xs),minY:Math.min(...ys),maxY:Math.max(...ys)};}const b=si._bounds;return(x>=b.minX&&x<=b.maxX&&y>=b.minY&&y<=b.maxY)?{type:T.INTERIOR,name:''}:{type:T.WALL,name:''};} return{type:T.INTERIOR,name:''};} if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];if(!s)return{type:T.WALL,name:''};if(s.map[`${x},${y}`])return s.map[`${x},${y}`];if(!s._bounds){const ks=Object.keys(s.map);const xs=ks.map(k=>parseInt(k.split(',')[0])),ys=ks.map(k=>parseInt(k.split(',')[1]));s._bounds={minX:Math.min(...xs),maxX:Math.max(...xs),minY:Math.min(...ys),maxY:Math.max(...ys)};}const b=s._bounds;return(x>=b.minX&&x<=b.maxX&&y>=b.minY&&y<=b.maxY)?{type:T.COURTYARD,name:''}:{type:T.WALL,name:''};}return WORLD_META[`${x},${y}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(x,y):null)||{type:T.PLAINS,name:''};}
 function terrainLabel(type){return{ocean:'Ocean',plains:'Plains',forest:'Forest',mountain:'Mountains',city:'City',town:'Town',village:'Village',road:'Road',farmland:'Farmland',river:'River',street:'Street',building:'Building',door:'Doorway',wall:'Wall',grass:'Courtyard',market:'Market',docks:'Docks',gate:'Gate',interior:'Interior',swamp:'Swamp',bog:'Bog',wilds:'Wilds',fens:'Fens',shore:'Shore',peaks:'Peaks',castle:'Castle',keep:'Keep',ruins:'Ruins'}[type]||'Wilderness';}
 function getNeighbourMeta(x,y){return{n:getCellMeta(x,y-1),s:getCellMeta(x,y+1),e:getCellMeta(x+1,y),w:getCellMeta(x-1,y)};}
-function isTraversable(type){return type!==T.OCEAN&&type!==T.WALL&&type!==T.BUILDING;}
+function isTraversable(type){return type!==T.OCEAN&&type!==T.WALL&&type!==T.BUILDING&&type!=='cliff';}
 
 // ═══════════════════════════════════════════════════
 // LAYER TRANSITIONS
@@ -1623,6 +1623,7 @@ const TERRAIN_TO_MF = {
   street:'dirt', road_settle:'cobble', building:'farmland', grass:'grass', courtyard:'grass',
   market:'sand', docks:'cobble', gate:'cobble',
   interior:'cave', wall:'rocky', door:'dirt', floor:'dirt', yard:'grass',
+  cliff:'cliff',
   water:'water',
   shallow_water:'shallow_water',
   // Floor types handled specially in _getTile
@@ -1655,6 +1656,13 @@ function _getTile(engineType, cx, cy, terrainStyle) {
     const key = 'crk_' + seed;
     if (_tileCache.has(key)) return _tileCache.get(key);
     try { const grid = MapForge.makeCrackedEarth(seed); const c = document.createElement('canvas'); MapForge.renderGridToCanvas(grid, c, 1); _tileCache.set(key, c); return c; } catch(e) { return null; }
+  }
+
+  if (engineType === 'cliff') {
+    const seed = (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
+    const key = 'cliff_' + seed;
+    if (_tileCache.has(key)) return _tileCache.get(key);
+    try { const grid = MapForge.makeCliff(20, 20, seed); const c = document.createElement('canvas'); MapForge.renderGridToCanvas(grid, c, 1); _tileCache.set(key, c); return c; } catch(e) { return null; }
   }
 
   const mfType = TERRAIN_TO_MF[engineType] || 'grass';
@@ -1808,6 +1816,13 @@ function _getObjectCanvas(objId, seed, style, linen) {
     else if (objId==='stairs')       grid = MF.makeStairs(seed,style);
     else if (objId==='basin')        grid = MF.makeBasin(seed);
     else if (objId==='fireplace')    grid = MF.makeFireplace(seed);
+    // Overworld settlement markers: settlement_city_0, settlement_town_2, etc.
+    else if (objId.startsWith('settlement_')) {
+      const parts = objId.split('_'); // ['settlement','city','0']
+      const stype = parts[1] || 'town';
+      const variant = parseInt(parts[2] ?? style ?? 0) || 0;
+      grid = MF.makeSettlementMarker(stype, variant, seed);
+    }
   } catch(e) { return null; }
   if (!grid) return null;
   const c = document.createElement('canvas');
@@ -1867,6 +1882,8 @@ const _OBJ_DIMS = {
   gate_h:{w:40,h:20,snap:'center'}, dungeon:{w:16,h:16,snap:'center'},
   ruins_obj:{w:20,h:20,snap:'center'}, watchtower:{w:20,h:20,snap:'center'},
   windmill:{w:40,h:40,snap:'center'}, gallows:{w:20,h:20,snap:'center'},
+  settlement_city:{w:20,h:20,snap:'center'}, settlement_town:{w:20,h:20,snap:'center'},
+  settlement_village:{w:20,h:20,snap:'center'}, settlement_building:{w:20,h:20,snap:'center'},
   castle_wall_h:{w:20,h:20,snap:'center'}, castle_wall_v:{w:20,h:20,snap:'center'},
   castle_wall_cse:{w:20,h:20,snap:'center'}, castle_wall_csw:{w:20,h:20,snap:'center'},
   castle_wall_cne:{w:20,h:20,snap:'center'}, castle_wall_cnw:{w:20,h:20,snap:'center'},
@@ -1953,7 +1970,7 @@ function _getObjectTile(meta, cx, cy) {
   return null;
 }
 
-const TERRAIN_HEX={ocean:'#1a2d3a',plains:'#3a4a2a',forest:'#1e3a1e',mountain:'#4a4040',city:'#6a5030',town:'#5a4525',village:'#4a3a20',road:'#3a4a2a',farmland:'#4a4a20',river:'#3a4a2a',unknown:'#181410',street:'#4a3e30',building:'#5a3a20',door:'#7a5030',wall:'#3a3030',grass:'#3a4228',market:'#5a4a28',docks:'#2a3a4a',gate:'#6a5540',interior:'#3a2a18',swamp:'#2a3a28',bog:'#2a3828',wilds:'#162a16',fens:'#263428',shore:'#3a4a40',peaks:'#4a4448',castle:'#5a4838',keep:'#604830',ruins:'#3a3228'};
+const TERRAIN_HEX={ocean:'#1a2d3a',plains:'#3a4a2a',forest:'#1e3a1e',mountain:'#4a4040',city:'#6a5030',town:'#5a4525',village:'#4a3a20',road:'#3a4a2a',farmland:'#4a4a20',river:'#3a4a2a',unknown:'#181410',street:'#4a3e30',building:'#5a3a20',door:'#7a5030',wall:'#3a3030',grass:'#3a4228',market:'#5a4a28',docks:'#2a3a4a',gate:'#6a5540',interior:'#3a2a18',swamp:'#2a3a28',bog:'#2a3828',wilds:'#162a16',fens:'#263428',shore:'#3a4a40',peaks:'#4a4448',castle:'#5a4838',keep:'#604830',ruins:'#3a3228',cliff:'#4a4438'};
 let mapView={x:0,y:0,scale:1,travelTarget:null};
 function getVisibleCellMeta(cx,cy){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];if(!s)return{type:T.WALL,name:''};if(s.map[`${cx},${cy}`])return s.map[`${cx},${cy}`];if(!s._bounds){const ks=Object.keys(s.map);const xs=ks.map(k=>parseInt(k.split(',')[0])),ys=ks.map(k=>parseInt(k.split(',')[1]));s._bounds={minX:Math.min(...xs),maxX:Math.max(...xs),minY:Math.min(...ys),maxY:Math.max(...ys)};}const b=s._bounds;return(cx>=b.minX&&cx<=b.maxX&&cy>=b.minY&&cy<=b.maxY)?{type:T.COURTYARD,name:''}:{type:T.WALL,name:''};}if(state.layer==='interior')return{type:T.INTERIOR,name:''};return WORLD_META[`${cx},${cy}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(cx,cy):null)||{type:T.PLAINS,name:''};}
 function drawMapCanvas(){const canvas=document.getElementById('map-canvas');if(!canvas)return;const hEl=document.getElementById('map-drawer-header'),lEl=document.getElementById('map-legend');const hH=hEl?hEl.offsetHeight:44,lH=lEl?lEl.offsetHeight:32;const W=window.innerWidth,H=window.innerHeight-hH-lH;if(W<10||H<10)return;if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H;canvas.style.width=W+'px';canvas.style.height=H+'px';}
@@ -1976,7 +1993,11 @@ if(cs>=10){
     const tile=_getObjectTile(meta,cx,cy);
     if(tile){
       if(meta.object&&meta.object!=='_part'){
-        const dims=_OBJ_DIMS[meta.object];
+        // For settlement markers, look up dims by prefix
+        const dimKey = meta.object.startsWith('settlement_')
+          ? 'settlement_' + meta.object.split('_')[1]
+          : meta.object;
+        const dims=_OBJ_DIMS[dimKey];
         if(dims){
           // dims.cells overrides cell span (e.g. beds force 1x1)
           const cellW=dims.cells?dims.cells[0]:1;
