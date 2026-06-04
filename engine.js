@@ -1603,6 +1603,7 @@ const TERRAIN_TO_MF = {
   street:'dirt', road_settle:'cobble', building:'farmland', courtyard:'grass',
   market:'sand', docks:'cobble', gate:'cobble',
   interior:'cave', wall:'rocky', door:'dirt', floor:'dirt', yard:'grass',
+  water:'water',
   // Floor types handled specially in _getTile
   floor_h:'floor_h', floor_v:'floor_v', floor_hbone:'floor_herringbone',
   floor_diag:'floor_diagonal', floor_parq:'floor_parquet', floor_stone:'floor_stone',
@@ -1617,26 +1618,26 @@ function _variantSeed(type, variant) {
 }
 
 
-function _getTile(engineType, cx, cy, variant) {
+function _getTile(engineType, cx, cy, terrainStyle) {
   if (!window.MapForge) return null;
 
   // Floorboard types
   const floorMap = {floor_h:'h',floor_v:'v',floor_hbone:'herringbone',floor_diag:'diagonal',floor_parq:'parquet',floor_stone:'stone'};
   if (floorMap[engineType]) {
-    const seed = variant != null ? _variantSeed(engineType, variant) : (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
-    const key = 'fl_' + floorMap[engineType] + '_' + seed;
+    const seed = (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
+    const key = 'fl_' + floorMap[engineType] + '_' + seed + '_s' + (terrainStyle ?? 'x');
     if (_tileCache.has(key)) return _tileCache.get(key);
-    try { const grid = MapForge.makeFloorboard(floorMap[engineType], seed); const c = document.createElement('canvas'); MapForge.renderGridToCanvas(grid, c, 1); _tileCache.set(key, c); return c; } catch(e) { return null; }
+    try { const grid = MapForge.makeFloorboard(floorMap[engineType], seed, terrainStyle); const c = document.createElement('canvas'); MapForge.renderGridToCanvas(grid, c, 1); _tileCache.set(key, c); return c; } catch(e) { return null; }
   }
   if (engineType === 'cracked') {
-    const seed = variant != null ? _variantSeed(engineType, variant) : (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
+    const seed = (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
     const key = 'crk_' + seed;
     if (_tileCache.has(key)) return _tileCache.get(key);
     try { const grid = MapForge.makeCrackedEarth(seed); const c = document.createElement('canvas'); MapForge.renderGridToCanvas(grid, c, 1); _tileCache.set(key, c); return c; } catch(e) { return null; }
   }
 
   const mfType = TERRAIN_TO_MF[engineType] || 'grass';
-  const seed = variant != null ? _variantSeed(engineType, variant) : (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
+  const seed = (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
   const key = mfType + '_' + seed;
   if (_tileCache.has(key)) return _tileCache.get(key);
   // Blend neighbours on overworld only
@@ -1939,7 +1940,7 @@ const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;ctx.clearRect(
 
 for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){try{const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],seen=ss.has(`${cx},${cy}`),isCurrent=cx===px&&cy===py;const sx=ox+cx*cs,sy=oy+cy*cs;const isLinear=meta.type==='road'||meta.type==='river';const bgType=isLinear?'plains':meta.type;
 // Draw pixel art tile if large enough, else flat colour fallback
-ctx.shadowBlur=0;if(cs>=10){const tile=_getTile(bgType,cx,cy,meta.variant);if(tile){ctx.drawImage(tile,sx,sy,cs,cs);}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs,cs);}}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs,cs);}
+ctx.shadowBlur=0;if(cs>=10){const tile=_getTile(bgType,cx,cy,meta.terrainStyle);if(tile){ctx.drawImage(tile,sx,sy,cs,cs);}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs,cs);}}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs,cs);}
 // Object sprites on top of terrain
 if(cs>=10){
   const obj=meta.object;
