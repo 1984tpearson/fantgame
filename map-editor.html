@@ -195,6 +195,30 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
       <div class="cprop"><label>interiorType</label><input id="prop-interiorType" type="text"></div>
       <div class="cprop"><label>doors (comma-sep)</label><input id="prop-doors" type="text" placeholder="north,east..."></div>
       <div class="cprop"><label>object</label><input id="prop-object" type="text"></div>
+      <div id="row-enter" style="display:none;border-top:1px solid #2a1e10;margin-top:4px;padding-top:4px;">
+        <div class="plabel" style="margin-bottom:4px;">ENTER / LINK</div>
+        <div class="cprop"><label>Destination</label>
+          <select id="prop-enter-id" style="width:100%;font-size:10px;">
+            <option value="">(none)</option>
+          </select>
+        </div>
+        <div class="cprop" style="display:flex;gap:4px;">
+          <label>Entry X</label><input id="prop-enter-x" type="number" value="1" style="width:45px;">
+          <label style="margin-left:4px;">Y</label><input id="prop-enter-y" type="number" value="1" style="width:45px;">
+        </div>
+        <div class="cprop"><label>Exit to OW</label>
+          <select id="prop-exit-layer" style="width:100%;font-size:10px;">
+            <option value="">(none)</option>
+            <option value="overworld">Overworld</option>
+          </select>
+        </div>
+        <div id="row-exit-ow" style="display:none;">
+          <div class="cprop" style="display:flex;gap:4px;">
+            <label>OW X</label><input id="prop-exit-x" type="number" value="0" style="width:45px;">
+            <label style="margin-left:4px;">Y</label><input id="prop-exit-y" type="number" value="0" style="width:45px;">
+          </div>
+        </div>
+      </div>
       <div class="cprop" id="row-rotation" style="display:none;">
         <label>rotation</label>
         <div style="display:flex;gap:3px;">
@@ -1092,6 +1116,30 @@ function selectCell(x,y){
   selectedCell={x,y};redrawCell(x,y);populateInspector(x,y);
 }
 
+function populateEnterDropdown() {
+  const sel = document.getElementById('prop-enter-id');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">(none)</option>';
+  const settlements = window.WORLD_DATA && window.WORLD_DATA.settlements || {};
+  const groups = {settlements:[], interiors:[]};
+  for (const [id, s] of Object.entries(settlements)) {
+    if (s.isInterior) groups.interiors.push([id, s.name||id]);
+    else groups.settlements.push([id, s.name||id]);
+  }
+  for (const [label, items] of [['Settlements', groups.settlements],['Interiors', groups.interiors]]) {
+    if (!items.length) continue;
+    const g = document.createElement('optgroup');
+    g.label = label;
+    for (const [id, name] of items.sort((a,b)=>a[1].localeCompare(b[1]))) {
+      const o = document.createElement('option');
+      o.value = id; o.textContent = name + ' [' + id + ']';
+      if (id === cur) o.selected = true;
+      g.appendChild(o);
+    }
+    sel.appendChild(g);
+  }
+}
+
 function populateInspector(x,y){
   const meta=map[`${x},${y}`]||{};
   const isDef=!!definedMap[`${x},${y}`];
@@ -1101,6 +1149,24 @@ function populateInspector(x,y){
   document.getElementById('prop-interiorType').value=meta.interiorType||'';
   document.getElementById('prop-doors').value=Array.isArray(meta.doors)?meta.doors.join(','):(meta.doors||'');
   document.getElementById('prop-object').value=meta.object||'';
+
+  // Enter/exit section — show for door, building, gate
+  const showEnter = ['door','building','gate'].includes(meta.type);
+  document.getElementById('row-enter').style.display = showEnter ? '' : 'none';
+  if (showEnter) {
+    populateEnterDropdown();
+    const enter = meta.enter || {};
+    document.getElementById('prop-enter-id').value = enter.id || '';
+    document.getElementById('prop-enter-x').value = enter.entryPos ? enter.entryPos.x : 1;
+    document.getElementById('prop-enter-y').value = enter.entryPos ? enter.entryPos.y : 1;
+    const exit = meta.exit || {};
+    const exitLayer = exit.layer || '';
+    document.getElementById('prop-exit-layer').value = exitLayer;
+    document.getElementById('row-exit-ow').style.display = exitLayer === 'overworld' ? '' : 'none';
+    document.getElementById('prop-exit-x').value = exit.pos ? exit.pos.x : 0;
+    document.getElementById('prop-exit-y').value = exit.pos ? exit.pos.y : 0;
+  }
+
   // Show rotation buttons if cell has a rotatable object
   const hasObj=meta.object&&meta.object!=='_part';
   document.getElementById('row-rotation').style.display=hasObj?'':'none';
@@ -1129,9 +1195,37 @@ document.getElementById('btn-apply').addEventListener('click',()=>{
   if(type)meta.type=type;if(name)meta.name=name;if(it)meta.interiorType=it;
   if(ds)meta.doors=ds.split(',').map(s=>s.trim()).filter(Boolean);
   if(obj!==undefined){if(obj==='')delete meta.object;else meta.object=obj;}
+
+  // Enter link
+  if(['door','building','gate'].includes(meta.type)){
+    const enterId = document.getElementById('prop-enter-id').value;
+    if(enterId){
+      const ex = parseInt(document.getElementById('prop-enter-x').value)||1;
+      const ey = parseInt(document.getElementById('prop-enter-y').value)||1;
+      const dest = window.WORLD_DATA.settlements[enterId];
+      const layer = dest && !dest.isInterior ? 'settlement' : 'interior';
+      meta.enter = {layer, id:enterId, entryPos:{x:ex, y:ey}};
+    } else {
+      delete meta.enter;
+    }
+    // Exit link
+    const exitLayer = document.getElementById('prop-exit-layer').value;
+    if(exitLayer === 'overworld'){
+      const ox = parseInt(document.getElementById('prop-exit-x').value)||0;
+      const oy = parseInt(document.getElementById('prop-exit-y').value)||0;
+      meta.exit = {layer:'overworld', pos:{x:ox, y:oy}};
+    } else {
+      delete meta.exit;
+    }
+  }
+
   const seed=(((x&0xffff)<<16)|(y&0xffff))>>>0;
   for(const ck of[...objCache.keys()]){if(ck.includes('_'+seed))objCache.delete(ck);}
   definedMap[k]=meta;map[k]=meta;redrawCell(x,y);updateExport();statusMsg('Applied.');
+});
+
+document.getElementById('prop-exit-layer').addEventListener('change', e => {
+  document.getElementById('row-exit-ow').style.display = e.target.value === 'overworld' ? '' : 'none';
 });
 
 document.querySelectorAll('.rot-btn').forEach(btn=>{
