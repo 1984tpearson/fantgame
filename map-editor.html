@@ -2114,10 +2114,15 @@ document.getElementById('btn-set-start').addEventListener('click', async () => {
   const x = owCX, y = owCY;
   statusMsg('Setting start...');
   try {
-    await githubPatch('worlds/overworld.js', c =>
-      c.replace(/window\.WORLD_START\s*=\s*\{[^}]+\};/, `window.WORLD_START = {x:${x}, y:${y}};`),
-      `Set player start to ${x},${y}`
-    );
+    await githubPatch('worlds/overworld.js', c => {
+      const newLine = `window.WORLD_START = {x:${x}, y:${y}};`;
+      if (/window\.WORLD_START\s*=/.test(c)) {
+        return c.replace(/window\.WORLD_START\s*=\s*\{[^}]+\};/, newLine);
+      }
+      // Insert after first line of the IIFE
+      return c.replace('window.WORLD_META = window.WORLD_META || {};', 
+        'window.WORLD_META = window.WORLD_META || {};\n  ' + newLine);
+    }, `Set player start to ${x},${y}`);
     statusMsg(`Start set to ${x},${y}`);
   } catch(e) {
     statusMsg('Error: ' + e.message);

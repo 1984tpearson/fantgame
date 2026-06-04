@@ -1,7 +1,12 @@
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
-with open('engine.js', encoding='utf-8') as f:
+with open('map-editor.html', encoding='utf-8') as f:
     lines = f.readlines()
-for i, line in enumerate(lines, 1):
-    if 'WORLD_META' in line and ('object' in line or 'render' in line.lower() or 'getObject' in line):
-        print(f'{i}: {line.rstrip()[:100]}')
+# Check last 5 lines
+print('Last 5 lines:')
+for i, line in enumerate(lines[-5:], len(lines)-4):
+    print(f'  {i}: {repr(line.rstrip())}')
+# Check for escaped closing tag anywhere after line 266
+for i, line in enumerate(lines[266:], 267):
+    if '\\x3c/script>' in line or r'\x3c/script>' in line:
+        print(f'ESCAPED CLOSE TAG at line {i}: {line.rstrip()[:80]}')
