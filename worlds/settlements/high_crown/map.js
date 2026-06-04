@@ -9,27 +9,27 @@
   }
 
   // Walls
-  for(let x=-20;x<=20;x++){ t(x,0,'wall','Outer Wall'); t(x,40,'wall','Outer Wall'); }
+  for(let x=-20;x<=20;x++){ t(x,40,'wall','Outer Wall') t(x,0,'wall','Outer Wall') }
   for(let y=0;y<=40;y++){ t(-20,y,'wall','Outer Wall'); t(20,y,'wall','Outer Wall'); }
 
   // Gates
-  t(0,0,'gate','North Gate',{exit:{layer:'overworld',pos:{x:253,y:392}}});
-  t(0,40,'gate','South Gate',{exit:{layer:'overworld',pos:{x:253,y:400}}});
+  t(0,40,'gate','North Gate',{exit:{layer:'overworld',pos:{x:253,y:392}}})
+  t(0,0,'gate','South Gate',{exit:{layer:'overworld',pos:{x:253,y:400}}})
 
   // Streets
   for(let y=1;y<=39;y++) t(0,y,'street','Castle Road');
 
   // Districts
-  sdef(-18,2,-2,18,'courtyard','Outer Bailey');
-  sdef(2,2,18,18,'building','Barracks');
-  sdef(-18,22,-2,38,'building','Great Hall');
-  sdef(2,22,18,38,'building','Royal Quarters');
+  sdef(-18,22,-2,38,'courtyard','Outer Bailey')
+  sdef(2,22,18,38,'building','Barracks')
+  sdef(-18,2,-2,18,'building','Great Hall')
+  sdef(2,2,18,18,'building','Royal Quarters')
 
   // Doors
-  t(-8,2,'door',"Steward's Office",{enter:{layer:'interior',id:'highcrown_steward',entryPos:{x:2,y:1}}});
-  t(8,2,'door','Barracks',{enter:{layer:'interior',id:'highcrown_barracks',entryPos:{x:2,y:1}}});
-  t(-8,22,'door','Great Hall',{enter:{layer:'interior',id:'highcrown_hall',entryPos:{x:4,y:1}}});
-  t(8,22,'door','Royal Quarters',{enter:{layer:'interior',id:'highcrown_royal',entryPos:{x:3,y:1}}});
+  t(-8,38,'door',"Steward's Office",{enter:{layer:'interior',id:'highcrown_steward',entryPos:{x:2,y:1}}})
+  t(8,38,'door','Barracks',{enter:{layer:'interior',id:'highcrown_barracks',entryPos:{x:2,y:1}}})
+  t(-8,18,'door','Great Hall',{enter:{layer:'interior',id:'highcrown_hall',entryPos:{x:4,y:1}}})
+  t(8,18,'door','Royal Quarters',{enter:{layer:'interior',id:'highcrown_royal',entryPos:{x:3,y:1}}})
 
   window.SETTLEMENTS['high_crown'] = {
     map: m,
