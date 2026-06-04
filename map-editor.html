@@ -98,6 +98,8 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
   <button id="btn-save" class="save-btn">&#128190; Save to GitHub</button>
   <button id="btn-copy-diff">&#128203; Diff</button>
   <button id="btn-export-full">&#8595; Full JS</button>
+  <button id="btn-new-settlement" title="Create new settlement">&#43; Settlement</button>
+  <button id="btn-new-interior" title="Create new interior">&#43; Interior</button>
   <input id="github-token" type="password" placeholder="GitHub token" style="width:130px;font-size:10px;" title="GitHub personal access token (stored in localStorage)">
   <span id="status-msg" style="font-size:11px;color:#5a7840;margin-left:4px;"></span>
 </div>
@@ -212,6 +214,36 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
         <button id="btn-cp-diff" style="flex:1">&#128203; Copy</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- New Settlement / Interior modal -->
+<div id="new-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#1a1408;border:2px solid #6a5030;padding:20px;min-width:340px;font-family:inherit;color:#c8a84a;">
+    <h3 id="new-modal-title" style="margin:0 0 14px;font-size:13px;letter-spacing:1px;color:#e8c870;"></h3>
+    <div style="display:grid;grid-template-columns:120px 1fr;gap:6px 10px;align-items:center;font-size:11px;">
+      <label>Name</label>
+      <input id="nm-name" type="text" placeholder="East-Port" style="width:100%;">
+      <label>ID (no spaces)</label>
+      <input id="nm-id" type="text" placeholder="east_port" style="width:100%;">
+      <div id="nm-settle-fields" style="display:contents;">
+        <label>Overworld X</label>
+        <input id="nm-wx" type="number" value="346" style="width:100%;">
+        <label>Overworld Y</label>
+        <input id="nm-wy" type="number" value="556" style="width:100%;">
+        <label>Has Walls</label>
+        <select id="nm-walls" style="width:100%;"><option value="false">No</option><option value="true">Yes</option></select>
+      </div>
+      <div id="nm-interior-fields" style="display:contents;">
+        <label>Settlement</label>
+        <select id="nm-settle-sel" style="width:100%;"></select>
+      </div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
+      <button id="nm-cancel">Cancel</button>
+      <button id="nm-create" class="save-btn">Create</button>
+    </div>
+    <div id="nm-status" style="margin-top:8px;font-size:10px;color:#5a7840;min-height:14px;"></div>
   </div>
 </div>
 
@@ -1671,6 +1703,175 @@ document.getElementById('btn-place-bldg').addEventListener('click',()=>{
 });
 
 // ── Dropdowns ─────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// GITHUB FILE HELPERS
+// ═══════════════════════════════════════════════════════════════
+function getToken() {
+  return (document.getElementById('github-token')||{}).value || localStorage.getItem('gh_token_map_editor') || '';
+}
+
+async function githubGet(path) {
+  const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`, {
+    headers: { 'Authorization': `Bearer ${getToken()}` }
+  });
+  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
+  return res.json();
+}
+
+async function githubPut(path, content, sha, message) {
+  const b64 = btoa(unescape(encodeURIComponent(content)));
+  const body = { message, content: b64 };
+  if (sha) body.sha = sha;
+  const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`, {
+    method: 'PUT',
+    headers: { 'Authorization': `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) { const e = await res.json(); throw new Error(e.message || `PUT ${path} failed: ${res.status}`); }
+  return res.json();
+}
+
+async function githubPatch(path, patchFn, message) {
+  let sha = null, current = '';
+  try {
+    const data = await githubGet(path);
+    sha = data.sha;
+    current = decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
+  } catch(e) {
+    if (!e.message.includes('404')) throw e;
+  }
+  const patched = patchFn(current);
+  if (patched === current) return;
+  await githubPut(path, patched, sha, message);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NEW SETTLEMENT / INTERIOR
+// ═══════════════════════════════════════════════════════════════
+let _newModalMode = 'settlement';
+
+function openNewModal(mode) {
+  if (!getToken()) { statusMsg('Enter GitHub token first.'); return; }
+  _newModalMode = mode;
+  document.getElementById('new-modal-title').textContent = mode === 'settlement' ? '+ NEW SETTLEMENT' : '+ NEW INTERIOR';
+  document.getElementById('nm-settle-fields').style.display = mode === 'settlement' ? 'contents' : 'none';
+  document.getElementById('nm-interior-fields').style.display = mode === 'interior' ? 'contents' : 'none';
+  document.getElementById('nm-name').value = '';
+  document.getElementById('nm-id').value = '';
+  document.getElementById('nm-id')._touched = false;
+  document.getElementById('nm-status').textContent = '';
+  if (mode === 'interior') {
+    const sel = document.getElementById('nm-settle-sel');
+    sel.innerHTML = '';
+    for (const [id, s] of Object.entries(window.WORLD_DATA.settlements||{})) {
+      if (s.isInterior) continue;
+      const o = document.createElement('option');
+      o.value = id; o.textContent = s.name || id;
+      if (id === settlementId) o.selected = true;
+      sel.appendChild(o);
+    }
+  }
+  document.getElementById('nm-wx').value = owCX;
+  document.getElementById('nm-wy').value = owCY;
+  document.getElementById('new-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('nm-name').focus(), 50);
+}
+
+document.getElementById('nm-name').addEventListener('input', e => {
+  const id = document.getElementById('nm-id');
+  if (!id._touched) id.value = e.target.value.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_');
+});
+document.getElementById('nm-id').addEventListener('input', () => { document.getElementById('nm-id')._touched = true; });
+document.getElementById('nm-cancel').addEventListener('click', () => { document.getElementById('new-modal').style.display = 'none'; });
+document.getElementById('btn-new-settlement').addEventListener('click', () => openNewModal('settlement'));
+document.getElementById('btn-new-interior').addEventListener('click', () => openNewModal('interior'));
+
+function settlementFolder(sid) { const m = {frilar_town:'east_port'}; return m[sid] || sid; }
+
+document.getElementById('nm-create').addEventListener('click', async () => {
+  const name = document.getElementById('nm-name').value.trim();
+  const id   = document.getElementById('nm-id').value.trim();
+  if (!name || !id) { document.getElementById('nm-status').textContent = 'Name and ID required.'; return; }
+  if (!/^[a-z0-9_]+$/.test(id)) { document.getElementById('nm-status').textContent = 'ID: lowercase letters, numbers, underscores only.'; return; }
+  document.getElementById('nm-create').disabled = true;
+  try {
+    if (_newModalMode === 'settlement') await createSettlement(id, name);
+    else {
+      const parentSid = document.getElementById('nm-settle-sel').value;
+      await createInterior(id, name, parentSid);
+    }
+  } catch(e) {
+    document.getElementById('nm-status').textContent = 'Error: ' + e.message;
+    console.error(e);
+  } finally {
+    document.getElementById('nm-create').disabled = false;
+  }
+});
+
+async function createSettlement(id, name) {
+  const nmStatus = s => document.getElementById('nm-status').textContent = s;
+  const wx = parseInt(document.getElementById('nm-wx').value) || 0;
+  const wy = parseInt(document.getElementById('nm-wy').value) || 0;
+  const hasWalls = document.getElementById('nm-walls').value === 'true';
+  const folder = id;
+
+  nmStatus('Creating map.js...');
+  const mapContent = `// ${name.toUpperCase()} -- settlement map\n(function(){\n  window.SETTLEMENTS = window.SETTLEMENTS || {};\n  const m = {};\n  function t(x,y,type,name,extra={}){ m[\`\${x},\${y}\`] = Object.assign({type,name},extra); }\n\n  // MAP CELLS -- edit in map-editor.html\n\n  window.SETTLEMENTS[${JSON.stringify(id)}] = {\n    map: m,\n    name: ${JSON.stringify(name)},\n    hasWalls: ${hasWalls},\n    entryPos: {x:0, y:2},\n    overworldCell: {x:${wx}, y:${wy}},\n    description: '',\n  };\n})();\n`;
+  await githubPut(`worlds/settlements/${folder}/map.js`, mapContent, null, `New settlement: ${name}`);
+
+  nmStatus('Patching overworld.js...');
+  await githubPatch('worlds/overworld.js', c => {
+    const line = `  defCell(${wx},${wy},'village',${JSON.stringify(name)});\n`;
+    return c.replace('  // -- SETTLEMENT FOOTPRINTS', line + '\n  // -- SETTLEMENT FOOTPRINTS')
+            .replace('  // \u2500\u2500 SETTLEMENT FOOTPRINTS', line + '\n  // \u2500\u2500 SETTLEMENT FOOTPRINTS');
+  }, `Add ${name} to overworld`);
+
+  nmStatus('Patching index.html...');
+  await githubPatch('index.html', c =>
+    c.replace('<!-- World data (terrain, overworld, NPCs) -->', `<script src="worlds/settlements/${folder}/map.js"></script>\n<!-- World data (terrain, overworld, NPCs) -->`),
+    `Add ${name} to index.html`);
+
+  nmStatus('Patching map-editor.html...');
+  await githubPatch('map-editor.html', c =>
+    c.replace('<script src="worlds/overworld.js"></script>', `<script src="worlds/settlements/${folder}/map.js"></script>\n<script src="worlds/overworld.js"></script>`),
+    `Add ${name} to map-editor.html`);
+
+  nmStatus('Done! Reload to edit the new settlement.');
+  document.getElementById('new-modal').style.display = 'none';
+  statusMsg(`Created ${name} -- reload to edit it.`);
+}
+
+async function createInterior(id, name, parentSid) {
+  const nmStatus = s => document.getElementById('nm-status').textContent = s;
+  const folder = settlementFolder(parentSid);
+  const filePath = `worlds/settlements/${folder}/interiors/${id}.js`;
+
+  nmStatus('Creating interior file...');
+  const content = `// ${name.toUpperCase()} -- interior map\n(function(){\n  window.SETTLEMENTS = window.SETTLEMENTS || {};\n  const m = {};\n  function t(x,y,type,name,extra={}){ m[\`\${x},\${y}\`] = Object.assign({type,name},extra); }\n\n  for(let x=0;x<=13;x++) for(let y=0;y<=11;y++){\n    const v=(x===0||x===13||y===0||y===11)?{type:'wall',name:'Wall'}:{type:'interior',name:'Floor'};\n    m[\`\${x},\${y}\`]=v;\n  }\n  m['6,0']={type:'door',name:'Entrance'};\n\n  window.SETTLEMENTS[${JSON.stringify(id)}] = {\n    map: m,\n    name: ${JSON.stringify(name)},\n    isInterior: true,\n    entryPos: {x:6, y:1},\n  };\n})();\n`;
+  await githubPut(filePath, content, null, `New interior: ${name}`);
+
+  const scriptTag = `<script src="${filePath}"></script>`;
+  const marker = `worlds/settlements/${folder}/map.js`;
+
+  nmStatus('Patching index.html...');
+  await githubPatch('index.html', c => {
+    const m = `<script src="${marker}"></script>`;
+    return c.includes(m) ? c.replace(m, m + '\n' + scriptTag)
+      : c.replace('<!-- World data (terrain, overworld, NPCs) -->', scriptTag + '\n<!-- World data (terrain, overworld, NPCs) -->');
+  }, `Add ${name} interior to index.html`);
+
+  nmStatus('Patching map-editor.html...');
+  await githubPatch('map-editor.html', c => {
+    const m = `<script src="${marker}"></script>`;
+    return c.includes(m) ? c.replace(m, m + '\n' + scriptTag)
+      : c.replace('<script src="worlds/overworld.js"></script>', scriptTag + '\n<script src="worlds/overworld.js"></script>');
+  }, `Add ${name} interior to map-editor.html`);
+
+  nmStatus('Done! Reload to edit the interior.');
+  document.getElementById('new-modal').style.display = 'none';
+  statusMsg(`Created ${name} -- reload to edit it.`);
+}
+
 function buildSettlementList(){
   const sel=document.getElementById('settlement-select');sel.innerHTML='';
   if(!window.WORLD_DATA)return;
