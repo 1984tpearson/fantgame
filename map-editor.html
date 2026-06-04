@@ -1828,12 +1828,12 @@ async function createSettlement(id, name) {
 
   nmStatus('Patching index.html...');
   await githubPatch('index.html', c =>
-    c.replace('<!-- World data (terrain, overworld, NPCs) -->', `\x3cscript src="worlds/settlements/${folder}/map.js"></script>\n<!-- World data (terrain, overworld, NPCs) -->`),
+    c.replace('<!-- World data (terrain, overworld, NPCs) -->', `\x3cscript src="worlds/settlements/${folder}/map.js">\x3c/script>\n<!-- World data (terrain, overworld, NPCs) -->`),
     `Add ${name} to index.html`);
 
   nmStatus('Patching map-editor.html...');
   await githubPatch('map-editor.html', c =>
-    c.replace('\x3cscript src="worlds/overworld.js"></script>', `\x3cscript src="worlds/settlements/${folder}/map.js"></script>\n\x3cscript src="worlds/overworld.js"></script>`),
+    c.replace('\x3cscript src="worlds/overworld.js">\x3c/script>', `\x3cscript src="worlds/settlements/${folder}/map.js">\x3c/script>\n\x3cscript src="worlds/overworld.js">\x3c/script>`),
     `Add ${name} to map-editor.html`);
 
   nmStatus('Done! Reload to edit the new settlement.');
@@ -1850,21 +1850,21 @@ async function createInterior(id, name, parentSid) {
   const content = `// ${name.toUpperCase()} -- interior map\n(function(){\n  window.SETTLEMENTS = window.SETTLEMENTS || {};\n  const m = {};\n  function t(x,y,type,name,extra={}){ m[\`\${x},\${y}\`] = Object.assign({type,name},extra); }\n\n  for(let x=0;x<=13;x++) for(let y=0;y<=11;y++){\n    const v=(x===0||x===13||y===0||y===11)?{type:'wall',name:'Wall'}:{type:'interior',name:'Floor'};\n    m[\`\${x},\${y}\`]=v;\n  }\n  m['6,0']={type:'door',name:'Entrance'};\n\n  window.SETTLEMENTS[${JSON.stringify(id)}] = {\n    map: m,\n    name: ${JSON.stringify(name)},\n    isInterior: true,\n    entryPos: {x:6, y:1},\n  };\n})();\n`;
   await githubPut(filePath, content, null, `New interior: ${name}`);
 
-  const scriptTag = `\x3cscript src="${filePath}"></script>`;
+  const scriptTag = `\x3cscript src="${filePath}">\x3c/script>`;
   const marker = `worlds/settlements/${folder}/map.js`;
 
   nmStatus('Patching index.html...');
   await githubPatch('index.html', c => {
-    const m = `\x3cscript src="${marker}"></script>`;
+    const m = `\x3cscript src="${marker}">\x3c/script>`;
     return c.includes(m) ? c.replace(m, m + '\n' + scriptTag)
       : c.replace('<!-- World data (terrain, overworld, NPCs) -->', scriptTag + '\n<!-- World data (terrain, overworld, NPCs) -->');
   }, `Add ${name} interior to index.html`);
 
   nmStatus('Patching map-editor.html...');
   await githubPatch('map-editor.html', c => {
-    const m = `\x3cscript src="${marker}"></script>`;
+    const m = `\x3cscript src="${marker}">\x3c/script>`;
     return c.includes(m) ? c.replace(m, m + '\n' + scriptTag)
-      : c.replace('\x3cscript src="worlds/overworld.js"></script>', scriptTag + '\n\x3cscript src="worlds/overworld.js"></script>');
+      : c.replace('\x3cscript src="worlds/overworld.js">\x3c/script>', scriptTag + '\n\x3cscript src="worlds/overworld.js">\x3c/script>');
   }, `Add ${name} interior to map-editor.html`);
 
   nmStatus('Done! Reload to edit the interior.');
@@ -2010,6 +2010,6 @@ function init(){
   buildSettlementList();buildInteriorList();buildTerrainPalette();buildObjPalette();buildBldgPalette();loadLayer();
 }
 init();
-</script>
+\x3c/script>
 </body>
 </html>
