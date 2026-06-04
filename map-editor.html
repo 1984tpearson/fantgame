@@ -237,7 +237,7 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
 // TERRAIN MAPS
 // ═══════════════════════════════════════════════════════════════
 const TERRAIN_TO_MF = {
-  street:'dirt', road:'cobble', building:'farmland', courtyard:'grass',
+  street:'dirt', road:'cobble', building:'farmland', grass:'grass',
   market:'sand', docks:'cobble', gate:'cobble', wall:'rocky', door:'dirt',
   interior:'cave', floor:'dirt', yard:'grass', mud:'mud',
   water:'water', shallow_water:'shallow_water',
@@ -250,7 +250,7 @@ const TERRAIN_TO_MF = {
   city:'cobble', town:'grass', village:'grass', ruins:'rocky', castle:'rocky', keep:'rocky',
 };
 const SETTLE_TERRAIN = [
-  {id:'courtyard',l:'Courtyard (grass)',mf:'grass'},{id:'street',l:'Street (dirt)',mf:'dirt'},
+  {id:'grass',l:'Courtyard (grass)',mf:'grass'},{id:'street',l:'Street (dirt)',mf:'dirt'},
   {id:'road',l:'Road (cobble)',mf:'cobble'},{id:'market',l:'Market (sand)',mf:'sand'},
   {id:'mud',l:'Mud',mf:'mud'},{id:'docks',l:'Docks (cobble)',mf:'cobble'},
   {id:'building',l:'Building',mf:'farmland'},{id:'wall',l:'Wall (stone)',mf:'rocky'},
@@ -283,7 +283,7 @@ const INT_TERRAIN = [
   {id:'floor_hbone',l:'Herringbone',mf:'floor_herringbone',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},{id:'floor_diag',l:'Diagonal',mf:'floor_diagonal',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},
   {id:'floor_parq',l:'Parquet',mf:'floor_parquet',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},{id:'floor_stone',l:'Stone Tile',mf:'floor_stone',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},
   {id:'wall',l:'Wall (stone)',mf:'rocky'},{id:'door',l:'Door',mf:'dirt'},
-  {id:'courtyard',l:'Yard (grass)',mf:'grass'},{id:'mud',l:'Mud',mf:'mud'},
+  {id:'grass',l:'Yard (grass)',mf:'grass'},{id:'mud',l:'Mud',mf:'mud'},
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -580,7 +580,7 @@ function inferBg(x, y) {
     if (m) return m;
     return window.WORLD_DATA.inferTerrain ? window.WORLD_DATA.inferTerrain(x,y) : {type:'plains',name:''};
   }
-  if (editorMode === 'settlement') return {type:'courtyard', name:''};
+  if (editorMode === 'settlement') return {type:'grass', name:''};
   return {type:'interior', name:''};
 }
 
@@ -1005,7 +1005,7 @@ function placeBuilding(ax,ay){
   for(let dx=0;dx<cellW;dx++) for(let dy=0;dy<cellH;dy++){
     if(dx===0&&dy===0)continue;
     const k=`${ax+dx},${ay+dy}`;
-    const partMeta={type:'courtyard',object:'_part',anchor:`${ax},${ay}`};
+    const partMeta={type:'grass',object:'_part',anchor:`${ax},${ay}`};
     pushUndo(ax+dx,ay+dy); definedMap[k]=partMeta; map[k]=Object.assign({},partMeta);
   }
   redrawAnchorGroup(ax,ay);

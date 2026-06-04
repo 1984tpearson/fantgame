@@ -111,7 +111,7 @@ const SETTLEMENTS = {};
   m[`11,3`]={type:'door',name:"Traveller's Rest Inn",enter:{layer:'interior',id:'ironhaven_inn_south',entryPos:{x:1,y:1}}};
 
   // Market district
-  sdef(-24,19,24,34,'courtyard','Market District');
+  sdef(-24,19,24,34,'grass','Market District');
   for(let x=-24;x<=24;x++)m[`${x},20`]={type:'street',name:'Market Street'};
   for(let x=-24;x<=24;x++)m[`${x},28`]={type:'street',name:'South Market Lane'};
   sdef(-20,21,-2,27,'market','Market Stalls');
@@ -135,12 +135,12 @@ const SETTLEMENTS = {};
   m[`17,15`]={type:'door',name:'Warehouse',enter:{layer:'interior',id:'ironhaven_warehouse',entryPos:{x:1,y:1}}};
 
   // Temple district
-  sdef(-24,35,-1,49,'courtyard','Temple District');
+  sdef(-24,35,-1,49,'grass','Temple District');
   for(let x=-24;x<=24;x++)m[`${x},35`]={type:'street',name:'Temple Row'};
   sdef(-20,38,-8,48,'building','Temple of Valdenmere');
   m[`-14,38`]={type:'door',name:'Temple of Valdenmere',enter:{layer:'interior',id:'ironhaven_temple',entryPos:{x:6,y:1}}};
-  sdef(-6,37,-2,48,'courtyard','Temple Gardens');
-  sdef(1,36,24,49,'courtyard','Castle Quarter');
+  sdef(-6,37,-2,48,'grass','Temple Gardens');
+  sdef(1,36,24,49,'grass','Castle Quarter');
   sdef(5,38,22,49,'building','Ironhaven Castle');
   m[`13,38`]={type:'door',name:'Castle Gatehouse',enter:{layer:'interior',id:'ironhaven_castle_gate',entryPos:{x:4,y:1}}};
 
@@ -182,7 +182,7 @@ const SETTLEMENTS = {};
   const m = {};
   for(let x=-5;x<=5;x++)m[`${x},5`]={type:'street',name:'Village Lane'};
   for(let y=0;y<=10;y++)m[`0,${y}`]={type:'street',name:'Village Lane'};
-  m[`0,5`]={type:'courtyard',name:'Village Well'};
+  m[`0,5`]={type:'grass',name:'Village Well'};
   m[`2,6`]={type:'building',name:"Miller's Rest"};m[`3,6`]={type:'building',name:"Miller's Rest"};
   m[`2,7`]={type:'building',name:"Miller's Rest"};m[`3,7`]={type:'building',name:"Miller's Rest"};
   m[`2,6`]={type:'door',name:"Miller's Rest Inn",enter:{layer:'interior',id:'greyveil_inn',entryPos:{x:1,y:1}}};
@@ -198,7 +198,7 @@ const SETTLEMENTS = {};
   const m = {};
   for(let x=-4;x<=4;x++)m[`${x},4`]={type:'street',name:'Farm Road'};
   for(let y=0;y<=8;y++)m[`0,${y}`]={type:'street',name:'Farm Road'};
-  m[`0,4`]={type:'courtyard',name:'Village Green'};
+  m[`0,4`]={type:'grass',name:'Village Green'};
   m[`-3,5`]={type:'door',name:'The Dunrock Alehouse',enter:{layer:'interior',id:'dunrock_alehouse',entryPos:{x:1,y:1}}};
   m[`-2,5`]={type:'building',name:'The Dunrock Alehouse'};
   m[`-3,6`]={type:'building',name:'The Dunrock Alehouse'};

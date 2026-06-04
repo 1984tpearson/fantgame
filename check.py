@@ -1,13 +1,22 @@
-import sys, re
+import sys, os, re
 sys.stdout.reconfigure(encoding='utf-8')
-with open('mapforge.js', encoding='utf-8') as f:
-    mf = f.read()
-# Find what terrain types mapforge can render
-types = re.findall(r"case '([^']+)'", mf)
-# Also check for shallow_water specifically
-print('shallow_water in mapforge:', 'shallow_water' in mf)
-print('makeShallowWater in mapforge:', 'makeShallowWater' in mf or 'shallow' in mf.lower())
-# Find the main tile dispatch
-for i, line in enumerate(mf.split('\n'), 1):
-    if 'shallow' in line.lower():
-        print(f'  line {i}: {line.strip()[:100]}')
+
+files = []
+for root, dirs, fs in os.walk('.'):
+    dirs[:] = [d for d in dirs if d not in ['.git', 'node_modules', 'images', 'suprabase']]
+    for f in fs:
+        if f.endswith(('.js', '.html', '.ts')):
+            files.append(os.path.join(root, f))
+
+for path in sorted(files):
+    with open(path, encoding='utf-8', errors='ignore') as f:
+        content = f.read()
+    if 'courtyard' not in content:
+        continue
+    new_content = content.replace('courtyard', 'grass')
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(new_content)
+    count = content.count('courtyard')
+    print(f'Replaced {count}x in {path}')
+
+print('Done.')

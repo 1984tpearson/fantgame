@@ -137,8 +137,8 @@ function makeSimpleTown(id,name,wx,wy,walls,doors){
   for(let y=1;y<=59;y++)m[`0,${y}`]={type:'street',name:"King's Road"};
   for(let x=-29;x<=29;x++)if(!m[`${x},30`]||m[`${x},30`].type!=='wall')m[`${x},30`]={type:'street',name:'Market Way'};
   sdef(-20,2,-2,14,'building','South Quarter');sdef(2,2,20,14,'docks','Docks Quarter');
-  sdef(-25,15,-2,28,'courtyard','Market District');sdef(2,15,25,28,'building','Guild District');
-  sdef(-25,32,-2,55,'courtyard','Temple District');sdef(2,32,25,55,'building','Castle Quarter');
+  sdef(-25,15,-2,28,'grass','Market District');sdef(2,15,25,28,'building','Guild District');
+  sdef(-25,32,-2,55,'grass','Temple District');sdef(2,32,25,55,'building','Castle Quarter');
   m[`-10,2`]={type:'door',name:'The Aethel Arms',enter:{layer:'interior',id:'aethel_inn',entryPos:{x:2,y:1}}};
   m[`10,2`]={type:'door',name:'Customs House',enter:{layer:'interior',id:'aethel_customs',entryPos:{x:2,y:1}}};
   m[`-10,15`]={type:'door',name:"Merchants' Exchange",enter:{layer:'interior',id:'aethel_exchange',entryPos:{x:3,y:1}}};
@@ -174,7 +174,7 @@ function makeSimpleTown(id,name,wx,wy,walls,doors){
   m[`0,0`]={type:'gate',name:'South Gate',exit:{layer:'overworld',pos:{x:253,y:397}}};
   m[`0,40`]={type:'gate',name:'North Gate',exit:{layer:'overworld',pos:{x:253,y:395}}};
   for(let y=1;y<=39;y++)m[`0,${y}`]={type:'street',name:'Castle Road'};
-  sdef(-18,2,-2,18,'courtyard','Outer Bailey');sdef(2,2,18,18,'building','Barracks');
+  sdef(-18,2,-2,18,'grass','Outer Bailey');sdef(2,2,18,18,'building','Barracks');
   sdef(-18,22,-2,38,'building','Great Hall');sdef(2,22,18,38,'building','Royal Quarters');
   m[`-8,2`]={type:'door',name:"Steward's Office",enter:{layer:'interior',id:'highcrown_steward',entryPos:{x:2,y:1}}};
   m[`8,2`]={type:'door',name:'Barracks',enter:{layer:'interior',id:'highcrown_barracks',entryPos:{x:2,y:1}}};
