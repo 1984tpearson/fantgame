@@ -2909,7 +2909,8 @@ async function init() {
         pickedWeird,
       ];
       addMessage(`Welcome to the Kingdom of Aerdorn.`, 'system');
-      await enterCell(346, 558);
+      const _start = window.WORLD_START || {x:346, y:558};
+      await enterCell(_start.x, _start.y);
     }
   } catch(e) {
     console.error('Init error:', e);

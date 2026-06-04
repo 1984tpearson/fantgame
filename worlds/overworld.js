@@ -2,6 +2,7 @@
 // Edit in map-editor.html (Overworld mode) and save via Save to GitHub
 (function(){
   window.WORLD_META = window.WORLD_META || {};
+  window.WORLD_START = {x:346, y:558};
   function defCell(x,y,type,name=''){window.WORLD_META[`${x},${y}`]={type,name};}
   function defLine(pts,type,name){for(const[x,y]of pts)defCell(x,y,type,name);}
   function defRect(x1,y1,x2,y2,type,name=''){for(let x=x1;x<=x2;x++)for(let y=y1;y<=y2;y++)window.WORLD_META[`${x},${y}`]={type,name};}

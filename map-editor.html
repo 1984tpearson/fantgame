@@ -92,6 +92,8 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
     <input id="ow-cy" type="text" style="width:40px;" value="556">
     <button id="ow-go">Go</button>
     <div class="sep"></div>
+    <button id="btn-set-start" title="Set player start position here">&#9658; Set Start</button>
+    <div class="sep"></div>
   </div>
   <button id="btn-undo">&#8617; Undo</button>
   <div class="sep"></div>
@@ -1150,22 +1152,19 @@ function populateInspector(x,y){
   document.getElementById('prop-doors').value=Array.isArray(meta.doors)?meta.doors.join(','):(meta.doors||'');
   document.getElementById('prop-object').value=meta.object||'';
 
-  // Enter/exit section — show for door, building, gate
-  const showEnter = ['door','building','gate'].includes(meta.type);
-  document.getElementById('row-enter').style.display = showEnter ? '' : 'none';
-  if (showEnter) {
-    populateEnterDropdown();
-    const enter = meta.enter || {};
-    document.getElementById('prop-enter-id').value = enter.id || '';
-    document.getElementById('prop-enter-x').value = enter.entryPos ? enter.entryPos.x : 1;
-    document.getElementById('prop-enter-y').value = enter.entryPos ? enter.entryPos.y : 1;
-    const exit = meta.exit || {};
-    const exitLayer = exit.layer || '';
-    document.getElementById('prop-exit-layer').value = exitLayer;
-    document.getElementById('row-exit-ow').style.display = exitLayer === 'overworld' ? '' : 'none';
-    document.getElementById('prop-exit-x').value = exit.pos ? exit.pos.x : 0;
-    document.getElementById('prop-exit-y').value = exit.pos ? exit.pos.y : 0;
-  }
+  // Enter/exit section — always show when a cell is selected
+  document.getElementById('row-enter').style.display = '';
+  populateEnterDropdown();
+  const enter = meta.enter || {};
+  document.getElementById('prop-enter-id').value = enter.id || '';
+  document.getElementById('prop-enter-x').value = enter.entryPos ? enter.entryPos.x : 1;
+  document.getElementById('prop-enter-y').value = enter.entryPos ? enter.entryPos.y : 1;
+  const exit = meta.exit || {};
+  const exitLayer = exit.layer || '';
+  document.getElementById('prop-exit-layer').value = exitLayer;
+  document.getElementById('row-exit-ow').style.display = exitLayer === 'overworld' ? '' : 'none';
+  document.getElementById('prop-exit-x').value = exit.pos ? exit.pos.x : 0;
+  document.getElementById('prop-exit-y').value = exit.pos ? exit.pos.y : 0;
 
   // Show rotation buttons if cell has a rotatable object
   const hasObj=meta.object&&meta.object!=='_part';
@@ -1197,26 +1196,24 @@ document.getElementById('btn-apply').addEventListener('click',()=>{
   if(obj!==undefined){if(obj==='')delete meta.object;else meta.object=obj;}
 
   // Enter link
-  if(['door','building','gate'].includes(meta.type)){
-    const enterId = document.getElementById('prop-enter-id').value;
-    if(enterId){
-      const ex = parseInt(document.getElementById('prop-enter-x').value)||1;
-      const ey = parseInt(document.getElementById('prop-enter-y').value)||1;
-      const dest = window.WORLD_DATA.settlements[enterId];
-      const layer = dest && !dest.isInterior ? 'settlement' : 'interior';
-      meta.enter = {layer, id:enterId, entryPos:{x:ex, y:ey}};
-    } else {
-      delete meta.enter;
-    }
-    // Exit link
-    const exitLayer = document.getElementById('prop-exit-layer').value;
-    if(exitLayer === 'overworld'){
-      const ox = parseInt(document.getElementById('prop-exit-x').value)||0;
-      const oy = parseInt(document.getElementById('prop-exit-y').value)||0;
-      meta.exit = {layer:'overworld', pos:{x:ox, y:oy}};
-    } else {
-      delete meta.exit;
-    }
+  const enterId = document.getElementById('prop-enter-id').value;
+  if(enterId){
+    const ex = parseInt(document.getElementById('prop-enter-x').value)||1;
+    const ey = parseInt(document.getElementById('prop-enter-y').value)||1;
+    const dest = window.WORLD_DATA.settlements[enterId];
+    const layer = dest && !dest.isInterior ? 'settlement' : 'interior';
+    meta.enter = {layer, id:enterId, entryPos:{x:ex, y:ey}};
+  } else {
+    delete meta.enter;
+  }
+  // Exit link
+  const exitLayer = document.getElementById('prop-exit-layer').value;
+  if(exitLayer === 'overworld'){
+    const ox = parseInt(document.getElementById('prop-exit-x').value)||0;
+    const oy = parseInt(document.getElementById('prop-exit-y').value)||0;
+    meta.exit = {layer:'overworld', pos:{x:ox, y:oy}};
+  } else {
+    delete meta.exit;
   }
 
   const seed=(((x&0xffff)<<16)|(y&0xffff))>>>0;
@@ -2088,6 +2085,21 @@ document.getElementById('ow-go').addEventListener('click',()=>{
   const cx=parseInt(document.getElementById('ow-cx').value)||346;
   const cy=parseInt(document.getElementById('ow-cy').value)||556;
   owCX=cx; owCY=cy; tileCache.clear(); loadLayer();
+});
+
+document.getElementById('btn-set-start').addEventListener('click', async () => {
+  if (!getToken()) { statusMsg('Enter GitHub token first.'); return; }
+  const x = owCX, y = owCY;
+  statusMsg('Setting start...');
+  try {
+    await githubPatch('worlds/overworld.js', c =>
+      c.replace(/window\.WORLD_START\s*=\s*\{[^}]+\};/, `window.WORLD_START = {x:${x}, y:${y}};`),
+      `Set player start to ${x},${y}`
+    );
+    statusMsg(`Start set to ${x},${y}`);
+  } catch(e) {
+    statusMsg('Error: ' + e.message);
+  }
 });
 document.addEventListener('keydown',e=>{
   if(e.target.matches('input,select,textarea'))return;
