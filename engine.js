@@ -1600,7 +1600,7 @@ const TERRAIN_TO_MF = {
   city:'cobble', town:'grass', village:'grass',
   lava:'lava', ice:'ice', corrupt:'corrupt', mud:'mud',
   // Settlement
-  street:'dirt', road_settle:'cobble', building:'farmland', grass:'grass',
+  street:'dirt', road_settle:'cobble', building:'farmland', grass:'grass', courtyard:'grass',
   market:'sand', docks:'cobble', gate:'cobble',
   interior:'cave', wall:'rocky', door:'dirt', floor:'dirt', yard:'grass',
   water:'water',
