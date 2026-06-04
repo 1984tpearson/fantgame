@@ -95,9 +95,10 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
   </div>
   <button id="btn-undo">&#8617; Undo</button>
   <div class="sep"></div>
-  <button id="btn-save" class="save-btn">&#128190; Save</button>
+  <button id="btn-save" class="save-btn">&#128190; Save to GitHub</button>
   <button id="btn-copy-diff">&#128203; Diff</button>
   <button id="btn-export-full">&#8595; Full JS</button>
+  <input id="github-token" type="password" placeholder="GitHub token" style="width:130px;font-size:10px;" title="GitHub personal access token (stored in localStorage)">
   <span id="status-msg" style="font-size:11px;color:#5a7840;margin-left:4px;"></span>
 </div>
 <div id="main">
@@ -1112,71 +1113,231 @@ document.querySelectorAll('.rot-btn').forEach(btn=>{
 // ═══════════════════════════════════════════════════════════════
 // EXPORT / SAVE
 // ═══════════════════════════════════════════════════════════════
-function cellToJS(k,meta){
-  const[x,y]=parseKey(k);
-  const ex={};
-  if(meta.interiorType)ex.interiorType=meta.interiorType;
-  if(meta.doors&&meta.doors.length)ex.doors=meta.doors;
-  if(meta.object)ex.object=meta.object;
-  if(meta.object==='_part'&&meta.anchor)ex.anchor=meta.anchor;
-  if(meta.bldgType)ex.bldgType=meta.bldgType;
-  if(meta.bldgW)ex.bldgW=meta.bldgW;
-  if(meta.bldgH)ex.bldgH=meta.bldgH;
-  if(meta.bldgPxW)ex.bldgPxW=meta.bldgPxW;
-  if(meta.bldgPxH)ex.bldgPxH=meta.bldgPxH;
-  if(meta.roofStyle)ex.roofStyle=meta.roofStyle;
-  if(meta.roofShape)ex.roofShape=meta.roofShape;
-  if(meta.bldgPattern)ex.bldgPattern=meta.bldgPattern;
-  if(meta.bldgFootprint&&meta.bldgFootprint!=='rect')ex.bldgFootprint=meta.bldgFootprint;
-  if(meta.bldgYard&&meta.bldgYard!=='none')ex.bldgYard=meta.bldgYard;
-  if(meta.rotation)ex.rotation=meta.rotation;
-  if(meta.variant!=null)ex.variant=meta.variant;
-  if(meta.objVariant!=null)ex.objVariant=meta.objVariant;
-  const es=Object.keys(ex).length?', '+JSON.stringify(ex).replace(/"(\w+)":/g,'$1:'):'';
-  const n=(meta.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-  return `t(${x},${y},'${meta.type||''}','${n}'${es});`;
+const GITHUB_OWNER = '1984tpearson';
+const GITHUB_REPO  = 'fantgame';
+
+function cellToJS(k, meta) {
+  const [x,y] = parseKey(k);
+  const ex = {};
+  // Terrain style
+  if (meta.terrainStyle != null) ex.terrainStyle = meta.terrainStyle;
+  // Building properties
+  if (meta.interiorType)  ex.interiorType  = meta.interiorType;
+  if (meta.doors && meta.doors.length) ex.doors = meta.doors;
+  if (meta.enter)         ex.enter         = meta.enter;
+  if (meta.exit)          ex.exit          = meta.exit;
+  if (meta.object)        ex.object        = meta.object;
+  if (meta.object === '_part' && meta.anchor) ex.anchor = meta.anchor;
+  if (meta.bldgType)      ex.bldgType      = meta.bldgType;
+  if (meta.bldgW)         ex.bldgW         = meta.bldgW;
+  if (meta.bldgH)         ex.bldgH         = meta.bldgH;
+  if (meta.bldgPxW)       ex.bldgPxW       = meta.bldgPxW;
+  if (meta.bldgPxH)       ex.bldgPxH       = meta.bldgPxH;
+  if (meta.roofStyle)     ex.roofStyle     = meta.roofStyle;
+  if (meta.roofShape)     ex.roofShape     = meta.roofShape;
+  if (meta.bldgPattern)   ex.bldgPattern   = meta.bldgPattern;
+  if (meta.bldgFootprint && meta.bldgFootprint !== 'rect') ex.bldgFootprint = meta.bldgFootprint;
+  if (meta.bldgYard && meta.bldgYard !== 'none') ex.bldgYard = meta.bldgYard;
+  if (meta.rotation)      ex.rotation      = meta.rotation;
+  if (meta.objVariant != null) ex.objVariant = meta.objVariant;
+  if (meta.objStyle != null)   ex.objStyle  = meta.objStyle;
+  if (meta.objLinen != null)   ex.objLinen  = meta.objLinen;
+  const es = Object.keys(ex).length ? ', ' + JSON.stringify(ex).replace(/"(\w+)":/g,'$1:') : '';
+  const n = (meta.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  return `  t(${x},${y},'${meta.type||''}','${n}'${es});`;
 }
-function cellToOWJS(k,meta){
-  const[x,y]=parseKey(k);
-  const n=(meta.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+
+function cellToOWJS(k, meta) {
+  const [x,y] = parseKey(k);
+  const n = (meta.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   return `defCell(${x},${y},'${meta.type||''}','${n}');`;
 }
-function buildDiff(){
-  const adds=[],removes=[];
-  const all=new Set([...Object.keys(definedMap),...Object.keys(originalMap)]);
-  for(const k of all){
-    const orig=originalMap[k],curr=definedMap[k];
-    if(!curr&&orig)removes.push(k);
-    else if(curr&&JSON.stringify(curr)!==JSON.stringify(orig))adds.push([k,curr]);
+
+function buildDiff() {
+  const adds = [], removes = [];
+  const all = new Set([...Object.keys(definedMap), ...Object.keys(originalMap)]);
+  for (const k of all) {
+    const orig = originalMap[k], curr = definedMap[k];
+    if (!curr && orig) removes.push(k);
+    else if (curr && JSON.stringify(curr) !== JSON.stringify(orig)) adds.push([k, curr]);
   }
-  return{adds,removes};
+  return {adds, removes};
 }
-function updateExport(){
-  const{adds,removes}=buildDiff();
-  const box=document.getElementById('export-box');
-  if(!adds.length&&!removes.length){box.textContent='';return;}
-  const isOW=editorMode==='overworld';
-  const lines=['// -- DIFF --'];
-  if(removes.length){lines.push('// Removed:');for(const k of removes){const[x,y]=parseKey(k);lines.push(`// DEL t(${x},${y},...)`);}  }
-  if(adds.length){lines.push('// Changed:');for(const[k,m]of adds)lines.push(isOW?cellToOWJS(k,m):cellToJS(k,m));}
-  box.textContent=lines.join('\n');
+
+function updateExport() {
+  const {adds, removes} = buildDiff();
+  const box = document.getElementById('export-box');
+  if (!adds.length && !removes.length) { box.textContent = ''; return; }
+  const isOW = editorMode === 'overworld';
+  const lines = ['// -- DIFF --'];
+  if (removes.length) { lines.push('// Removed:'); for (const k of removes) { const [x,y] = parseKey(k); lines.push(`// DEL t(${x},${y},...)`) } }
+  if (adds.length) { lines.push('// Changed:'); for (const [k,m] of adds) lines.push(isOW ? cellToOWJS(k,m) : cellToJS(k,m)); }
+  box.textContent = lines.join('\n');
 }
-function getDiff(){return document.getElementById('export-box').textContent;}
-function getFull(){
-  const isOW=editorMode==='overworld';
-  const lines=['// Full export'];
-  for(const[k,m]of Object.entries(definedMap))lines.push(isOW?cellToOWJS(k,m):cellToJS(k,m));
-  return lines.join('\n');
+
+function getDiff() { return document.getElementById('export-box').textContent; }
+
+function getSettlementFilePath() {
+  // Map settlementId to its folder name
+  const folderMap = {
+    frilar_town:  'east_port',
+    aethel_keep:  'aethel_keep',
+    weavers_deep: 'weavers_deep',
+    high_crown:   'high_crown',
+    gladehome:    'gladehome',
+    sylvanis_root:'sylvanis_root',
+    briar_town:   'briar_town',
+    harvestfell:  'harvestfell',
+    theatfields:  'theatfields',
+    dunesedge:    'dunesedge',
+    saltwell:     'saltwell',
+    wheatstone:   'wheatstone',
+  };
+  const folder = folderMap[settlementId] || settlementId;
+  if (editorMode === 'interior') return `worlds/settlements/${folder}/interiors/${interiorId}.js`;
+  return `worlds/settlements/${folder}/map.js`;
 }
-function doDownload(t,s){const b=new Blob([t],{type:'text/javascript'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(editorMode==='settlement'?settlementId:editorMode)+'_'+s+'.js';a.click();}
-function doCopy(t){navigator.clipboard.writeText(t).then(()=>statusMsg('Copied!'));}
-function statusMsg(msg){const el=document.getElementById('status-msg');el.textContent=msg;setTimeout(()=>{if(el.textContent===msg)el.textContent='';},3000);}
-function saveToGame(){
-  const{adds,removes}=buildDiff();
-  if(!adds.length&&!removes.length){statusMsg('No changes.');return;}
-  const text=getDiff();
-  try{localStorage.setItem('map_patch_'+editorMode+'_'+(settlementId||interiorId),text);}catch(e){}
-  doCopy(text);statusMsg('Diff copied. Paste into aerdorn.js.');
+
+function getSettlementFileContent() {
+  const sid = settlementId;
+  const s = window.SETTLEMENTS && window.SETTLEMENTS[sid];
+  const name       = s ? s.name        : sid;
+  const hasWalls   = s ? (s.hasWalls !== false) : true;
+  const entryPos   = s ? JSON.stringify(s.entryPos)   : '{x:0,y:2}';
+  const owCell     = s ? JSON.stringify(s.overworldCell) : '{x:0,y:0}';
+  const desc       = s ? (s.description || '') : '';
+
+  const header = editorMode === 'interior'
+    ? `// ${interiorId.toUpperCase()} — interior map`
+    : `// ${name.toUpperCase()} — settlement map`;
+
+  const cellLines = Object.entries(definedMap)
+    .sort(([a],[b]) => {
+      const [ax,ay] = parseKey(a), [bx,by] = parseKey(b);
+      return ay !== by ? ay - by : ax - bx;
+    })
+    .map(([k,m]) => cellToJS(k, m));
+
+  if (editorMode === 'interior') {
+    const iid = interiorId;
+    return [
+      `${header}`,
+      `(function(){`,
+      `  window.SETTLEMENTS = window.SETTLEMENTS || {};`,
+      `  const m = {};`,
+      `  function t(x,y,type,name,extra={}){ m[\`\${x},\${y}\`] = Object.assign({type,name},extra); }`,
+      ``,
+      `  // MAP CELLS`,
+      ...cellLines,
+      ``,
+      `  window.SETTLEMENTS[${JSON.stringify(iid)}] = {`,
+      `    map: m,`,
+      `    name: ${JSON.stringify(name)},`,
+      `    isInterior: true,`,
+      `    entryPos: {x:1, y:1},`,
+      `  };`,
+      `})();`,
+      ``,
+    ].join('\n');
+  }
+
+  return [
+    `${header}`,
+    `(function(){`,
+    `  window.SETTLEMENTS = window.SETTLEMENTS || {};`,
+    `  const m = {};`,
+    `  function t(x,y,type,name,extra={}){ m[\`\${x},\${y}\`] = Object.assign({type,name},extra); }`,
+    `  function rect(x1,y1,x2,y2,type,name,extra={}){`,
+    `    for(let x=x1;x<=x2;x++) for(let y=y1;y<=y2;y++) t(x,y,type,name,extra);`,
+    `  }`,
+    ``,
+    `  // MAP CELLS`,
+    ...cellLines,
+    ``,
+    `  window.SETTLEMENTS[${JSON.stringify(sid)}] = {`,
+    `    map: m,`,
+    `    name: ${JSON.stringify(name)},`,
+    `    hasWalls: ${hasWalls},`,
+    `    entryPos: ${entryPos},`,
+    `    overworldCell: ${owCell},`,
+    `    description: ${JSON.stringify(desc)},`,
+    `  };`,
+    `})();`,
+    ``,
+  ].join('\n');
+}
+
+function getFull() { return getSettlementFileContent(); }
+
+function doDownload(t,s) {
+  const b = new Blob([t], {type:'text/javascript'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b);
+  a.download = (editorMode === 'settlement' ? settlementId : editorMode) + '_' + s + '.js';
+  a.click();
+}
+
+function doCopy(t) { navigator.clipboard.writeText(t).then(() => statusMsg('Copied!')); }
+function statusMsg(msg) {
+  const el = document.getElementById('status-msg');
+  el.textContent = msg;
+  setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 4000);
+}
+
+async function saveToGame() {
+  const token = (document.getElementById('github-token')||{}).value || localStorage.getItem('gh_token_map_editor') || '';
+  if (!token) {
+    statusMsg('Enter GitHub token first.');
+    document.getElementById('github-token').focus();
+    return;
+  }
+  // Persist token for this session
+  try { localStorage.setItem('gh_token_map_editor', token); } catch(e) {}
+
+  statusMsg('Saving...');
+  const path = getSettlementFilePath();
+  const content = getSettlementFileContent();
+  const b64 = btoa(unescape(encodeURIComponent(content)));
+
+  try {
+    // GET current file to retrieve its sha (required for update)
+    const getRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    let sha = null;
+    if (getRes.ok) {
+      const data = await getRes.json();
+      sha = data.sha;
+    } else if (getRes.status !== 404) {
+      throw new Error(`GitHub GET failed: ${getRes.status}`);
+    }
+
+    // PUT new content
+    const body = {
+      message: `Map editor: update ${path}`,
+      content: b64,
+    };
+    if (sha) body.sha = sha;
+
+    const putRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!putRes.ok) {
+      const err = await putRes.json();
+      throw new Error(err.message || `GitHub PUT failed: ${putRes.status}`);
+    }
+
+    // Update originalMap so diff clears
+    for (const [k,v] of Object.entries(definedMap)) originalMap[k] = Object.assign({}, v);
+    updateExport();
+    statusMsg('Saved to GitHub.');
+  } catch(e) {
+    statusMsg('Error: ' + e.message);
+    console.error('GitHub save error:', e);
+  }
 }
 
 document.getElementById('btn-save').addEventListener('click',saveToGame);
@@ -1620,6 +1781,9 @@ function init(){
   if(!window.WORLD_DATA){statusMsg('ERROR: aerdorn.js not loaded');return;}
   if(!window.MapForge){statusMsg('ERROR: mapforge.js not loaded');return;}
   MF=window.MapForge;
+  // Restore GitHub token
+  const saved = localStorage.getItem('gh_token_map_editor');
+  if (saved) { const el = document.getElementById('github-token'); if (el) el.value = saved; }
   buildSettlementList();buildInteriorList();buildTerrainPalette();buildObjPalette();buildBldgPalette();loadLayer();
 }
 init();
