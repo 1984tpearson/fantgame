@@ -1195,6 +1195,7 @@ function getSettlementFilePath() {
   };
   const folder = folderMap[settlementId] || settlementId;
   if (editorMode === 'interior') return `worlds/settlements/${folder}/interiors/${interiorId}.js`;
+  if (editorMode === 'overworld') return null;
   return `worlds/settlements/${folder}/map.js`;
 }
 
@@ -1285,6 +1286,10 @@ function statusMsg(msg) {
 }
 
 async function saveToGame() {
+  if (editorMode === 'overworld') {
+    statusMsg('Overworld save not supported yet — use Diff to copy changes.');
+    return;
+  }
   const token = (document.getElementById('github-token')||{}).value || localStorage.getItem('gh_token_map_editor') || '';
   if (!token) {
     statusMsg('Enter GitHub token first.');
