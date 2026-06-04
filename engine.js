@@ -112,7 +112,7 @@ async function generateSceneImage(description, cellKeyStr) {
   try {
     const prompt = `${CONFIG.IMAGE_STYLE_SUFFIX}, ${description}`;
     const form = new FormData();
-    form.append('prompt', prompt);
+    form.append(prompt, 'prompt');
     form.append('negative_prompt', CONFIG.IMAGE_NEGATIVE_PROMPT);
     form.append('model', CONFIG.IMAGE_MODEL);
     form.append('width', String(CONFIG.IMAGE_WIDTH));
