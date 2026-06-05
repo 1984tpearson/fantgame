@@ -296,6 +296,15 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
   <div style="background:#0e1820;border:2px solid #4a8080;padding:20px;min-width:400px;max-width:520px;font-family:inherit;color:#80c8c8;">
     <h3 style="margin:0 0 14px;font-size:13px;letter-spacing:1px;color:#80e0e0;">⚡ AI GENERATE MAP</h3>
     <div style="display:grid;grid-template-columns:110px 1fr;gap:6px 10px;align-items:start;font-size:11px;">
+      <label style="padding-top:2px;">Model</label>
+      <select id="ai-gen-model" style="width:100%;font-size:10px;">
+        <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (best spatial)</option>
+        <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5</option>
+        <option value="deepseek/deepseek-r1">DeepSeek R1 (reasoning)</option>
+        <option value="deepseek/deepseek-v4-flash">DeepSeek V4 Flash (fast)</option>
+        <option value="openai/gpt-4o">GPT-4o</option>
+        <option value="google/gemini-flash-1.5">Gemini Flash 1.5 (cheap)</option>
+      </select>
       <label style="padding-top:2px;">Mode</label>
       <select id="ai-mode" style="width:100%;font-size:10px;">
         <option value="interior">Interior (inn room, forge, dungeon...)</option>
@@ -2387,7 +2396,7 @@ Format: [{"x":0,"y":0,"type":"wall","name":"Rock Face"},{"x":3,"y":2,"type":"int
         'apikey': cfg.SUPABASE_ANON_KEY || 'sb_publishable_w0h8f1AIXQGty5X5nKrJtg_ThI1-a-j',
       },
       body: JSON.stringify({
-        model: cfg.TEXT_MODEL || 'deepseek/deepseek-v4-flash',
+        model: document.getElementById('ai-gen-model').value || cfg.TEXT_MODEL || 'google/gemini-2.5-pro',
         max_tokens: 8000,
         messages: [{role:'user', content: prompt.trim()}],
       }),
@@ -2454,10 +2463,15 @@ function buildSettlementList(){
 function buildInteriorList(){
   const sel=document.getElementById('interior-select');sel.innerHTML='';
   const ids=new Set(['blank']);
-  if(window.WORLD_DATA)
+  if(window.WORLD_DATA){
+    // Add all registered interiors
+    for(const[id,s] of Object.entries(window.WORLD_DATA.settlements))
+      if(s.isInterior) ids.add(id);
+    // Also add any referenced via enter links in settlement maps
     for(const s of Object.values(window.WORLD_DATA.settlements))
-      for(const meta of Object.values(s.map))
-        if(meta.enter&&meta.enter.id)ids.add(meta.enter.id);
+      if(s.map) for(const meta of Object.values(s.map))
+        if(meta.enter&&meta.enter.id) ids.add(meta.enter.id);
+  }
   for(const id of[...ids].sort()){const o=document.createElement('option');o.value=id;o.textContent=id;sel.appendChild(o);}
   interiorId=sel.value;
 }
