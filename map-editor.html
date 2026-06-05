@@ -663,8 +663,8 @@ function inferBg(x, y) {
     if (m) return m;
     return window.WORLD_DATA.inferTerrain ? window.WORLD_DATA.inferTerrain(x,y) : {type:'plains',name:''};
   }
-  if (editorMode === 'settlement') return {type:'grass', name:''};
-  return {type:'interior', name:''};
+  // Outside defined cells — render as void (black)
+  return {type:'void', name:''};
 }
 
 function buildDisplayMap(x0,x1,y0,y1) {
@@ -906,6 +906,10 @@ function renderAll() {
       const k=`${gx},${gy}`;
       const meta = definedMap[k] || inferBg(gx,gy);
       const {px,py}=cellToCanvas(gx,gy);
+      if (meta.type === 'void') {
+        ctx.fillStyle='#050402'; ctx.fillRect(px,py,tileSize,tileSize);
+        continue;
+      }
       const tc=getTileCanvas(meta.type,gx,gy,meta.variant,meta.terrainStyle);
       if(tc) ctx.drawImage(tc,px,py,tileSize,tileSize);
       else { ctx.fillStyle='#1a1408'; ctx.fillRect(px,py,tileSize,tileSize); }
@@ -2010,6 +2014,7 @@ function buildSettlementList(){
   const sel=document.getElementById('settlement-select');sel.innerHTML='';
   if(!window.WORLD_DATA)return;
   for(const[id,s]of Object.entries(window.WORLD_DATA.settlements)){
+    if(s.isInterior)continue; // skip interiors
     const o=document.createElement('option');o.value=id;o.textContent=s.name||id;
     if(id===settlementId)o.selected=true;sel.appendChild(o);
   }
