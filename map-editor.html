@@ -197,7 +197,15 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
       <div class="cprop"><label>Type</label><input id="prop-type" type="text"></div>
       <div class="cprop"><label>Name</label><input id="prop-name" type="text"></div>
       <div class="cprop"><label>interiorType</label><input id="prop-interiorType" type="text"></div>
-      <div class="cprop"><label>doors (comma-sep)</label><input id="prop-doors" type="text" placeholder="north,east..."></div>
+      <div class="cprop">
+        <label>doors</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:3px;font-size:10px;"><input type="checkbox" id="door-north" value="north"> N</label>
+          <label style="display:flex;align-items:center;gap:3px;font-size:10px;"><input type="checkbox" id="door-east"  value="east">  E</label>
+          <label style="display:flex;align-items:center;gap:3px;font-size:10px;"><input type="checkbox" id="door-south" value="south"> S</label>
+          <label style="display:flex;align-items:center;gap:3px;font-size:10px;"><input type="checkbox" id="door-west"  value="west">  W</label>
+        </div>
+      </div>
       <div class="cprop"><label>object</label><input id="prop-object" type="text"></div>
       <div class="cprop" id="row-terrain-rotation">
         <label>terrain rotation</label>
@@ -1291,7 +1299,8 @@ function populateInspector(x,y){
   document.getElementById('prop-type').value=meta.type||'';
   document.getElementById('prop-name').value=meta.name||'';
   document.getElementById('prop-interiorType').value=meta.interiorType||'';
-  document.getElementById('prop-doors').value=Array.isArray(meta.doors)?meta.doors.join(','):(meta.doors||'');
+  const doors = Array.isArray(meta.doors) ? meta.doors : (meta.doors ? meta.doors.split(',').map(s=>s.trim()) : []);
+  ['north','east','south','west'].forEach(d => document.getElementById('door-'+d).checked = doors.includes(d));
   document.getElementById('prop-object').value=meta.object||'';
 
   // Enter/exit section — always show when a cell is selected
@@ -1324,7 +1333,8 @@ function populateInspector(x,y){
 
 function clearInspector(){
   document.getElementById('cell-coords').textContent='-';
-  ['prop-type','prop-name','prop-interiorType','prop-doors','prop-object'].forEach(id=>document.getElementById(id).value='');
+  ['prop-type','prop-name','prop-interiorType','prop-object'].forEach(id=>document.getElementById(id).value='');
+  ['north','east','south','west'].forEach(d => document.getElementById('door-'+d).checked = false);
   document.getElementById('row-rotation').style.display='none';
 }
 
@@ -1335,11 +1345,11 @@ document.getElementById('btn-apply').addEventListener('click',()=>{
   const type=document.getElementById('prop-type').value.trim();
   const name=document.getElementById('prop-name').value.trim();
   const it=document.getElementById('prop-interiorType').value.trim();
-  const ds=document.getElementById('prop-doors').value.trim();
+  const ds=['north','east','south','west'].filter(d=>document.getElementById('door-'+d).checked);
   const obj=document.getElementById('prop-object').value.trim();
   const meta=map[k]?Object.assign({},map[k]):{};
   if(type)meta.type=type;if(name)meta.name=name;if(it)meta.interiorType=it;
-  if(ds)meta.doors=ds.split(',').map(s=>s.trim()).filter(Boolean);
+  if(ds.length) meta.doors=ds; else delete meta.doors;
   if(obj!==undefined){if(obj==='')delete meta.object;else meta.object=obj;}
 
   // Enter link
@@ -2430,11 +2440,15 @@ Format: [{"x":0,"y":0,"type":"wall","name":"Rock Face"},{"x":3,"y":2,"type":"int
     text = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     // If response starts with </think> (unclosed think block), strip up to and including it
     text = text.replace(/^[\s\S]*?<\/think>/,'').trim();
+    // Strip markdown code fences
+    text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
     console.log('[AI Generate] Raw response (first 500):', text.slice(0, 500));
-    // Extract JSON array
-    const match = text.match(/\[[\s\S]*\]/);
-    if (!match) throw new Error('No JSON array in response');
-    const cells = JSON.parse(match[0]);
+    // Extract JSON array — find first [ and last ]
+    const arrStart = text.indexOf('[');
+    const arrEnd = text.lastIndexOf(']');
+    if (arrStart === -1 || arrEnd === -1) throw new Error('No JSON array in response');
+    const jsonStr = text.slice(arrStart, arrEnd + 1);
+    const cells = JSON.parse(jsonStr);
     if (!Array.isArray(cells) || !cells.length) throw new Error('Empty cell array');
 
     // Apply to definedMap — save undo state first
