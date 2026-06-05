@@ -312,7 +312,15 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
         <option value="o_small">Settlement small — 7×7 (~½ overworld cell)</option>
         <option value="o_med">Settlement medium — 14×14 (1 overworld cell)</option>
         <option value="o_large">Settlement large — 28×14 (2×1 overworld cells)</option>
+        <option value="custom">Custom...</option>
       </select>
+      <div id="ai-custom-size" style="display:none;grid-column:1/-1;">
+        <div style="display:flex;gap:8px;align-items:center;margin-top:2px;">
+          <label>W</label><input id="ai-custom-w" type="number" value="10" min="3" max="56" style="width:55px;">
+          <label>H</label><input id="ai-custom-h" type="number" value="8" min="3" max="56" style="width:55px;">
+          <span id="ai-custom-info" style="color:#3a6060;font-size:10px;"></span>
+        </div>
+      </div>
       <label style="padding-top:2px;">Atmosphere</label>
       <textarea id="ai-notes" rows="3" placeholder="e.g. rundown and dark, smells of fish and old rope. A hiding place for smugglers." style="width:100%;background:#080f14;border:1px solid #3a6060;color:#80c8c8;padding:4px;font-size:11px;resize:vertical;"></textarea>
       <label id="ai-settlement-label" style="padding-top:2px;">Settlement</label>
@@ -2226,13 +2234,20 @@ const AI_SIZES = {
 };
 
 function updateAiSizeLabel() {
-  // Auto-suggest size based on mode
   const mode = document.getElementById('ai-mode').value;
   const sel  = document.getElementById('ai-size');
-  if (mode === 'interior') {
-    if (!sel.value.startsWith('s_')) sel.value = 's_med';
-  } else {
-    if (!sel.value.startsWith('o_')) sel.value = 'o_small';
+  const isCustom = sel.value === 'custom';
+  document.getElementById('ai-custom-size').style.display = isCustom ? 'block' : 'none';
+  if (!isCustom) {
+    if (mode === 'interior' && !sel.value.startsWith('s_')) sel.value = 's_med';
+    if (mode !== 'interior' && !sel.value.startsWith('o_') && sel.value !== 'custom') sel.value = 'o_small';
+  }
+  // Update info label for custom
+  if (isCustom) {
+    const w = parseInt(document.getElementById('ai-custom-w').value) || 10;
+    const h = parseInt(document.getElementById('ai-custom-h').value) || 8;
+    const scale = mode === 'interior' ? 2 : 20;
+    document.getElementById('ai-custom-info').textContent = `${w*scale}m × ${h*scale}m — ${w*h} cells`;
   }
 }
 
@@ -2272,6 +2287,9 @@ document.getElementById('ai-mode').addEventListener('change', e => {
   updateAiSizeLabel();
 });
 
+document.getElementById('ai-custom-w').addEventListener('input', updateAiSizeLabel);
+document.getElementById('ai-custom-h').addEventListener('input', updateAiSizeLabel);
+
 document.getElementById('ai-generate-btn').addEventListener('click', async () => {
   const mode  = document.getElementById('ai-mode').value;
   const type  = document.getElementById('ai-type').value.trim() || 'generic building';
@@ -2279,7 +2297,9 @@ document.getElementById('ai-generate-btn').addEventListener('click', async () =>
   const notes = document.getElementById('ai-notes').value.trim();
   const sid   = document.getElementById('ai-settlement').value;
   const sname = (window.WORLD_DATA.settlements[sid]?.name) || sid;
-  const {w, h} = AI_SIZES[size];
+  const {w, h} = size === 'custom'
+    ? {w: parseInt(document.getElementById('ai-custom-w').value)||10, h: parseInt(document.getElementById('ai-custom-h').value)||8}
+    : AI_SIZES[size] || {w:10, h:8};
   const validT = (AI_TERRAIN_VALID[mode] || AI_TERRAIN_VALID.interior).join(', ');
 
   const aiStatus = s => document.getElementById('ai-status').textContent = s;
