@@ -1,14 +1,23 @@
-import sys, re
+import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
 with open('map-editor.html', encoding='utf-8') as f:
     content = f.read()
 
-script_start = content.find('\n<script>\n')
-script_end = content.rfind('</script>')
-js = content[script_start:script_end]
+old = "document.getElementById('ai-cancel').addEventListener('click', () => {\n  document.getElementById('ai-modal').style.display = 'none';\n});"
 
-for m in re.finditer(r'</script', js, re.IGNORECASE):
-    pos = m.start()
-    line = js[:pos].count('\n') + 1
-    print(f'line {line}: {js[max(0,pos-40):pos+20]!r}')
+new = """document.getElementById('ai-cancel').addEventListener('click', () => {
+  document.getElementById('ai-modal').style.display = 'none';
+});
+
+document.getElementById('ai-mode').addEventListener('change', e => {
+  const isWild = e.target.value === 'wilderness';
+  const row = document.getElementById('ai-settlement').closest('div[style*="grid"]') || document.getElementById('ai-settlement').parentElement;
+  // Hide settlement row for wilderness
+  document.getElementById('ai-settlement-row').style.display = isWild ? 'none' : 'contents';
+});"""
+
+content = content.replace(old, new)
+with open('map-editor.html', 'w', encoding='utf-8') as f:
+    f.write(content)
+print('Done.')

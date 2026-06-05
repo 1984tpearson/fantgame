@@ -298,8 +298,9 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
     <div style="display:grid;grid-template-columns:110px 1fr;gap:6px 10px;align-items:start;font-size:11px;">
       <label style="padding-top:2px;">Mode</label>
       <select id="ai-mode" style="width:100%;font-size:10px;">
-        <option value="interior">Interior / Building</option>
-        <option value="settlement">Settlement / Outdoor Area</option>
+        <option value="interior">Interior (inn room, forge, dungeon...)</option>
+        <option value="settlement">Settlement area (streets, market, docks...)</option>
+        <option value="wilderness">Wilderness / Found (cave, hut, ruin, sewer...)</option>
       </select>
       <label style="padding-top:2px;">Type / Name</label>
       <input id="ai-type" type="text" placeholder="e.g. inn, sewer, abandoned hut, market square" style="width:100%;">
@@ -311,7 +312,7 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
       </select>
       <label style="padding-top:2px;">Atmosphere</label>
       <textarea id="ai-notes" rows="3" placeholder="e.g. rundown and dark, smells of fish and old rope. A hiding place for smugglers." style="width:100%;background:#080f14;border:1px solid #3a6060;color:#80c8c8;padding:4px;font-size:11px;resize:vertical;"></textarea>
-      <label style="padding-top:2px;">Settlement</label>
+      <label id="ai-settlement-label" style="padding-top:2px;">Settlement</label>
       <select id="ai-settlement" style="width:100%;font-size:10px;"></select>
     </div>
     <div style="margin-top:6px;font-size:10px;color:#3a6060;">This will replace the current map. Review and edit before saving.</div>
@@ -2247,6 +2248,12 @@ document.getElementById('ai-cancel').addEventListener('click', () => {
   document.getElementById('ai-modal').style.display = 'none';
 });
 
+document.getElementById('ai-mode').addEventListener('change', e => {
+  const isWild = e.target.value === 'wilderness';
+  document.getElementById('ai-settlement').style.display = isWild ? 'none' : '';
+  document.getElementById('ai-settlement-label').style.display = isWild ? 'none' : '';
+});
+
 document.getElementById('ai-generate-btn').addEventListener('click', async () => {
   const mode  = document.getElementById('ai-mode').value;
   const type  = document.getElementById('ai-type').value.trim() || 'generic building';
@@ -2255,36 +2262,83 @@ document.getElementById('ai-generate-btn').addEventListener('click', async () =>
   const sid   = document.getElementById('ai-settlement').value;
   const sname = (window.WORLD_DATA.settlements[sid]?.name) || sid;
   const {w, h} = AI_SIZES[size];
-  const validT = AI_TERRAIN_VALID[mode].join(', ');
+  const validT = (AI_TERRAIN_VALID[mode] || AI_TERRAIN_VALID.interior).join(', ');
 
   const aiStatus = s => document.getElementById('ai-status').textContent = s;
   document.getElementById('ai-generate-btn').disabled = true;
   aiStatus('Generating...');
 
-  const isInterior = mode === 'interior';
-  const prompt = isInterior ? `
-Generate a ${type} interior map for a gritty low-fantasy RPG set in ${sname}.
-${notes ? 'Atmosphere: ' + notes : ''}
-Size: ${w} wide x ${h} tall (x: 0 to ${w-1}, y: 0 to ${h-1}). y=0 is NORTH (top). y=${h-1} is SOUTH (bottom).
-Rules:
-- Perimeter (x=0, x=${w-1}, y=0, y=${h-1}) must be wall type EXCEPT for 1-2 door cells on the south wall (y=${h-1}).
-- Interior cells use: ${validT}
-- Objects (optional, 3-8 total): ${AI_OBJECTS_VALID.join(', ')}
-- Door cells must have exit: {"layer":"settlement","pos":null}
-- Every cell in the grid must be covered.
-- Name field: descriptive label for the area/room (e.g. "Common Room", "Forge", "Storage")
-Return ONLY a JSON array. No markdown, no explanation. Format:
-[{"x":0,"y":0,"type":"wall","name":"Wall"},{"x":1,"y":0,"type":"wall","name":"Wall"},...]
-Include object field only when placing an object: {"x":3,"y":2,"type":"floor_h","name":"Bedroom","object":"bed_s"}
-` : `
-Generate a ${type} outdoor/settlement area map for a gritty low-fantasy RPG set in ${sname}.
-${notes ? 'Atmosphere: ' + notes : ''}
-Size: ${w} wide x ${h} tall (x: 0 to ${w-1}, y: 0 to ${h-1}). y=0 is NORTH (top). y=${h-1} is SOUTH (bottom).
-Valid terrain: ${validT}
-Objects (optional): ${AI_OBJECTS_VALID.join(', ')}
-Return ONLY a JSON array. No markdown, no explanation. Format:
-[{"x":0,"y":0,"type":"grass","name":""},{"x":1,"y":0,"type":"street","name":"Main Road"},...]
-`;
+  // mode is used directly in prompt generation above
+  const sizeLabel = size === 'small' ? `${w}x${h}` : size === 'medium' ? `${w}x${h}` : `${w}x${h}`;
+
+  let prompt = '';
+
+  if (mode === 'interior') {
+    prompt = `You are generating a tile map for a gritty low-fantasy RPG interior. Design a real, believable space.
+
+LOCATION: ${type} in ${sname}. ${notes ? 'Atmosphere: ' + notes : ''}
+GRID: ${w} wide x ${h} tall. x=0=west wall, x=${w-1}=east wall, y=0=north wall (top), y=${h-1}=south wall (bottom).
+
+MANDATORY RULES:
+1. ALL perimeter cells MUST be type "wall" except 1 door on south wall (y=${h-1}) near centre.
+2. Add 1-3 internal walls dividing space into 2-4 distinct rooms. Each internal wall has a 1-2 cell doorway gap.
+3. Each room uses a DIFFERENT floor type: interior, floor_h, floor_v, floor_stone, floor_parq, floor_hbone, floor_diag, dirt, mud, grass.
+4. Place 4-10 objects appropriate to a ${type}. Spread them logically.
+5. Name each room (e.g. "Common Room", "Back Store", "Forge", "Sleeping Quarters").
+6. Door cell format: {"x":N,"y":${h-1},"type":"door","name":"Entrance","exit":{"layer":"settlement","pos":null}}
+7. Cover ALL ${w*h} cells exactly once.
+
+VALID FLOOR TYPES: interior, floor_h, floor_v, floor_stone, floor_parq, floor_hbone, floor_diag, dirt, mud, grass
+VALID OBJECTS: ${AI_OBJECTS_VALID.slice(0,30).join(', ')}
+
+Return ONLY a JSON array of ${w*h} objects. No explanation, no markdown.
+Format: [{"x":0,"y":0,"type":"wall","name":"Wall"},{"x":3,"y":2,"type":"floor_h","name":"Bedroom","object":"bed_s"},...]`;
+
+  } else if (mode === 'settlement') {
+    prompt = `You are generating an outdoor settlement tile map for a gritty low-fantasy RPG. Design a real, functional urban space.
+
+LOCATION: ${type} in ${sname}. ${notes ? 'Atmosphere: ' + notes : ''}
+GRID: ${w} wide x ${h} tall. x=0=west, x=${w-1}=east, y=0=north (top), y=${h-1}=south (bottom).
+
+DESIGN RULES:
+1. Create distinct zones using varied terrain (street, grass, mud, sand, water etc). Not one uniform texture.
+2. Streets/paths connect logically. Use "street" for paths, "road" for main routes.
+3. BUILDINGS: use type "building" with a real name (e.g. "The Rusty Anchor Inn", "Blacksmith", "Grain Store"). Place 2-5 buildings of 1-4 cells each. Buildings block movement. Add an interiorType field for enterable buildings: house, inn, shop, blacksmith, chapel, market_hall.
+4. Open areas: grass, market (sand), courtyard areas between buildings.
+5. Water features: "water" or "shallow_water" for ponds/rivers.
+6. Place 3-8 objects in logical positions (barrels near buildings, stalls in market areas, etc).
+7. Name each zone descriptively.
+8. Cover ALL ${w*h} cells exactly once.
+
+VALID TERRAIN: ${validT}
+VALID OBJECTS: ${AI_OBJECTS_VALID.slice(0,30).join(', ')}
+BUILDING INTERIOR TYPES: house, inn, shop, blacksmith, chapel, market_hall, bathhouse, harbormaster
+
+Return ONLY a JSON array of ${w*h} objects. No explanation, no markdown.
+Format: [{"x":0,"y":0,"type":"grass","name":"Town Square"},{"x":3,"y":2,"type":"building","name":"The Rusty Anchor Inn","interiorType":"inn"},{"x":2,"y":4,"type":"street","name":"Market Lane","object":"stall"},...]`;
+
+  } else {
+    // wilderness/found
+    prompt = `You are generating a tile map for a standalone discovered space in a gritty low-fantasy RPG wilderness. This is NOT inside a settlement.
+
+LOCATION: ${type}. ${notes ? 'Atmosphere: ' + notes : ''}
+GRID: ${w} wide x ${h} tall. x=0=west, x=${w-1}=east, y=0=north (top), y=${h-1}=south (bottom).
+
+DESIGN RULES:
+1. Organic, irregular shapes — not a neat rectangle. Use cliff, wall, water, mud to create irregular boundaries and features.
+2. Mix terrain types creatively. A cave uses: wall (solid rock), interior (cave floor), mud, shallow_water. A ruin uses: wall, grass, floor_stone, cracked. A hut uses: wall, floor_h, grass (outside).
+3. If enclosed (hut, cave): perimeter is mostly "wall" but with rough irregular edges — some perimeter cells can be cliff or water instead.
+4. If open (clearing, ruin): no strict perimeter — blend terrain naturally.
+5. Place 3-8 objects appropriate to the location.
+6. 1-2 door/exit cells if enclosed: {"type":"door","name":"Exit","exit":{"layer":"overworld","pos":null}}
+7. Cover ALL ${w*h} cells exactly once.
+
+VALID TERRAIN: wall, cliff, interior, floor_h, floor_v, floor_stone, floor_parq, dirt, mud, grass, shallow_water, water, cracked, lava, corrupt, ice, snow
+VALID OBJECTS: ${AI_OBJECTS_VALID.slice(0,30).join(', ')}
+
+Return ONLY a JSON array of ${w*h} objects. No explanation, no markdown.
+Format: [{"x":0,"y":0,"type":"wall","name":"Rock Face"},{"x":3,"y":2,"type":"interior","name":"Cave Floor","object":"campfire"},...]`;
+  }
 
   try {
     const cfg = window.CONFIG || {};
@@ -2295,8 +2349,8 @@ Return ONLY a JSON array. No markdown, no explanation. Format:
         'apikey': cfg.SUPABASE_ANON_KEY || 'sb_publishable_w0h8f1AIXQGty5X5nKrJtg_ThI1-a-j',
       },
       body: JSON.stringify({
-        model: cfg.TEXT_MODEL || 'anthropic/claude-3-haiku',
-        max_tokens: 4000,
+        model: cfg.TEXT_MODEL || 'deepseek/deepseek-v4-flash',
+        max_tokens: 8000,
         messages: [{role:'user', content: prompt.trim()}],
       }),
     });
