@@ -2334,7 +2334,9 @@ document.getElementById('ai-generate-btn').addEventListener('click', async () =>
 
   const aiStatus = s => document.getElementById('ai-status').textContent = s;
   document.getElementById('ai-generate-btn').disabled = true;
-  aiStatus('Generating...');
+  const model = document.getElementById('ai-gen-model').value || '';
+  const isGemini = model.includes('gemini');
+  aiStatus(isGemini ? 'Generating... (Gemini may take 30-60s)' : 'Generating...');
 
   // mode is used directly in prompt generation above
   const sizeLabel = size === 'small' ? `${w}x${h}` : size === 'medium' ? `${w}x${h}` : `${w}x${h}`;
@@ -2473,7 +2475,10 @@ Format: [{"x":0,"y":0,"type":"wall","name":"Rock Face"},{"x":3,"y":2,"type":"int
       body: JSON.stringify({
         model: document.getElementById('ai-gen-model').value || cfg.TEXT_MODEL || 'google/gemini-2.5-pro',
         max_tokens: Math.min(16000, w * h * 60), // ~60 tokens per cell max
-        messages: [{role:'user', content: prompt.trim()}],
+        messages: [
+          {role:'system', content:'You are a JSON generator. Output only raw JSON arrays with no explanation, no markdown, no preamble. Begin your response with [ and end with ].'},
+          {role:'user', content: prompt.trim()}
+        ],
       }),
     });
 
