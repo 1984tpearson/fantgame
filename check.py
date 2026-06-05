@@ -8,56 +8,52 @@ start = content.find("} else if (mode === 'settlement') {")
 end = content.find("  } else {", start)
 
 new_block = r"""} else if (mode === 'settlement') {
-    prompt = `You are generating a settlement tile map for a gritty low-fantasy RPG. Follow these instructions EXACTLY and in ORDER.
-
+    prompt = `Generate a ${w}x${h} settlement tile map for a gritty low-fantasy RPG.
 LOCATION: ${type} in ${sname}. ${notes ? 'Atmosphere: ' + notes : ''}
-GRID: ${w} columns (x: 0 to ${w-1}) x ${h} rows (y: 0 to ${h-1}). y=0=north/top, y=${h-1}=south/bottom.
-TOTAL CELLS: exactly ${w*h} — every cell must appear once.
+GRID: x=0 to ${w-1} (west to east), y=0 to ${h-1} (north=top to south=bottom).
+OUTPUT: JSON array of exactly ${w*h} objects, one per cell. Raw JSON only — no markdown, no explanation.
 
-STEP 1 — PLAN YOUR ZONES (do this mentally before outputting):
-Divide the grid into named rectangular zones. Example for a ${w}x${h} seaside town:
-- North strip (y=0-2): wilderness/trees
-- Main road (y=3, full width): road type
-- West quarter (x=0-5, y=4-${h-1}): residential houses + gardens  
-- Central area (x=6-9, y=4-10): market square + key buildings
-- East quarter (x=10-${w-1}, y=4-${h-1}): harbour/waterfront
-- South strip (y=${h-2}-${h-1}): beach/water edge
+FOLLOW THESE STEPS IN ORDER:
 
-STEP 2 — PLACE ROADS FIRST:
-- 1-2 "road" cells forming a main route crossing the grid (must span full width or height)
-- 2-4 "street" cells as side paths branching off the main road
+STEP 1 — PLACE BUILDINGS (15-25% of cells):
+Place 6-12 named buildings FIRST before anything else. Buildings are 1-4 cells each with the same name.
+Spread them across the grid — do not cluster all buildings in one corner.
+Building cell format: {"x":N,"y":N,"type":"building","name":"The Salted Herring Inn","interiorType":"inn"}
+Use varied interiorType values: house, inn, shop, blacksmith, chapel, market_hall, harbormaster, bathhouse
+House names: "Fisherman's Cottage", "Cooper's House", "Miller's Home", "Weaver's Cottage", "Tanner's House"
+Shop names: "Blacksmith", "Chandler & Rope", "Grain Store", "Bakery", "Apothecary", "Fletcher"
+Inn names: "The Salted Herring", "The Anchor Inn", "The Crossed Keys", "The Sailor's Rest"
 
-STEP 3 — PLACE BUILDINGS (10-20% of cells):
-Use type "building" with real names. Vary sizes (1-3 cells for same building):
-- Houses: "Fisherman's Cottage", "Miller's House", "Weaver's Home" etc. Add interiorType:"house"
-- Inns: "The Salted Herring", "The Anchor Inn" etc. Add interiorType:"inn"  
-- Shops: "Blacksmith", "Chandler", "Bakery" etc. Add interiorType:"shop"
-- Special: chapel, market_hall, harbormaster etc. with matching interiorType
+STEP 2 — PLACE MAIN ROADS (3-6% of cells):
+Add 1-2 main roads ("road" type) running through the settlement, connecting to grid edges.
+Roads must pass near building clusters so buildings front onto them.
 
-STEP 4 — FILL TERRAIN (50-60% of cells):
-- grass: open ground, gardens, commons
-- mud: unpaved areas near water/industry
-- sand: beaches, market squares, desert areas
-- water/shallow_water: sea, rivers, ponds
-- cliff: rocky outcrops (impassable)
+STEP 3 — PLACE PATHS TO BUILDING DOORS (2-5% of cells):
+For every building that does NOT already face a road, add 1-2 "street" cells immediately adjacent to it.
+Use path objects on street cells near buildings: path_h, path_v, path_cross, path_cne, path_cnw, path_cse, path_csw, path_te, path_tn, path_ts, path_tw
+Choose the correct path variant based on direction (h=horizontal, v=vertical, corners=cne/cnw/cse/csw, tees=te/tn/ts/tw).
 
-STEP 5 — ADD OBJECTS (25-35% of non-building, non-road cells):
-NATURE on grass: tree_oak, tree_oak_lg, tree_pine, bush, bush_lg, flowers, mushroom, thicket
-STREET clutter: stall, cart, barrels, trough, well, noticeboard, signpost, haystack  
-WATERFRONT: boat, barrels, logpile, anchor
-RESIDENTIAL: garden, coop, fence_h, fence_v, pond_sm
+STEP 4 — FILL TERRAIN (remaining ~60-70% of cells):
+Fill all remaining cells with appropriate terrain. NO large empty grass patches.
+- grass: general ground between buildings
+- mud: near water, back alleys, unpaved service areas
+- sand: beaches, market squares, desert areas  
+- water/shallow_water: harbour, river, pond
+- cliff: rocky outcrops (impassable, use sparingly on edges)
+Mix terrain types — vary them naturally.
 
-CRITICAL RULES:
-- Cover ALL ${w*h} cells. Count as you go.
-- No two cells share the same x,y coordinate.
-- Vary terrain — avoid large uniform patches without objects.
-- Group related cells (all house cells of one building share the same name).
+STEP 5 — ADD NATURE AND DECORATION (objects on 30-40% of terrain cells):
+NATURE on grass: tree_oak, tree_oak_lg, tree_pine, tree_pine_lg, bush, bush_lg, flowers, mushroom, thicket, garden
+STREET LIFE on/near roads: stall, cart, barrels, trough, well, noticeboard, signpost, haystack, logpile
+RESIDENTIAL near houses: coop, fence_h, fence_v, pond_sm, flowers, bush
+WATERFRONT: boat, barrels, logpile
+Do NOT leave large areas of plain terrain with no objects.
 
 VALID TERRAIN: ${validT}
-ALL VALID OBJECTS: ${AI_OBJECTS_VALID.join(', ')}
+ALL OBJECTS: ${AI_OBJECTS_VALID.join(', ')}
 
-Return ONLY a JSON array. Zero explanation. Zero markdown. Just the raw JSON array starting with [ and ending with ].
-Format: [{"x":0,"y":0,"type":"grass","name":"Town Edge","object":"tree_oak_lg"},{"x":1,"y":0,"type":"grass","name":"Town Edge"},...]`;
+JSON format — every cell must have x, y, type, name. Add object field only when placing one.
+[{"x":0,"y":0,"type":"grass","name":"Town Edge","object":"tree_oak_lg"},{"x":3,"y":2,"type":"building","name":"The Salted Herring Inn","interiorType":"inn"},{"x":3,"y":3,"type":"street","name":"Harbour Road","object":"path_v"},...]`;
 
   """
 
