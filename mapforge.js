@@ -3960,67 +3960,62 @@ function gridToDataURL(grid, scale=1) {
 }
 
 function makeSettlementMarker(type, variant, seed) {
-  const W=20,H=20, rng=mulberry32(seed^(variant*0x9e3779b9)), grid=createPixelGrid(W,H);
+  const W=20, H=20, rng=mulberry32(seed^(variant*0x9e3779b9)), grid=createPixelGrid(W,H);
 
-  // Colour palettes per variant
-  const roofPals = [
-    {r:[168,72,48,255], rd:[110,42,28,255]},   // red tile
-    {r:[140,120,90,255], rd:[90,75,55,255]},    // thatch
-    {r:[80,100,120,255], rd:[50,65,80,255]},    // slate
-    {r:[160,140,60,255], rd:[105,90,35,255]},   // gold/straw
+  // Roof tile colours per variant — these are what you see from directly above
+  const roofCols = [
+    [148,68,45,255],   // red clay tile
+    [130,115,85,255],  // thatch/straw
+    [75,90,108,255],   // dark slate
+    [145,128,55,255],  // weathered yellow tile
   ];
-  const wallPals = [
-    [210,200,180,255], // pale stone
-    [175,155,125,255], // warm sandstone
-    [140,130,120,255], // grey stone
-    [190,175,145,255], // cream plaster
+  const roofDark = [
+    [85,38,22,255],
+    [80,68,48,255],
+    [45,55,70,255],
+    [92,80,30,255],
   ];
-  const pal = roofPals[variant % roofPals.length];
-  const wallC = wallPals[variant % wallPals.length];
-  const wallD = lerp(wallC, [20,15,10,255], 0.35);
-  const shadow = [30,25,20,100];
+  const roofC = roofCols[variant % roofCols.length];
+  const roofD = roofDark[variant % roofDark.length];
 
-  function drawBuilding(bx, by, bw, bh) {
-    // Wall face
-    for(let y=by;y<by+bh;y++) for(let x=bx;x<bx+bw;x++)
-      setPixel(grid,x,y, x===bx||x===bx+bw-1||y===by+bh-1 ? wallD : jitter(wallC,12,rng));
-    // Roof (triangle peak above building)
-    const rh = Math.max(2, Math.round(bh*0.5));
-    const cx2 = bx+Math.floor(bw/2);
-    for(let ry=0;ry<rh;ry++) {
-      const half = Math.round((bw/2)*(1-ry/rh));
-      for(let rx=cx2-half;rx<=cx2+half;rx++) {
-        const t = ry/rh;
-        setPixel(grid,rx,by-ry-1, jitter(lerp(pal.r,pal.rd,t),8,rng));
-      }
+  // Draw a single top-down roof square with ridge line and tile texture
+  function drawRoof(x1, y1, x2, y2) {
+    const mx = Math.floor((x1+x2)/2);
+    for(let y=y1;y<=y2;y++) for(let x=x1;x<=x2;x++) {
+      // Tile rows — subtle horizontal lines
+      const tileRow = Math.floor((y-y1) % 3) === 0;
+      // Darker at edges, lighter in middle (curved roof feel)
+      const dx = Math.abs(x - mx);
+      const t = dx / ((x2-x1)/2+1);
+      let c = lerp(roofC, roofD, t*0.5);
+      if (tileRow) c = lerp(c, roofD, 0.35);
+      c = jitter(c, 8, rng);
+      setPixel(grid, x, y, c);
     }
-    // Ridge
-    setPixel(grid,cx2,by-rh,pal.rd);
+    // Ridge line down the centre
+    for(let y=y1;y<=y2;y++) setPixel(grid, mx, y, jitter(lerp(roofD,[20,15,10,255],0.3), 4, rng));
+    // Shadow edge on right and bottom
+    for(let y=y1;y<=y2;y++) setPixel(grid, x2, y, lerp(roofD,[15,12,8,255],0.5));
+    for(let x=x1;x<=x2;x++) setPixel(grid, x, y2, lerp(roofD,[15,12,8,255],0.5));
   }
 
   if(type==='city') {
-    // 4 buildings tightly packed
-    drawBuilding(1,10,7,8);
-    drawBuilding(8,12,5,6);
-    drawBuilding(13,9,6,9);
-    drawBuilding(5,7,5,5);
+    // Dense cluster — 3 roof squares packed together
+    drawRoof(0,2,9,9);
+    drawRoof(10,0,19,7);
+    drawRoof(2,10,12,18);
+    drawRoof(13,9,19,19);
   } else if(type==='town') {
-    // 2-3 buildings
-    drawBuilding(2,11,7,7);
-    drawBuilding(11,12,6,6);
-    drawBuilding(7,8,4,5);
+    // 2 roofs
+    drawRoof(0,2,10,12);
+    drawRoof(11,4,19,16);
   } else if(type==='village') {
-    // 1-2 small buildings
-    drawBuilding(4,11,7,7);
-    if(variant%2===0) drawBuilding(12,13,4,5);
+    // 1 roof, smaller
+    drawRoof(3,4,16,15);
   } else {
-    // single building
-    drawBuilding(6,10,8,8);
+    // single tiny building
+    drawRoof(5,5,14,14);
   }
-
-  // Ground shadow under everything
-  for(let x=0;x<W;x++) for(let y=H-3;y<H;y++)
-    if(!grid[y][x]) setPixel(grid,x,y, lerp([60,50,35,255],[20,15,10,0],( y-(H-3))/3));
 
   return grid;
 }

@@ -1542,6 +1542,12 @@ function getCellTransition(x,y){
   if(state.layer==='overworld'){
     const sid=OVERWORLD_TO_SETTLEMENT[`${x},${y}`];
     if(sid&&SETTLEMENTS[sid])return{type:'enter_settlement',id:sid};
+    // Also check for explicit enter links on overworld cells
+    const owCell = WORLD_META[`${x},${y}`];
+    if(owCell?.enter) {
+      const e = owCell.enter;
+      return{type:'enter_link', layer:e.layer, id:e.id, x:e.entryPos?.x??1, y:e.entryPos?.y??1, enterMode:owCell.enterMode||'auto', destName:owCell.name||''};
+    }
     return null;
   }
   if(state.layer==='settlement'||state.layer==='interior'){
@@ -1553,7 +1559,10 @@ function getCellTransition(x,y){
     // Door mode — handled in move(), not here
     if(cell.doors&&cell.doors.length)return null;
     // Auto or prompt mode — return enter data for move() to decide
-    if(cell.enter)return{type:'enter_link',...cell.enter,enterMode:cell.enterMode||'auto',destName:cell.name||''};
+    if(cell.enter){
+      const e = cell.enter;
+      return{type:'enter_link', layer:e.layer, id:e.id, x:e.entryPos?.x??1, y:e.entryPos?.y??1, enterMode:cell.enterMode||'auto', destName:cell.name||''};
+    }
     return null;
   }
   return null;

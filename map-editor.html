@@ -308,7 +308,7 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
 const TERRAIN_TO_MF = {
   street:'dirt', road:'cobble', building:'farmland', grass:'grass', courtyard:'grass',
   market:'sand', gate:'cobble', wall:'rocky', door:'dirt',
-  interior:'cave', floor:'dirt', yard:'grass', mud:'mud', cliff:'cliff',
+  interior:'cave', floor:'dirt', yard:'grass', mud:'mud',
   water:'water', shallow_water:'shallow_water',
   floor_h:'floor_h', floor_v:'floor_v', floor_hbone:'floor_herringbone',
   floor_diag:'floor_diagonal', floor_parq:'floor_parquet', floor_stone:'floor_stone',
@@ -758,6 +758,10 @@ function getTileCanvas(type, x, y, variant, terrainStyle) {
   if (type==='cracked') {
     const key='crk_'+seed; if(tileCache.has(key))return tileCache.get(key);
     try{const g=MF.makeCrackedEarth(seed);const c=document.createElement('canvas');MF.renderGridToCanvas(g,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
+  }
+  if (type==='cliff') {
+    const key='cliff_'+seed; if(tileCache.has(key))return tileCache.get(key);
+    try{const g=MF.makeCliff(20,20,seed);const c=document.createElement('canvas');MF.renderGridToCanvas(g,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
   }
   const mf=TERRAIN_TO_MF[type]||'grass';
   const key=mf+'_'+seed; if(tileCache.has(key))return tileCache.get(key);
