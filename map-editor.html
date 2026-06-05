@@ -1092,6 +1092,20 @@ function _drawCellTerrain(x,y,meta) {
       ctx.drawImage(tc,-tileSize/2,-tileSize/2,tileSize,tileSize);ctx.restore();
     } else ctx.drawImage(tc,px,py,tileSize,tileSize);
   } else { ctx.fillStyle='#1a1408'; ctx.fillRect(px,py,tileSize,tileSize); }
+  // Draw door lines
+  if(meta.doors&&meta.doors.length){
+    ctx.globalAlpha=0.9;ctx.strokeStyle='#7a4a20';ctx.lineWidth=Math.max(2,tileSize*0.16);ctx.lineCap='round';
+    const dm=tileSize*0.28,dc=tileSize/2;
+    meta.doors.forEach(d=>{
+      ctx.beginPath();
+      if(d==='north'){ctx.moveTo(px+dc-dm,py+0.5);ctx.lineTo(px+dc+dm,py+0.5);}
+      else if(d==='south'){ctx.moveTo(px+dc-dm,py+tileSize-1.5);ctx.lineTo(px+dc+dm,py+tileSize-1.5);}
+      else if(d==='west'){ctx.moveTo(px+0.5,py+dc-dm);ctx.lineTo(px+0.5,py+dc+dm);}
+      else if(d==='east'){ctx.moveTo(px+tileSize-1.5,py+dc-dm);ctx.lineTo(px+tileSize-1.5,py+dc+dm);}
+      ctx.stroke();
+    });
+    ctx.globalAlpha=1;
+  }
 }
 
 function _drawSel(x,y){
@@ -2351,8 +2365,8 @@ GRID: ${w} wide x ${h} tall. x=0=west wall, x=${w-1}=east wall, y=0=north wall (
 MANDATORY STRUCTURAL RULES:
 1. ALL perimeter cells MUST be "wall" except 1-2 door cells on the south wall (y=${h-1}) near centre.
 2. Divide interior with 1-3 internal wall lines, each with a 1-2 cell doorway gap. Create 2-4 named rooms.
-3. CRITICAL: Each distinct room/area uses ONE consistent floor type throughout that room. Do NOT mix floor types within a room.
-   Choose from: interior, floor_h, floor_v, floor_stone, floor_parq, floor_hbone, floor_diag, dirt, mud, grass
+3. FLOOR TYPES — CRITICAL RULE: Before placing any floor cells, mentally assign ONE floor type to each room and use it for EVERY cell in that room without exception. Do NOT vary floor types within a single room — a bedroom is ALL floor_v, a kitchen is ALL dirt, a common room is ALL floor_h, etc. Mixing floor types within one room is wrong.
+   Available floor types: interior, floor_h, floor_v, floor_stone, floor_parq, floor_hbone, floor_diag, dirt, mud, grass
 4. FURNITURE DENSITY: Place objects on 30-50% of floor cells. Use context-appropriate objects.
    Suggested objects for ${type}: ${relevantFurniture}
    Full object list: ${AI_OBJECTS_VALID.join(', ')}
@@ -2425,7 +2439,7 @@ Format: [{"x":0,"y":0,"type":"wall","name":"Rock Face"},{"x":3,"y":2,"type":"int
       },
       body: JSON.stringify({
         model: document.getElementById('ai-gen-model').value || cfg.TEXT_MODEL || 'google/gemini-2.5-pro',
-        max_tokens: 8000,
+        max_tokens: 16000,
         messages: [{role:'user', content: prompt.trim()}],
       }),
     });
