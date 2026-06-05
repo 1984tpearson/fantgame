@@ -3962,59 +3962,42 @@ function gridToDataURL(grid, scale=1) {
 function makeSettlementMarker(type, variant, seed) {
   const W=20, H=20, rng=mulberry32(seed^(variant*0x9e3779b9)), grid=createPixelGrid(W,H);
 
-  // Roof tile colours per variant — these are what you see from directly above
+  // Roof colour palettes per variant
   const roofCols = [
-    [148,68,45,255],   // red clay tile
-    [130,115,85,255],  // thatch/straw
-    [75,90,108,255],   // dark slate
-    [145,128,55,255],  // weathered yellow tile
-  ];
-  const roofDark = [
-    [85,38,22,255],
-    [80,68,48,255],
-    [45,55,70,255],
-    [92,80,30,255],
+    [148,68,45,255],   // red clay
+    [130,115,85,255],  // thatch
+    [75,90,108,255],   // slate
+    [145,128,55,255],  // yellow tile
   ];
   const roofC = roofCols[variant % roofCols.length];
-  const roofD = roofDark[variant % roofDark.length];
+  const roofD = lerp(roofC, [15,10,8,255], 0.45);
+  const wallC = [185,170,145,255];
 
-  // Draw a single top-down roof square with ridge line and tile texture
-  function drawRoof(x1, y1, x2, y2) {
-    const mx = Math.floor((x1+x2)/2);
-    for(let y=y1;y<=y2;y++) for(let x=x1;x<=x2;x++) {
-      // Tile rows — subtle horizontal lines
-      const tileRow = Math.floor((y-y1) % 3) === 0;
-      // Darker at edges, lighter in middle (curved roof feel)
-      const dx = Math.abs(x - mx);
-      const t = dx / ((x2-x1)/2+1);
-      let c = lerp(roofC, roofD, t*0.5);
-      if (tileRow) c = lerp(c, roofD, 0.35);
-      c = jitter(c, 8, rng);
+  // How many buildings and their size range per type
+  const configs = {
+    city:     {count:[12,18], minSz:2, maxSz:4},
+    town:     {count:[6,10],  minSz:2, maxSz:4},
+    village:  {count:[2,4],   minSz:3, maxSz:5},
+    building: {count:[1,2],   minSz:4, maxSz:6},
+  };
+  const cfg = configs[type] || configs.town;
+  const count = cfg.count[0] + Math.floor(rng() * (cfg.count[1] - cfg.count[0] + 1));
+
+  for (let i = 0; i < count; i++) {
+    const bw = cfg.minSz + Math.floor(rng() * (cfg.maxSz - cfg.minSz + 1));
+    const bh = cfg.minSz + Math.floor(rng() * (cfg.maxSz - cfg.minSz + 1));
+    const bx = Math.floor(rng() * (W - bw));
+    const by = Math.floor(rng() * (H - bh));
+
+    // Fill roof
+    for (let y=by; y<by+bh; y++) for (let x=bx; x<bx+bw; x++) {
+      // Ridge runs horizontally across middle
+      const isRidge = y === by + Math.floor(bh/2);
+      let c = isRidge ? lerp(roofC, roofD, 0.7) : jitter(roofC, 10, rng);
+      // Darken edges
+      if (x===bx||x===bx+bw-1||y===by||y===by+bh-1) c = lerp(c, roofD, 0.5);
       setPixel(grid, x, y, c);
     }
-    // Ridge line down the centre
-    for(let y=y1;y<=y2;y++) setPixel(grid, mx, y, jitter(lerp(roofD,[20,15,10,255],0.3), 4, rng));
-    // Shadow edge on right and bottom
-    for(let y=y1;y<=y2;y++) setPixel(grid, x2, y, lerp(roofD,[15,12,8,255],0.5));
-    for(let x=x1;x<=x2;x++) setPixel(grid, x, y2, lerp(roofD,[15,12,8,255],0.5));
-  }
-
-  if(type==='city') {
-    // Dense cluster — 3 roof squares packed together
-    drawRoof(0,2,9,9);
-    drawRoof(10,0,19,7);
-    drawRoof(2,10,12,18);
-    drawRoof(13,9,19,19);
-  } else if(type==='town') {
-    // 2 roofs
-    drawRoof(0,2,10,12);
-    drawRoof(11,4,19,16);
-  } else if(type==='village') {
-    // 1 roof, smaller
-    drawRoof(3,4,16,15);
-  } else {
-    // single tiny building
-    drawRoof(5,5,14,14);
   }
 
   return grid;

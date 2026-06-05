@@ -1987,7 +1987,10 @@ const ctx=canvas.getContext('2d');ctx.imageSmoothingEnabled=false;ctx.clearRect(
 
 for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++){try{const key=cellKey(cx,cy);const meta=getVisibleCellMeta(cx,cy);const visited=!!state.cells[key],seen=ss.has(`${cx},${cy}`),isCurrent=cx===px&&cy===py;const sx=ox+cx*cs,sy=oy+cy*cs;const isLinear=meta.type==='road'||meta.type==='river';const bgType=isLinear?'plains':meta.type;
 // Draw pixel art tile if large enough, else flat colour fallback
-ctx.shadowBlur=0;if(cs>=10){const tile=_getTile(bgType,cx,cy,meta.terrainStyle);if(tile){ctx.drawImage(tile,sx,sy,cs,cs);}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs,cs);}}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs,cs);}
+ctx.shadowBlur=0;if(cs>=10){const tile=_getTile(bgType,cx,cy,meta.terrainStyle);if(tile){
+  if(meta.terrainRotation){const r=meta.terrainRotation*Math.PI/180;ctx.save();ctx.translate(sx+cs/2,sy+cs/2);ctx.rotate(r);ctx.drawImage(tile,-cs/2,-cs/2,cs,cs);ctx.restore();}
+  else ctx.drawImage(tile,sx,sy,cs,cs);
+}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs,cs);}}else{ctx.fillStyle=TERRAIN_HEX[bgType]||TERRAIN_HEX.unknown;ctx.fillRect(sx,sy,cs,cs);}
 // Object sprites on top of terrain
 if(cs>=10){
   const obj=meta.object;

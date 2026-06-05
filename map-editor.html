@@ -197,6 +197,15 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
       <div class="cprop"><label>interiorType</label><input id="prop-interiorType" type="text"></div>
       <div class="cprop"><label>doors (comma-sep)</label><input id="prop-doors" type="text" placeholder="north,east..."></div>
       <div class="cprop"><label>object</label><input id="prop-object" type="text"></div>
+      <div class="cprop" id="row-terrain-rotation">
+        <label>terrain rotation</label>
+        <div style="display:flex;gap:3px;">
+          <button class="trot-btn active" data-trot="0">0°</button>
+          <button class="trot-btn" data-trot="90">90°</button>
+          <button class="trot-btn" data-trot="180">180°</button>
+          <button class="trot-btn" data-trot="270">270°</button>
+        </div>
+      </div>
       <div id="row-enter" style="display:none;border-top:1px solid #2a1e10;margin-top:4px;padding-top:4px;">
         <div class="plabel" style="margin-bottom:4px;">ENTER / LINK</div>
         <div class="cprop"><label>Mode</label>
@@ -663,8 +672,16 @@ function inferBg(x, y) {
     if (m) return m;
     return window.WORLD_DATA.inferTerrain ? window.WORLD_DATA.inferTerrain(x,y) : {type:'plains',name:''};
   }
-  // Outside defined cells — render as void (black)
-  return {type:'void', name:''};
+  // Cells within the 2-tile border padding = void (black)
+  // Cells inside the actual defined map bounds = default terrain
+  const keys = Object.keys(definedMap);
+  if (!keys.length) return {type:'void',name:''};
+  let mnX=Infinity,mxX=-Infinity,mnY=Infinity,mxY=-Infinity;
+  for (const k of keys) { const [kx,ky]=parseKey(k); if(kx<mnX)mnX=kx;if(kx>mxX)mxX=kx;if(ky<mnY)mnY=ky;if(ky>mxY)mxY=ky; }
+  if (x < mnX || x > mxX || y < mnY || y > mxY) return {type:'void',name:''};
+  // Inside map bounds but unpainted — default background
+  if (editorMode === 'settlement') return {type:'grass', name:''};
+  return {type:'interior', name:''};
 }
 
 function buildDisplayMap(x0,x1,y0,y1) {
@@ -911,8 +928,10 @@ function renderAll() {
         continue;
       }
       const tc=getTileCanvas(meta.type,gx,gy,meta.variant,meta.terrainStyle);
-      if(tc) ctx.drawImage(tc,px,py,tileSize,tileSize);
-      else { ctx.fillStyle='#1a1408'; ctx.fillRect(px,py,tileSize,tileSize); }
+      if(tc){
+        if(meta.terrainRotation){const r=meta.terrainRotation*Math.PI/180;ctx.save();ctx.translate(px+tileSize/2,py+tileSize/2);ctx.rotate(r);ctx.drawImage(tc,-tileSize/2,-tileSize/2,tileSize,tileSize);ctx.restore();}
+        else ctx.drawImage(tc,px,py,tileSize,tileSize);
+      } else { ctx.fillStyle='#1a1408'; ctx.fillRect(px,py,tileSize,tileSize); }
       if(editorMode==='overworld'&&(meta.type==='town'||meta.type==='city'||meta.type==='village'||meta.type==='castle')){
         ctx.fillStyle='#e8c870cc';const sz=Math.max(2,tileSize/4);ctx.fillRect(px+tileSize/2-sz/2,py+tileSize/2-sz/2,sz,sz);
       }
@@ -1196,6 +1215,10 @@ function populateInspector(x,y){
   document.getElementById('prop-exit-x').value = exit.pos ? exit.pos.x : 0;
   document.getElementById('prop-exit-y').value = exit.pos ? exit.pos.y : 0;
 
+  // Terrain rotation
+  const trot = meta.terrainRotation || 0;
+  document.querySelectorAll('.trot-btn').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.trot)===trot));
+
   // Show rotation buttons if cell has a rotatable object
   const hasObj=meta.object&&meta.object!=='_part';
   document.getElementById('row-rotation').style.display=hasObj?'':'none';
@@ -1273,6 +1296,19 @@ document.querySelectorAll('.rot-btn').forEach(btn=>{
   });
 });
 
+document.querySelectorAll('.trot-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    if(!selectedCell)return;
+    const{x,y}=selectedCell;const k=`${x},${y}`;
+    const rot=parseInt(btn.dataset.trot);
+    const meta=map[k]?Object.assign({},map[k]):{};
+    if(rot===0) delete meta.terrainRotation; else meta.terrainRotation=rot;
+    document.querySelectorAll('.trot-btn').forEach(b=>b.classList.toggle('active',parseInt(b.dataset.trot)===rot));
+    pushUndo(x,y);definedMap[k]=meta;map[k]=meta;
+    redrawCell(x,y);updateExport();
+  });
+});
+
 // ═══════════════════════════════════════════════════════════════
 // EXPORT / SAVE
 // ═══════════════════════════════════════════════════════════════
@@ -1284,6 +1320,7 @@ function cellToJS(k, meta) {
   const ex = {};
   // Terrain style
   if (meta.terrainStyle != null) ex.terrainStyle = meta.terrainStyle;
+  if (meta.terrainRotation)     ex.terrainRotation = meta.terrainRotation;
   // Building properties
   if (meta.interiorType)  ex.interiorType  = meta.interiorType;
   if (meta.doors && meta.doors.length) ex.doors = meta.doors;
