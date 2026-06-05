@@ -1,23 +1,15 @@
-import sys
+import sys, re
 sys.stdout.reconfigure(encoding='utf-8')
 
-with open('map-editor.html', encoding='utf-8') as f:
-    content = f.read()
+files = ['engine.js', 'map-editor.html', 'worlds/aerdorn.js', 'config.js']
+patterns = ['280m','20m','5m','1m per','2m per','m per cell','SCALE','scale.*cell','cell.*scale','280','OW_SCALE','CELL_SIZE']
 
-old = "document.getElementById('ai-cancel').addEventListener('click', () => {\n  document.getElementById('ai-modal').style.display = 'none';\n});"
-
-new = """document.getElementById('ai-cancel').addEventListener('click', () => {
-  document.getElementById('ai-modal').style.display = 'none';
-});
-
-document.getElementById('ai-mode').addEventListener('change', e => {
-  const isWild = e.target.value === 'wilderness';
-  const row = document.getElementById('ai-settlement').closest('div[style*="grid"]') || document.getElementById('ai-settlement').parentElement;
-  // Hide settlement row for wilderness
-  document.getElementById('ai-settlement-row').style.display = isWild ? 'none' : 'contents';
-});"""
-
-content = content.replace(old, new)
-with open('map-editor.html', 'w', encoding='utf-8') as f:
-    f.write(content)
-print('Done.')
+for path in files:
+    try:
+        with open(path, encoding='utf-8') as f:
+            lines = f.readlines()
+        for i, line in enumerate(lines, 1):
+            if any(p.lower() in line.lower() for p in patterns):
+                print(f'{path}:{i}: {line.rstrip()[:100]}')
+    except FileNotFoundError:
+        print(f'{path}: not found')

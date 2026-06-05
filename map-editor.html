@@ -305,10 +305,13 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
       <label style="padding-top:2px;">Type / Name</label>
       <input id="ai-type" type="text" placeholder="e.g. inn, sewer, abandoned hut, market square" style="width:100%;">
       <label style="padding-top:2px;">Size</label>
-      <select id="ai-size" style="width:100%;font-size:10px;">
-        <option value="small">Small (8×6)</option>
-        <option value="medium" selected>Medium (14×10)</option>
-        <option value="large">Large (20×16)</option>
+      <select id="ai-size" style="width:100%;font-size:10px;" onchange="updateAiSizeLabel()">
+        <option value="s_small">Interior small — 5×4 (10m×8m)</option>
+        <option value="s_med" selected>Interior medium — 10×8 (20m×16m)</option>
+        <option value="s_large">Interior large — 15×12 (30m×24m)</option>
+        <option value="o_small">Settlement small — 7×7 (~½ overworld cell)</option>
+        <option value="o_med">Settlement medium — 14×14 (1 overworld cell)</option>
+        <option value="o_large">Settlement large — 28×14 (2×1 overworld cells)</option>
       </select>
       <label style="padding-top:2px;">Atmosphere</label>
       <textarea id="ai-notes" rows="3" placeholder="e.g. rundown and dark, smells of fish and old rope. A hiding place for smugglers." style="width:100%;background:#080f14;border:1px solid #3a6060;color:#80c8c8;padding:4px;font-size:11px;resize:vertical;"></textarea>
@@ -2214,10 +2217,24 @@ async function createInterior(id, name, parentSid) {
 // AI MAP GENERATION
 // ================================================================
 const AI_SIZES = {
-  small:  {w:8,  h:6},
-  medium: {w:14, h:10},
-  large:  {w:20, h:16},
+  s_small: {w:5,  h:4},   // interior small  — 10m×8m
+  s_med:   {w:10, h:8},   // interior medium — 20m×16m
+  s_large: {w:15, h:12},  // interior large  — 30m×24m
+  o_small: {w:7,  h:7},   // settlement small  — ~½ OW cell
+  o_med:   {w:14, h:14},  // settlement medium — 1 OW cell
+  o_large: {w:28, h:14},  // settlement large  — 2×1 OW cells
 };
+
+function updateAiSizeLabel() {
+  // Auto-suggest size based on mode
+  const mode = document.getElementById('ai-mode').value;
+  const sel  = document.getElementById('ai-size');
+  if (mode === 'interior') {
+    if (!sel.value.startsWith('s_')) sel.value = 's_med';
+  } else {
+    if (!sel.value.startsWith('o_')) sel.value = 'o_small';
+  }
+}
 
 const AI_TERRAIN_VALID = {
   interior: ['wall','door','interior','floor','floor_h','floor_v','floor_hbone','floor_diag','floor_parq','floor_stone','grass','water','shallow_water','mud','sand','cliff'],
@@ -2252,6 +2269,7 @@ document.getElementById('ai-mode').addEventListener('change', e => {
   const isWild = e.target.value === 'wilderness';
   document.getElementById('ai-settlement').style.display = isWild ? 'none' : '';
   document.getElementById('ai-settlement-label').style.display = isWild ? 'none' : '';
+  updateAiSizeLabel();
 });
 
 document.getElementById('ai-generate-btn').addEventListener('click', async () => {

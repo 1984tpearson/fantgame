@@ -2,7 +2,11 @@
 // ═══════════════════════════════════════════════════
 // AERDORN — WORLD DATA
 // Grid: 500 x 888 squares (scaled down 8x from original)
-// Each square ~280m. North=low Y, South=high Y, East=high X, West=low X
+// SCALE:
+//   Overworld:   1 cell = ~280m
+//   Settlement:  1 cell = 20m  (14 settlement cells per overworld cell)
+//   Interior:    1 cell = 2m   (10 interior cells per settlement cell)
+// North=low Y, South=high Y, East=high X, West=low X
 //
 // IMAGE ALIGNMENT:
 //   Map content: pixel (8,38) to (561,1012) = 553x974px
