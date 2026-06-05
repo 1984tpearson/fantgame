@@ -103,6 +103,7 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
   <button id="btn-new-settlement" title="Create new settlement">&#43; Settlement</button>
   <button id="btn-new-interior" title="Create new interior">&#43; Interior</button>
   <button id="btn-new-npc" title="Create new NPC">&#43; NPC</button>
+  <button id="btn-ai-generate" title="AI generate map" style="background:linear-gradient(180deg,#2a4060,#182838);border-color:#4a8080;color:#80c8c8;">&#9889; AI Generate</button>
   <input id="github-token" type="password" placeholder="GitHub token" style="width:130px;font-size:10px;" title="GitHub personal access token (stored in localStorage)">
   <span id="status-msg" style="font-size:11px;color:#5a7840;margin-left:4px;"></span>
 </div>
@@ -290,7 +291,37 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
   </div>
 </div>
 
-<!-- NPC Modal -->
+<!-- AI Generate Modal -->
+<div id="ai-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#0e1820;border:2px solid #4a8080;padding:20px;min-width:400px;max-width:520px;font-family:inherit;color:#80c8c8;">
+    <h3 style="margin:0 0 14px;font-size:13px;letter-spacing:1px;color:#80e0e0;">⚡ AI GENERATE MAP</h3>
+    <div style="display:grid;grid-template-columns:110px 1fr;gap:6px 10px;align-items:start;font-size:11px;">
+      <label style="padding-top:2px;">Mode</label>
+      <select id="ai-mode" style="width:100%;font-size:10px;">
+        <option value="interior">Interior / Building</option>
+        <option value="settlement">Settlement / Outdoor Area</option>
+      </select>
+      <label style="padding-top:2px;">Type / Name</label>
+      <input id="ai-type" type="text" placeholder="e.g. inn, sewer, abandoned hut, market square" style="width:100%;">
+      <label style="padding-top:2px;">Size</label>
+      <select id="ai-size" style="width:100%;font-size:10px;">
+        <option value="small">Small (8×6)</option>
+        <option value="medium" selected>Medium (14×10)</option>
+        <option value="large">Large (20×16)</option>
+      </select>
+      <label style="padding-top:2px;">Atmosphere</label>
+      <textarea id="ai-notes" rows="3" placeholder="e.g. rundown and dark, smells of fish and old rope. A hiding place for smugglers." style="width:100%;background:#080f14;border:1px solid #3a6060;color:#80c8c8;padding:4px;font-size:11px;resize:vertical;"></textarea>
+      <label style="padding-top:2px;">Settlement</label>
+      <select id="ai-settlement" style="width:100%;font-size:10px;"></select>
+    </div>
+    <div style="margin-top:6px;font-size:10px;color:#3a6060;">This will replace the current map. Review and edit before saving.</div>
+    <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
+      <button id="ai-cancel">Cancel</button>
+      <button id="ai-generate-btn" style="background:linear-gradient(180deg,#2a4060,#182838);border-color:#4a8080;color:#80c8c8;padding:4px 16px;">⚡ Generate</button>
+    </div>
+    <div id="ai-status" style="margin-top:8px;font-size:10px;color:#5a9090;min-height:14px;"></div>
+  </div>
+</div>
 <div id="npc-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
   <div style="background:#1a1408;border:2px solid #6a5030;padding:20px;min-width:380px;max-width:480px;font-family:inherit;color:#c8a84a;">
     <h3 style="margin:0 0 14px;font-size:13px;letter-spacing:1px;color:#e8c870;">+ NEW NPC</h3>
@@ -328,6 +359,7 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
 </div>
 
 <script src="mapforge.js"></script>
+<script src="config.js"></script>
 <!-- Settlement maps -->
 <script src="worlds/settlements/east_port/map.js"></script>
 <script src="worlds/settlements/aethel_keep/map.js"></script>
@@ -2175,6 +2207,145 @@ async function createInterior(id, name, parentSid) {
   document.getElementById('new-modal').style.display = 'none';
   statusMsg(`Created ${name} -- reload to edit it.`);
 }
+
+
+// ================================================================
+// AI MAP GENERATION
+// ================================================================
+const AI_SIZES = {
+  small:  {w:8,  h:6},
+  medium: {w:14, h:10},
+  large:  {w:20, h:16},
+};
+
+const AI_TERRAIN_VALID = {
+  interior: ['wall','door','interior','floor','floor_h','floor_v','floor_hbone','floor_diag','floor_parq','floor_stone','grass','water','shallow_water','mud','sand','cliff'],
+  settlement: ['grass','street','road','sand','mud','building','wall','cliff','gate','door','water','shallow_water','floor_h','floor_v'],
+};
+
+const AI_OBJECTS_VALID = ['well','haystack','campfire','signpost','anvil','logpile','barrels','noticeboard','trough','stall','cart','chest','altar','torch','boat','bridge','skeleton','dead_body','bones','blood','bush','bush_lg','tree_oak','tree_pine','rock','boulder','pond','pond_sm','mushroom','flowers','fern','reeds','vine','cactus','bed_s','bed_d','table_r','table_l','chair','bookshelf','drawers','cauldron','weaponrack','desk','stool','wardrobe','stairs','basin','fireplace','fence_h','fence_v','wall_h','wall_v'];
+
+document.getElementById('btn-ai-generate').addEventListener('click', () => {
+  // Populate settlement dropdown
+  const sel = document.getElementById('ai-settlement');
+  sel.innerHTML = '';
+  for (const [id, s] of Object.entries(window.WORLD_DATA.settlements||{})) {
+    if (s.isInterior) continue;
+    const o = document.createElement('option');
+    o.value = id; o.textContent = s.name || id;
+    if (id === settlementId) o.selected = true;
+    sel.appendChild(o);
+  }
+  document.getElementById('ai-type').value = '';
+  document.getElementById('ai-notes').value = '';
+  document.getElementById('ai-status').textContent = '';
+  document.getElementById('ai-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('ai-type').focus(), 50);
+});
+
+document.getElementById('ai-cancel').addEventListener('click', () => {
+  document.getElementById('ai-modal').style.display = 'none';
+});
+
+document.getElementById('ai-generate-btn').addEventListener('click', async () => {
+  const mode  = document.getElementById('ai-mode').value;
+  const type  = document.getElementById('ai-type').value.trim() || 'generic building';
+  const size  = document.getElementById('ai-size').value;
+  const notes = document.getElementById('ai-notes').value.trim();
+  const sid   = document.getElementById('ai-settlement').value;
+  const sname = (window.WORLD_DATA.settlements[sid]?.name) || sid;
+  const {w, h} = AI_SIZES[size];
+  const validT = AI_TERRAIN_VALID[mode].join(', ');
+
+  const aiStatus = s => document.getElementById('ai-status').textContent = s;
+  document.getElementById('ai-generate-btn').disabled = true;
+  aiStatus('Generating...');
+
+  const isInterior = mode === 'interior';
+  const prompt = isInterior ? `
+Generate a ${type} interior map for a gritty low-fantasy RPG set in ${sname}.
+${notes ? 'Atmosphere: ' + notes : ''}
+Size: ${w} wide x ${h} tall (x: 0 to ${w-1}, y: 0 to ${h-1}). y=0 is NORTH (top). y=${h-1} is SOUTH (bottom).
+Rules:
+- Perimeter (x=0, x=${w-1}, y=0, y=${h-1}) must be wall type EXCEPT for 1-2 door cells on the south wall (y=${h-1}).
+- Interior cells use: ${validT}
+- Objects (optional, 3-8 total): ${AI_OBJECTS_VALID.join(', ')}
+- Door cells must have exit: {"layer":"settlement","pos":null}
+- Every cell in the grid must be covered.
+- Name field: descriptive label for the area/room (e.g. "Common Room", "Forge", "Storage")
+Return ONLY a JSON array. No markdown, no explanation. Format:
+[{"x":0,"y":0,"type":"wall","name":"Wall"},{"x":1,"y":0,"type":"wall","name":"Wall"},...]
+Include object field only when placing an object: {"x":3,"y":2,"type":"floor_h","name":"Bedroom","object":"bed_s"}
+` : `
+Generate a ${type} outdoor/settlement area map for a gritty low-fantasy RPG set in ${sname}.
+${notes ? 'Atmosphere: ' + notes : ''}
+Size: ${w} wide x ${h} tall (x: 0 to ${w-1}, y: 0 to ${h-1}). y=0 is NORTH (top). y=${h-1} is SOUTH (bottom).
+Valid terrain: ${validT}
+Objects (optional): ${AI_OBJECTS_VALID.join(', ')}
+Return ONLY a JSON array. No markdown, no explanation. Format:
+[{"x":0,"y":0,"type":"grass","name":""},{"x":1,"y":0,"type":"street","name":"Main Road"},...]
+`;
+
+  try {
+    const cfg = window.CONFIG || {};
+    const res = await fetch(cfg.AI_PROXY_URL || 'https://keqzqhykfygplolcnxnn.supabase.co/functions/v1/ai-proxy', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': cfg.SUPABASE_ANON_KEY || 'sb_publishable_w0h8f1AIXQGty5X5nKrJtg_ThI1-a-j',
+      },
+      body: JSON.stringify({
+        model: cfg.TEXT_MODEL || 'anthropic/claude-3-haiku',
+        max_tokens: 4000,
+        messages: [{role:'user', content: prompt.trim()}],
+      }),
+    });
+
+    if (!res.ok) throw new Error(`AI request failed: ${res.status}`);
+    let data = await res.json();
+    let text = '';
+    if (data.choices) text = data.choices[0]?.message?.content || '';
+    else if (data.content) text = data.content.map(c=>c.text||'').join('');
+
+    // Strip </think> tags if present
+    text = text.replace(/<\/think>[\s\S]*?(<\/think>)?/g,'').replace(/<think>[\s\S]*?<\/think>/g,'').trim();
+    // Extract JSON array
+    const match = text.match(/\[[\s\S]*\]/);
+    if (!match) throw new Error('No JSON array in response');
+    const cells = JSON.parse(match[0]);
+    if (!Array.isArray(cells) || !cells.length) throw new Error('Empty cell array');
+
+    // Apply to definedMap — save undo state first
+    const prevDefined = Object.assign({}, definedMap);
+    undoStack.push({type:'bulk', prev: prevDefined});
+    definedMap = {};
+    originalMap = {};
+
+    for (const cell of cells) {
+      if (typeof cell.x !== 'number' || typeof cell.y !== 'number') continue;
+      const k = `${cell.x},${cell.y}`;
+      const meta = {type: cell.type || 'interior', name: cell.name || ''};
+      if (cell.object) meta.object = cell.object;
+      if (cell.exit) meta.exit = cell.exit;
+      if (cell.enter) meta.enter = cell.enter;
+      definedMap[k] = meta;
+      originalMap[k] = Object.assign({}, meta);
+    }
+
+    map = Object.assign({}, definedMap);
+    computeBounds();
+    renderAll();
+    clearInspector();
+    updateExport();
+    document.getElementById('ai-modal').style.display = 'none';
+    statusMsg(`Generated ${cells.length} cells. Review and save when ready.`);
+  } catch(e) {
+    aiStatus('Error: ' + e.message);
+    console.error('AI generate error:', e);
+  } finally {
+    document.getElementById('ai-generate-btn').disabled = false;
+  }
+});
 
 function buildSettlementList(){
   const sel=document.getElementById('settlement-select');sel.innerHTML='';
