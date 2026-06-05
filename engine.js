@@ -2611,18 +2611,41 @@ function showEnterPrompt(destName, onConfirm, nx, ny) {
   setTimeout(() => { if (document.getElementById('enter-prompt') === div) div.remove(); }, 8000);
 }
 
-async function enterBuilding(bx, by) {
+async function enterBuilding(bx, by, dx=0, dy=-1) {
   const meta = getCellMeta(bx, by);
   const itype = meta.interiorType || 'house';
   const bname = meta.name || 'building';
   const interiorId = `${state.settlementId}:bld:${bx},${by}`;
+
+  // Determine which door face was used from movement direction
+  // dx=1 → moved east → used west door; dy=-1 → moved north → used south door
+  const doorFace = dx===1?'west': dx===-1?'east': dy===1?'north': 'south';
+
   if (!SETTLEMENTS[interiorId]) {
-    SETTLEMENTS[interiorId] = generateBuildingInterior(interiorId, itype, bname);
+    SETTLEMENTS[interiorId] = generateBuildingInterior(interiorId, itype, bname, doorFace);
   }
-  await enterInterior(interiorId, SETTLEMENTS[interiorId].entryPos || {x:1,y:1});
+
+  // Calculate entry position based on door face
+  const interior = SETTLEMENTS[interiorId];
+  const imap = interior.map || {};
+  const keys = Object.keys(imap);
+  const xs = keys.map(k=>parseInt(k.split(',')[0]));
+  const ys = keys.map(k=>parseInt(k.split(',')[1]));
+  const minX=Math.min(...xs), maxX=Math.max(...xs);
+  const minY=Math.min(...ys), maxY=Math.max(...ys);
+  const midX = Math.round((minX+maxX)/2);
+  const midY = Math.round((minY+maxY)/2);
+
+  let entryPos;
+  if (doorFace==='south') entryPos = {x: midX, y: maxY-1};
+  else if (doorFace==='north') entryPos = {x: midX, y: minY+1};
+  else if (doorFace==='west')  entryPos = {x: minX+1, y: midY};
+  else                          entryPos = {x: maxX-1, y: midY};
+
+  await enterInterior(interiorId, interior.entryPos || entryPos);
 }
 
-function generateBuildingInterior(id, itype, bname) {
+function generateBuildingInterior(id, itype, bname, doorFace='south') {
   const sizes = {
     house:{w:5,h:4}, inn:{w:9,h:7}, market_hall:{w:8,h:6},
     blacksmith:{w:6,h:5}, bathhouse:{w:7,h:6}, shop:{w:5,h:4},
@@ -2637,7 +2660,17 @@ function generateBuildingInterior(id, itype, bname) {
   for(let x=-hw;x<=hw;x++){tile(x,0,'wall','Wall');tile(x,H,'wall','Wall');}
   for(let y=0;y<=H;y++){tile(-hw,y,'wall','Wall');tile(hw,y,'wall','Wall');}
   fill(-hw+1,1,hw-1,H-1,'interior','Interior');
-  tile(0,0,'door','Doorway',{exit:{layer:'settlement',pos:null}});
+  // Place door on correct wall based on approach direction
+  const exitLink = {exit:{layer:'settlement',pos:null}};
+  if(doorFace==='south')      tile(0,H,'door','Doorway',exitLink);
+  else if(doorFace==='north') tile(0,0,'door','Doorway',exitLink);
+  else if(doorFace==='west')  tile(-hw,Math.floor(H/2),'door','Doorway',exitLink);
+  else                        tile(hw,Math.floor(H/2),'door','Doorway',exitLink);
+  // Entry position — just inside the door
+  const entryPos = doorFace==='south' ? {x:0,y:H-1}
+                 : doorFace==='north' ? {x:0,y:1}
+                 : doorFace==='west'  ? {x:-hw+1,y:Math.floor(H/2)}
+                 :                     {x:hw-1,y:Math.floor(H/2)};
   if(itype==='inn'){
     fill(-hw+1,1,hw-1,2,'market','Common Room');
     fill(-hw+1,3,0,H-1,'building','Private Rooms');
@@ -2657,8 +2690,8 @@ function generateBuildingInterior(id, itype, bname) {
     fill(-hw+1,1,0,H-1,'building','Office');
     fill(1,1,hw-1,H-1,'grass','Records Room');
   }
-  if(H>=6) tile(0,H,'door','Back Door',{exit:{layer:'settlement',pos:null}});
-  return { map:m, name:bname, entryPos:{x:0,y:1}, overworldCell:null, isGenerated:true, buildingType:itype };
+  if(H>=6) tile(0,doorFace==='north'?H:0,'door','Back Door',{exit:{layer:'settlement',pos:null}});
+  return { map:m, name:bname, entryPos, overworldCell:null, isGenerated:true, buildingType:itype };
 }
 
 async function move(dx, dy) {
@@ -2681,7 +2714,7 @@ async function move(dx, dy) {
   if (meta.type === T.BUILDING && meta.doors && Array.isArray(meta.doors) && !meta.enter) {
     const doorNeeded = dx===1?'west':dx===-1?'east':dy===1?'north':dy===-1?'south':null;
     if (doorNeeded && meta.doors.includes(doorNeeded)) {
-      await enterBuilding(nx, ny);
+      await enterBuilding(nx, ny, dx, dy);
       return;
     }
   }
