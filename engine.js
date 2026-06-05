@@ -1530,7 +1530,12 @@ async function loadState() {
 function getCellMeta(x,y){if(state.layer==='interior'){const si=SETTLEMENTS[state.interiorId];if(si&&si.map){if(si.map[`${x},${y}`])return si.map[`${x},${y}`];if(!si._bounds){const ks=Object.keys(si.map);const xs=ks.map(k=>parseInt(k.split(',')[0])),ys=ks.map(k=>parseInt(k.split(',')[1]));si._bounds={minX:Math.min(...xs),maxX:Math.max(...xs),minY:Math.min(...ys),maxY:Math.max(...ys)};}const b=si._bounds;return(x>=b.minX&&x<=b.maxX&&y>=b.minY&&y<=b.maxY)?{type:T.INTERIOR,name:''}:{type:'void',name:''};} return{type:T.INTERIOR,name:''};} if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];if(!s)return{type:'void',name:''};if(s.map[`${x},${y}`])return s.map[`${x},${y}`];if(!s._bounds){const ks=Object.keys(s.map);const xs=ks.map(k=>parseInt(k.split(',')[0])),ys=ks.map(k=>parseInt(k.split(',')[1]));s._bounds={minX:Math.min(...xs),maxX:Math.max(...xs),minY:Math.min(...ys),maxY:Math.max(...ys)};}const b=s._bounds;return(x>=b.minX&&x<=b.maxX&&y>=b.minY&&y<=b.maxY)?{type:T.GRASS,name:''}:{type:'void',name:''};}return WORLD_META[`${x},${y}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(x,y):null)||{type:T.PLAINS,name:''};}
 function terrainLabel(type){return{ocean:'Ocean',plains:'Plains',forest:'Forest',mountain:'Mountains',city:'City',town:'Town',village:'Village',road:'Road',farmland:'Farmland',river:'River',street:'Street',building:'Building',door:'Doorway',wall:'Wall',grass:'Courtyard',market:'Market',docks:'Docks',gate:'Gate',interior:'Interior',swamp:'Swamp',bog:'Bog',wilds:'Wilds',fens:'Fens',shore:'Shore',peaks:'Peaks',castle:'Castle',keep:'Keep',ruins:'Ruins'}[type]||'Wilderness';}
 function getNeighbourMeta(x,y){return{n:getCellMeta(x,y-1),s:getCellMeta(x,y+1),e:getCellMeta(x+1,y),w:getCellMeta(x-1,y)};}
-function isTraversable(type){return type!==T.OCEAN&&type!==T.WALL&&type!==T.BUILDING&&type!=='cliff'&&type!=='void';}
+const BLOCKING_OBJECTS = new Set(['cliff','wall_h','wall_v','wall_cse','wall_cnw','wall_cne','wall_csw']);
+function isTraversable(type, object){
+  if(type===T.OCEAN||type===T.WALL||type===T.BUILDING||type==='void')return false;
+  if(object&&BLOCKING_OBJECTS.has(object))return false;
+  return true;
+}
 
 // ═══════════════════════════════════════════════════
 // LAYER TRANSITIONS
@@ -1632,7 +1637,6 @@ const TERRAIN_TO_MF = {
   street:'dirt', road_settle:'cobble', building:'farmland', grass:'grass', courtyard:'grass',
   market:'sand', docks:'cobble', gate:'cobble',
   interior:'cave', wall:'rocky', door:'dirt', floor:'dirt', yard:'grass',
-  cliff:'cliff',
   water:'water',
   shallow_water:'shallow_water',
   // Floor types handled specially in _getTile
@@ -1665,13 +1669,6 @@ function _getTile(engineType, cx, cy, terrainStyle) {
     const key = 'crk_' + seed;
     if (_tileCache.has(key)) return _tileCache.get(key);
     try { const grid = MapForge.makeCrackedEarth(seed); const c = document.createElement('canvas'); MapForge.renderGridToCanvas(grid, c, 1); _tileCache.set(key, c); return c; } catch(e) { return null; }
-  }
-
-  if (engineType === 'cliff') {
-    const seed = (((cx & 0xffff) << 16) | (cy & 0xffff)) >>> 0;
-    const key = 'cliff_' + seed;
-    if (_tileCache.has(key)) return _tileCache.get(key);
-    try { const grid = MapForge.makeCliff(20, 20, seed); const c = document.createElement('canvas'); MapForge.renderGridToCanvas(grid, c, 1); _tileCache.set(key, c); return c; } catch(e) { return null; }
   }
 
   const mfType = TERRAIN_TO_MF[engineType] || 'grass';
@@ -1825,6 +1822,10 @@ function _getObjectCanvas(objId, seed, style, linen) {
     else if (objId==='stairs')       grid = MF.makeStairs(seed,style);
     else if (objId==='basin')        grid = MF.makeBasin(seed);
     else if (objId==='fireplace')    grid = MF.makeFireplace(seed);
+    // Cliff — uses makeCliff, sized to fill the cell
+    else if (objId==='cliff') {
+      grid = MF.makeCliff(20, 20, seed);
+    }
     // Overworld settlement markers: settlement_city_0, settlement_town_2, etc.
     else if (objId.startsWith('settlement_')) {
       const parts = objId.split('_'); // ['settlement','city','0']
@@ -1890,6 +1891,7 @@ const _OBJ_DIMS = {
   hedge_v:{w:20,h:20,snap:'center'}, hedge_cse:{w:20,h:20,snap:'center'},
   gate_h:{w:40,h:20,snap:'center'}, dungeon:{w:16,h:16,snap:'center'},
   ruins_obj:{w:20,h:20,snap:'center'}, watchtower:{w:20,h:20,snap:'center'},
+  cliff:{w:20,h:20,snap:'center'},
   windmill:{w:40,h:40,snap:'center'}, gallows:{w:20,h:20,snap:'center'},
   settlement_city:{w:20,h:20,snap:'center'}, settlement_town:{w:20,h:20,snap:'center'},
   settlement_village:{w:20,h:20,snap:'center'}, settlement_building:{w:20,h:20,snap:'center'},
@@ -1979,7 +1981,7 @@ function _getObjectTile(meta, cx, cy) {
   return null;
 }
 
-const TERRAIN_HEX={void:'#050402',ocean:'#1a2d3a',plains:'#3a4a2a',forest:'#1e3a1e',mountain:'#4a4040',city:'#6a5030',town:'#5a4525',village:'#4a3a20',road:'#3a4a2a',farmland:'#4a4a20',river:'#3a4a2a',unknown:'#181410',street:'#4a3e30',building:'#5a3a20',door:'#7a5030',wall:'#3a3030',grass:'#3a4228',market:'#5a4a28',docks:'#2a3a4a',gate:'#6a5540',interior:'#3a2a18',swamp:'#2a3a28',bog:'#2a3828',wilds:'#162a16',fens:'#263428',shore:'#3a4a40',peaks:'#4a4448',castle:'#5a4838',keep:'#604830',ruins:'#3a3228',cliff:'#4a4438'};
+const TERRAIN_HEX={void:'#050402',ocean:'#1a2d3a',plains:'#3a4a2a',forest:'#1e3a1e',mountain:'#4a4040',city:'#6a5030',town:'#5a4525',village:'#4a3a20',road:'#3a4a2a',farmland:'#4a4a20',river:'#3a4a2a',unknown:'#181410',street:'#4a3e30',building:'#5a3a20',door:'#7a5030',wall:'#3a3030',grass:'#3a4228',market:'#5a4a28',docks:'#2a3a4a',gate:'#6a5540',interior:'#3a2a18',swamp:'#2a3a28',bog:'#2a3828',wilds:'#162a16',fens:'#263428',shore:'#3a4a40',peaks:'#4a4448',castle:'#5a4838',keep:'#604830',ruins:'#3a3228'};
 let mapView={x:0,y:0,scale:1,travelTarget:null};
 function getVisibleCellMeta(cx,cy){if(state.layer==='settlement'){const s=SETTLEMENTS[state.settlementId];if(!s)return{type:'void',name:''};if(s.map[`${cx},${cy}`])return s.map[`${cx},${cy}`];if(!s._bounds){const ks=Object.keys(s.map);const xs=ks.map(k=>parseInt(k.split(',')[0])),ys=ks.map(k=>parseInt(k.split(',')[1]));s._bounds={minX:Math.min(...xs),maxX:Math.max(...xs),minY:Math.min(...ys),maxY:Math.max(...ys)};}const b=s._bounds;return(cx>=b.minX&&cx<=b.maxX&&cy>=b.minY&&cy<=b.maxY)?{type:T.GRASS,name:''}:{type:'void',name:''};}if(state.layer==='interior'){const si=SETTLEMENTS[state.interiorId];if(!si||!si.map)return{type:'void',name:''};if(si.map[`${cx},${cy}`])return si.map[`${cx},${cy}`];if(!si._bounds){const ks=Object.keys(si.map);const xs=ks.map(k=>parseInt(k.split(',')[0])),ys=ks.map(k=>parseInt(k.split(',')[1]));si._bounds={minX:Math.min(...xs),maxX:Math.max(...xs),minY:Math.min(...ys),maxY:Math.max(...ys)};}const b=si._bounds;return(cx>=b.minX&&cx<=b.maxX&&cy>=b.minY&&cy<=b.maxY)?{type:T.INTERIOR,name:''}:{type:'void',name:''};}return WORLD_META[`${cx},${cy}`]||(WORLD_DATA.inferTerrain?WORLD_DATA.inferTerrain(cx,cy):null)||{type:T.PLAINS,name:''};}
 function drawMapCanvas(){const canvas=document.getElementById('map-canvas');if(!canvas)return;const hEl=document.getElementById('map-drawer-header'),lEl=document.getElementById('map-legend');const hH=hEl?hEl.offsetHeight:44,lH=lEl?lEl.offsetHeight:32;const W=window.innerWidth,H=window.innerHeight-hH-lH;if(W<10||H<10)return;if(canvas.width!==W||canvas.height!==H){canvas.width=W;canvas.height=H;canvas.style.width=W+'px';canvas.style.height=H+'px';}
@@ -2103,7 +2105,7 @@ function aStarPath(sx,sy,dx,dy,layerOverride){
     }
     for(const[nx2,ny2]of[[cur.x,cur.y-1],[cur.x,cur.y+1],[cur.x-1,cur.y],[cur.x+1,cur.y]]){
       const nk=key(nx2,ny2);if(closed.has(nk))continue;
-      const nm=meta(nx2,ny2);if(!isTraversable(nm.type)&&!(nx2===dx&&ny2===dy))continue;
+      const nm=meta(nx2,ny2);if(!isTraversable(nm.type,nm.object)&&!(nx2===dx&&ny2===dy))continue;
       const ng=gScore.get(best)+1;
       if(ng<(gScore.get(nk)??Infinity)){
         gScore.set(nk,ng);parent.set(nk,best);
@@ -2123,7 +2125,7 @@ async function startQuickTravel(dx,dy){document.getElementById('map-travel-confi
   if(state.layer==='settlement'){const apath=aStarPath(sx,sy,dx,dy);if(!apath||apath.length===0){addMessage('No path found.','system');return;}path=apath;}
   else{let cx=sx,cy=sy;while(cx!==dx||cy!==dy){if(cx!==dx)cx+=cx<dx?1:-1;else if(cy!==dy)cy+=cy<dy?1:-1;path.push({x:cx,y:cy});}}
   addMessage(`You set off toward ${state.cells[cellKey(dx,dy)]?.locationName||terrainLabel(getVisibleCellMeta(dx,dy).type)}...`,'system');
-  for(let i=0;i<path.length;i++){const step=path[i];const meta=getVisibleCellMeta(step.x,step.y);if(!isTraversable(meta.type)){addMessage('Your path is blocked. You stop here.','system');await enterCell(path[i-1]?.x??sx,path[i-1]?.y??sy);return;}state.player.day+=0.05;state.player.stamina=Math.min(state.player.maxStamina,state.player.stamina+1);state.pos={x:step.x,y:step.y};const ss2=seenSet();for(let dy2=-FOV_RADIUS;dy2<=FOV_RADIUS;dy2++)for(let dx2=-FOV_RADIUS;dx2<=FOV_RADIUS;dx2++)ss2.add(`${step.x+dx2},${step.y+dy2}`);if(Math.random()<0.005){addMessage(`Something catches your attention after ${i+1} step${i>0?'s':''}...`,'system');await enterCell(step.x,step.y);return;}}
+  for(let i=0;i<path.length;i++){const step=path[i];const meta=getVisibleCellMeta(step.x,step.y);if(!isTraversable(meta.type,meta.object)){addMessage('Your path is blocked. You stop here.','system');await enterCell(path[i-1]?.x??sx,path[i-1]?.y??sy);return;}state.player.day+=0.05;state.player.stamina=Math.min(state.player.maxStamina,state.player.stamina+1);state.pos={x:step.x,y:step.y};const ss2=seenSet();for(let dy2=-FOV_RADIUS;dy2<=FOV_RADIUS;dy2++)for(let dx2=-FOV_RADIUS;dx2<=FOV_RADIUS;dx2++)ss2.add(`${step.x+dx2},${step.y+dy2}`);if(Math.random()<0.005){addMessage(`Something catches your attention after ${i+1} step${i>0?'s':''}...`,'system');await enterCell(step.x,step.y);return;}}
   await enterCell(dx,dy);}
 
 const FOV_RADIUS=2,MAP_VIEW=9;
@@ -2672,7 +2674,7 @@ async function move(dx, dy) {
       return;
     }
     // Wrong side — don't enter
-    if (meta.doors.length && !isTraversable(meta.type)) return;
+    if (meta.doors.length && !isTraversable(meta.type, meta.object)) return;
   }
 
   // Legacy building door handling
@@ -2684,7 +2686,7 @@ async function move(dx, dy) {
     }
   }
 
-  if (!isTraversable(meta.type)) return;
+  if (!isTraversable(meta.type, meta.object)) return;
 
   // Prompt mode — intercept before moving
   if (meta.enter && meta.enterMode === 'prompt') {

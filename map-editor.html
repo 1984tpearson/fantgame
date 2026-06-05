@@ -424,7 +424,6 @@ const SETTLE_TERRAIN = [
   {id:'road',l:'Road (cobble)',mf:'cobble'},{id:'market',l:'Sand',mf:'sand'},
   {id:'mud',l:'Mud',mf:'mud'},
   {id:'building',l:'Building',mf:'farmland'},{id:'wall',l:'Wall (stone)',mf:'rocky'},
-  {id:'cliff',l:'Cliff',mf:'cliff'},
   {id:'gate',l:'Gate',mf:'cobble'},{id:'door',l:'Door',mf:'dirt'},
   {id:'interior',l:'Interior (cave)',mf:'cave'},{id:'floor',l:'Dirt',mf:'dirt'},
   {id:'floor_h',l:'Planks H',mf:'floor_h',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},{id:'floor_v',l:'Planks V',mf:'floor_v',styles:['Pine','Dark Oak','Ash','Walnut','Maple','Birch']},
@@ -444,7 +443,6 @@ const OW_TERRAIN = [
   {id:'lava',l:'Lava',mf:'lava'},{id:'ice',l:'Ice',mf:'ice'},
   {id:'corrupt',l:'Corrupted',mf:'corrupt'},{id:'mud',l:'Mud',mf:'mud'},
   {id:'cracked',l:'Cracked Earth',mf:'cracked'},
-  {id:'cliff',l:'Cliff',mf:'cliff'},
   {id:'city',l:'City',mf:'cobble'},{id:'town',l:'Town',mf:'grass'},
   {id:'village',l:'Village',mf:'grass'},{id:'castle',l:'Castle',mf:'rocky'},
   {id:'ruins',l:'Ruins',mf:'rocky'},{id:'road',l:'Road',mf:'cobble'},
@@ -571,6 +569,7 @@ const OBJECT_DEFS = {
   gate_h:       {l:'Gate ━',        w:40, h:20, snap:'center', fn:s=>MF.makeGate(s)},
   dungeon:      {l:'Dungeon Entry',  w:16, h:16, snap:'center', fn:s=>MF.makeDungeonEntrance(s)},
   ruins_obj:    {l:'Ruins',          w:20, h:20, snap:'center', fn:s=>MF.makeRuins(s)},
+  cliff:         {l:'Cliff',           w:20, h:20, snap:'center', fn:(s,seed)=>MF.makeCliff(20,20,seed), blocking:true},
   watchtower:   {l:'Watchtower',     w:20, h:20, snap:'center', fn:s=>MF.makeWatchtower(s)},
   windmill:     {l:'Windmill',       w:40, h:40, snap:'center', fn:s=>MF.makeWindmill(s)},
   gallows:      {l:'Gallows',        w:20, h:20, snap:'center', fn:s=>MF.makeGallows(s)},
@@ -638,7 +637,7 @@ const OBJ_CATS = [
   {id:'gore',    label:'Gore',    ids:['skeleton','dead_body','dirt_hole','blood','bones']},
   {id:'nature',  label:'Nature',  ids:['bush','bush_lg','thicket','tree_oak','tree_oak_lg','tree_pine','tree_pine_lg','tree_palm','tree_dead','rock','boulder','mossy_rock','pond','pond_lg','mushroom','mushroom_lg','log','flowers','fern','reeds','lily','vine','cactus','giant_roots','crop_wheat','crop_corn','crop_veg']},
   {id:'paths',   label:'Paths',   ids:['path_h','path_v','path_cross','path_cse','path_csw','path_cne','path_cnw','path_ts','path_tn','path_te','path_tw','track_h','track_v','track_cross','track_cse','track_csw','track_cne','track_cnw']},
-  {id:'struct',  label:'Struct.', ids:['wall_h','wall_v','wall_cse','fence_h','fence_v','hedge_h','hedge_v','hedge_cse','gate_h','dungeon','ruins_obj','watchtower','windmill','gallows','castle_wall_h','castle_wall_v','castle_wall_cse','castle_wall_csw','castle_wall_cne','castle_wall_cnw']},
+  {id:'struct',  label:'Struct.', ids:['cliff','wall_h','wall_v','wall_cse','fence_h','fence_v','hedge_h','hedge_v','hedge_cse','gate_h','dungeon','ruins_obj','watchtower','windmill','gallows','castle_wall_h','castle_wall_v','castle_wall_cse','castle_wall_csw','castle_wall_cne','castle_wall_cnw']},
   {id:'settle',  label:'Settle.', ids:['settlement_city_0','settlement_city_1','settlement_city_2','settlement_town_0','settlement_town_1','settlement_town_2','settlement_village_0','settlement_village_1','settlement_building_0','settlement_building_1']},
   {id:'furn',    label:'Furn.',   ids:['bed_s','bed_d','table_r','table_l','chair','throne','bookshelf','drawers','cauldron','weaponrack','desk','stool','wardrobe','stairs','basin','fireplace']},
 ];
@@ -868,10 +867,7 @@ function getTileCanvas(type, x, y, variant, terrainStyle) {
     const key='crk_'+seed; if(tileCache.has(key))return tileCache.get(key);
     try{const g=MF.makeCrackedEarth(seed);const c=document.createElement('canvas');MF.renderGridToCanvas(g,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
   }
-  if (type==='cliff') {
-    const key='cliff_'+seed; if(tileCache.has(key))return tileCache.get(key);
-    try{const g=MF.makeCliff(20,20,seed);const c=document.createElement('canvas');MF.renderGridToCanvas(g,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
-  }
+
   const mf=TERRAIN_TO_MF[type]||'grass';
   const key=mf+'_'+seed; if(tileCache.has(key))return tileCache.get(key);
   try{const g=MF.makeTerrain(mf,seed,{});const c=document.createElement('canvas');MF.renderGridToCanvas(g,c,1);tileCache.set(key,c);return c;}catch(e){return null;}
@@ -2266,7 +2262,7 @@ const AI_TERRAIN_VALID = {
   settlement: ['grass','street','road','sand','mud','building','wall','cliff','gate','door','water','shallow_water','floor_h','floor_v'],
 };
 
-const AI_OBJECTS_VALID = ['well','haystack','campfire','signpost','anvil','logpile','barrels','noticeboard','trough','stall','cart','chest','altar','torch','boat','bridge','skeleton','dead_body','bones','blood','bush','bush_lg','tree_oak','tree_pine','rock','boulder','pond','pond_sm','mushroom','flowers','fern','reeds','vine','cactus','bed_s','bed_d','table_r','table_l','chair','bookshelf','drawers','cauldron','weaponrack','desk','stool','wardrobe','stairs','basin','fireplace','fence_h','fence_v','wall_h','wall_v'];
+const AI_OBJECTS_VALID = ['well','haystack','campfire','campsite','signpost','anvil','logpile','barrels','noticeboard','trough','stall','cart','chest','altar','torch','boat','bridge','skeleton','dead_body','bones','blood','bush','bush_lg','tree_oak','tree_oak_lg','tree_pine','tree_pine_lg','tree_dead','tree_palm','rock','boulder','mossy_rock','pond','pond_lg','mushroom','mushroom_lg','flowers','fern','reeds','vine','cactus','thicket','graveyard','shrine','magic_circle','bed_s','bed_d','table_r','table_l','chair','bookshelf','drawers','cauldron','weaponrack','desk','stool','wardrobe','stairs','basin','fireplace','throne','gold_pile','fence_h','fence_v','wall_h','wall_v','hedge_h','hedge_v','hedge_cse','gate_h','dungeon','dungeon_bars','ruins_obj','watchtower','windmill','gallows','stocks','stockade','catapult','tent','coop','garden','crop_wheat','crop_corn','crop_veg','giant_roots','trapdoor','dirt_hole','log','linen','lily'];
 
 document.getElementById('btn-ai-generate').addEventListener('click', () => {
   // Populate settlement dropdown
@@ -2322,50 +2318,71 @@ document.getElementById('ai-generate-btn').addEventListener('click', async () =>
   let prompt = '';
 
   if (mode === 'interior') {
-    prompt = `You are generating a tile map for a gritty low-fantasy RPG interior. Design a real, believable space.
+    const roomFurniture = {
+      inn: 'bed_s, bed_d, table_r, chair, stool, fireplace, barrels, chest, wardrobe',
+      tavern: 'table_r, table_l, chair, stool, barrels, fireplace, noticeboard, stairs',
+      forge: 'anvil, weaponrack, barrels, chest, stool, basin, logpile',
+      shop: 'chest, drawers, bookshelf, table_r, stool, barrels, linen',
+      chapel: 'altar, throne, bookshelf, shrine, magic_circle, stairs, torch',
+      house: 'bed_s, table_r, chair, fireplace, drawers, wardrobe, chest, stool, basin',
+      dungeon: 'bones, skeleton, chest, dungeon_bars, torch, blood, stocks, trapdoor',
+      warehouse: 'barrels, logpile, chest, cart, stall, drawers',
+      sewer: 'bones, blood, trapdoor, dirt_hole, reeds, pond',
+      cave: 'bones, campfire, chest, rock, boulder, mushroom, mushroom_lg, giant_roots',
+    };
+    const relevantFurniture = Object.entries(roomFurniture).find(([k]) => type.toLowerCase().includes(k))?.[1]
+      || 'table_r, chair, bed_s, chest, barrels, fireplace, bookshelf, stool, basin, drawers';
+
+    prompt = `You are generating a tile map for a gritty low-fantasy RPG interior. Design a real, believable space with clear room divisions.
 
 LOCATION: ${type} in ${sname}. ${notes ? 'Atmosphere: ' + notes : ''}
 GRID: ${w} wide x ${h} tall. x=0=west wall, x=${w-1}=east wall, y=0=north wall (top), y=${h-1}=south wall (bottom).
 
-MANDATORY RULES:
-1. ALL perimeter cells MUST be type "wall" except 1 door on south wall (y=${h-1}) near centre.
-2. Add 1-3 internal walls dividing space into 2-4 distinct rooms. Each internal wall has a 1-2 cell doorway gap.
-3. Each room uses a DIFFERENT floor type: interior, floor_h, floor_v, floor_stone, floor_parq, floor_hbone, floor_diag, dirt, mud, grass.
-4. Place 4-10 objects appropriate to a ${type}. Spread them logically.
-5. Name each room (e.g. "Common Room", "Back Store", "Forge", "Sleeping Quarters").
-6. Door cell format: {"x":N,"y":${h-1},"type":"door","name":"Entrance","exit":{"layer":"settlement","pos":null}}
+MANDATORY STRUCTURAL RULES:
+1. ALL perimeter cells MUST be "wall" except 1-2 door cells on the south wall (y=${h-1}) near centre.
+2. Divide interior with 1-3 internal wall lines, each with a 1-2 cell doorway gap. Create 2-4 named rooms.
+3. CRITICAL: Each distinct room/area uses ONE consistent floor type throughout that room. Do NOT mix floor types within a room.
+   Choose from: interior, floor_h, floor_v, floor_stone, floor_parq, floor_hbone, floor_diag, dirt, mud, grass
+4. FURNITURE DENSITY: Place objects on 30-50% of floor cells. Use context-appropriate objects.
+   Suggested objects for ${type}: ${relevantFurniture}
+   Full object list: ${AI_OBJECTS_VALID.join(', ')}
+5. Each room must have a descriptive name (e.g. "Common Room", "Sleeping Quarters", "Storeroom", "Kitchen").
+6. Entrance door: {"x":N,"y":${h-1},"type":"door","name":"Entrance","exit":{"layer":"settlement","pos":null}}
 7. Cover ALL ${w*h} cells exactly once.
 
-VALID FLOOR TYPES: interior, floor_h, floor_v, floor_stone, floor_parq, floor_hbone, floor_diag, dirt, mud, grass
-VALID OBJECTS: ${AI_OBJECTS_VALID.slice(0,30).join(', ')}
+ROOM PLANNING EXAMPLE for an inn (${w}x${h}):
+- Common room (south half): floor_h floor, tables/chairs/fireplace/barrels
+- Kitchen (corner): dirt floor, cauldron/barrels/stool  
+- Sleeping quarters (north): floor_v floor, beds/chests/wardrobe
+- Store (corner): interior floor, barrels/drawers/chest
 
-Return ONLY a JSON array of ${w*h} objects. No explanation, no markdown.
-Format: [{"x":0,"y":0,"type":"wall","name":"Wall"},{"x":3,"y":2,"type":"floor_h","name":"Bedroom","object":"bed_s"},...]`;
+Return ONLY a JSON array of exactly ${w*h} objects. Zero explanation, zero markdown.
+[{"x":0,"y":0,"type":"wall","name":"Wall"},{"x":3,"y":2,"type":"floor_h","name":"Common Room","object":"table_r"},...]`;
 
   } else if (mode === 'settlement') {
-    prompt = `You are generating an outdoor settlement tile map for a gritty low-fantasy RPG. Design a real, functional urban space.
+    prompt = `You are generating an outdoor settlement tile map for a gritty low-fantasy RPG. Design a dense, lived-in space.
 
 LOCATION: ${type} in ${sname}. ${notes ? 'Atmosphere: ' + notes : ''}
 GRID: ${w} wide x ${h} tall. x=0=west, x=${w-1}=east, y=0=north (top), y=${h-1}=south (bottom).
 
-DESIGN RULES:
-1. Create distinct zones using varied terrain (street, grass, mud, sand, water etc). Not one uniform texture.
-2. Streets/paths connect logically. Use "street" for paths, "road" for main routes.
-3. BUILDINGS: use type "building" with a real name (e.g. "The Rusty Anchor Inn", "Blacksmith", "Grain Store"). Place 2-5 buildings of 1-4 cells each. Buildings block movement. Add an interiorType field for enterable buildings: house, inn, shop, blacksmith, chapel, market_hall.
-4. Open areas: grass, market (sand), courtyard areas between buildings.
-5. Water features: "water" or "shallow_water" for ponds/rivers.
-6. Place 3-8 objects in logical positions (barrels near buildings, stalls in market areas, etc).
-7. Name each zone descriptively.
+MANDATORY DESIGN RULES:
+1. PATHS FIRST: Lay out 1-2 main streets ("road" type) and 2-4 side streets ("street" type) connecting areas. Paths must reach grid edges.
+2. BUILDINGS: Place 3-8 named buildings ("building" type, 1-4 cells each). Real names e.g. "The Rusty Anchor Inn", "Grain Store", "Cooper's Workshop". Add interiorType: house, inn, shop, blacksmith, chapel, market_hall, bathhouse, harbormaster.
+3. NATURE: Scatter trees (tree_oak, tree_oak_lg, tree_pine, tree_pine_lg), bushes (bush, bush_lg), flowers, mushrooms, thicket on grass cells. At least 15% of grass cells must have a nature object.
+4. OBJECT DENSITY: ~40% of non-building, non-path cells should have objects. Use the full object list.
+5. VARIED TERRAIN: Mix grass, mud, sand, shallow_water, water. No large uniform zones without objects.
+6. STREET OBJECTS: Place stalls, carts, barrels, signposts, troughs, wells, noticeboards on/near streets.
+7. Name every cell descriptively.
 8. Cover ALL ${w*h} cells exactly once.
 
 VALID TERRAIN: ${validT}
-VALID OBJECTS: ${AI_OBJECTS_VALID.slice(0,30).join(', ')}
+ALL VALID OBJECTS: ${AI_OBJECTS_VALID.join(', ')}
 BUILDING INTERIOR TYPES: house, inn, shop, blacksmith, chapel, market_hall, bathhouse, harbormaster
 
-Return ONLY a JSON array of ${w*h} objects. No explanation, no markdown.
-Format: [{"x":0,"y":0,"type":"grass","name":"Town Square"},{"x":3,"y":2,"type":"building","name":"The Rusty Anchor Inn","interiorType":"inn"},{"x":2,"y":4,"type":"street","name":"Market Lane","object":"stall"},...]`;
+Return ONLY a JSON array of ${w*h} objects. Zero explanation, zero markdown.
+[{"x":0,"y":0,"type":"grass","name":"Town Common","object":"tree_oak"},{"x":3,"y":2,"type":"building","name":"The Rusty Anchor Inn","interiorType":"inn"},{"x":2,"y":4,"type":"street","name":"Market Lane","object":"stall"},...]`;
 
-  } else {
+    } else {
     // wilderness/found
     prompt = `You are generating a tile map for a standalone discovered space in a gritty low-fantasy RPG wilderness. This is NOT inside a settlement.
 
