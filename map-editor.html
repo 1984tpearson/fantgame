@@ -2379,8 +2379,11 @@ Format: [{"x":0,"y":0,"type":"wall","name":"Rock Face"},{"x":3,"y":2,"type":"int
     if (data.choices) text = data.choices[0]?.message?.content || '';
     else if (data.content) text = data.content.map(c=>c.text||'').join('');
 
-    // Strip </think> tags if present
-    text = text.replace(/<\/think>[\s\S]*?(<\/think>)?/g,'').replace(/<think>[\s\S]*?<\/think>/g,'').trim();
+    // Strip <think>...</think> blocks (DeepSeek reasoning tokens)
+    text = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    // If response starts with </think> (unclosed think block), strip up to and including it
+    text = text.replace(/^[\s\S]*?<\/think>/,'').trim();
+    console.log('[AI Generate] Raw response (first 500):', text.slice(0, 500));
     // Extract JSON array
     const match = text.match(/\[[\s\S]*\]/);
     if (!match) throw new Error('No JSON array in response');
