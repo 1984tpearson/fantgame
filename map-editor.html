@@ -80,6 +80,7 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
   <button id="tool-fill" data-tool="fill">&#9632; Fill</button>
   <button id="tool-erase" data-tool="erase">&#10005; Erase</button>
   <button id="tool-pick" data-tool="pick">&#9677; Pick</button>
+  <button id="tool-path" data-tool="path" title="Path tool: click start then end cell">&#9135; Path</button>
   <div class="sep"></div>
   <div id="ow-nav" style="display:none;gap:3px;align-items:center;">
     <button id="ow-pan-n" title="North">&#8593;</button>
@@ -318,6 +319,7 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
         <option value="interior">Interior (inn room, forge, dungeon...)</option>
         <option value="settlement">Settlement area (streets, market, docks...)</option>
         <option value="wilderness">Wilderness / Found (cave, hut, ruin, sewer...)</option>
+        <option value="procedural">Procedural (BSP / WFC)</option>
       </select>
       <label style="padding-top:2px;">Type / Name</label>
       <input id="ai-type" type="text" placeholder="e.g. inn, sewer, abandoned hut, market square" style="width:100%;">
@@ -342,6 +344,35 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
       <textarea id="ai-notes" rows="3" placeholder="e.g. rundown and dark, smells of fish and old rope. A hiding place for smugglers." style="width:100%;background:#080f14;border:1px solid #3a6060;color:#80c8c8;padding:4px;font-size:11px;resize:vertical;"></textarea>
       <label id="ai-settlement-label" style="padding-top:2px;">Settlement</label>
       <select id="ai-settlement" style="width:100%;font-size:10px;"></select>
+    </div>
+    <div id="proc-fields" style="display:none;border-top:1px solid #2a4060;margin-top:6px;padding-top:6px;">
+      <div style="display:grid;grid-template-columns:110px 1fr;gap:6px 10px;align-items:center;font-size:11px;">
+        <label>Algorithm</label>
+        <select id="proc-algo" style="width:100%;font-size:10px;" onchange="updateProcFields()">
+          <option value="bsp">BSP Dungeon</option>
+          <option value="wfc">Wave Function Collapse</option>
+        </select>
+        <label>Width</label><input id="proc-w" type="number" value="20" min="6" max="56" style="width:80px;">
+        <label>Height</label><input id="proc-h" type="number" value="16" min="6" max="56" style="width:80px;">
+        <div id="bsp-fields" style="display:contents;">
+          <label>Min room</label><input id="bsp-minroom" type="number" value="3" min="2" max="10" style="width:60px;">
+          <label>Corridor floor</label>
+          <select id="bsp-floor" style="width:100%;font-size:10px;">
+            <option value="interior">Cave floor</option>
+            <option value="floor_stone">Stone tile</option>
+            <option value="floor_h" selected>Planks H</option>
+            <option value="dirt">Dirt</option>
+          </select>
+        </div>
+        <div id="wfc-fields" style="display:none;contents;">
+          <label>Learn from</label>
+          <select id="wfc-source" style="width:100%;font-size:10px;"></select>
+          <label>Width</label><input id="wfc-w" type="number" value="20" min="6" max="56" style="width:80px;">
+          <label>Height</label><input id="wfc-h" type="number" value="16" min="6" max="56" style="width:80px;">
+        </div>
+      </div>
+      <button id="proc-run-btn" style="margin-top:10px;width:100%;background:linear-gradient(180deg,#2a4060,#182838);border-color:#4a8080;color:#80c8c8;padding:5px;">&#9658; Run Procedural</button>
+      <div id="proc-status" style="margin-top:6px;font-size:10px;color:#5a9090;min-height:12px;"></div>
     </div>
     <div style="margin-top:6px;font-size:10px;color:#3a6060;">This will replace the current map. Review and edit before saving.</div>
     <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
@@ -2482,7 +2513,11 @@ Format: [{"x":0,"y":0,"type":"wall","name":"Rock Face"},{"x":3,"y":2,"type":"int
       }),
     });
 
-    if (!res.ok) throw new Error(`AI request failed: ${res.status}`);
+    if (!res.ok) {
+      let errMsg = `AI request failed: ${res.status}`;
+      try { const e = await res.json(); errMsg += ' — ' + (e.error?.message || JSON.stringify(e)); } catch(e2) {}
+      throw new Error(errMsg);
+    }
     let data = await res.json();
     let text = '';
     if (data.choices) text = data.choices[0]?.message?.content || '';
@@ -2535,6 +2570,308 @@ Format: [{"x":0,"y":0,"type":"wall","name":"Rock Face"},{"x":3,"y":2,"type":"int
   }
 });
 
+
+// ================================================================
+// PATH TOOL
+// ================================================================
+let _pathStart = null;
+
+function handlePathTool(x, y, isDown) {
+  if (!isDown) return;
+  if (!_pathStart) {
+    _pathStart = {x, y};
+    statusMsg(`Path start: ${x},${y} — click end point`);
+    return;
+  }
+  // Draw path from _pathStart to {x,y}
+  const path = _buildOrthogonalPath(_pathStart.x, _pathStart.y, x, y);
+  pushUndo(_pathStart.x, _pathStart.y);
+  for (const cell of path) {
+    const k = `${cell.x},${cell.y}`;
+    const existing = definedMap[k] || {};
+    definedMap[k] = Object.assign({}, existing, {object: cell.obj});
+    if (!definedMap[k].type) definedMap[k].type = 'street';
+    map[k] = definedMap[k];
+  }
+  _pathStart = null;
+  computeBounds(); renderAll(); updateExport();
+  statusMsg(`Path drawn (${path.length} cells)`);
+}
+
+function _buildOrthogonalPath(x1, y1, x2, y2) {
+  // Manhattan path: horizontal first then vertical
+  const cells = [];
+  const dx = x2 > x1 ? 1 : -1;
+  const dy = y2 > y1 ? 1 : -1;
+
+  // Walk horizontal segment
+  for (let x = x1; x !== x2; x += dx) {
+    cells.push({x, y: y1});
+  }
+  // Corner cell
+  if (x1 !== x2 && y1 !== y2) cells.push({x: x2, y: y1});
+  // Walk vertical segment
+  for (let y = y1; y !== y2; y += dy) {
+    if (x1 === x2 || y !== y1) cells.push({x: x2, y});
+  }
+  cells.push({x: x2, y: y2});
+
+  // Assign correct path tile variant to each cell
+  return cells.map((cell, i) => {
+    const prev = cells[i-1] || null;
+    const next = cells[i+1] || null;
+    cell.obj = _pathVariant(prev, cell, next);
+    return cell;
+  });
+}
+
+function _pathVariant(prev, cur, next) {
+  // Determine which directions connect
+  const from = prev ? {x: Math.sign(cur.x - prev.x), y: Math.sign(cur.y - prev.y)} : null;
+  const to   = next ? {x: Math.sign(next.x - cur.x), y: Math.sign(next.y - cur.y)} : null;
+
+  const dirs = new Set();
+  if (from) { if (from.x !== 0) dirs.add(from.x > 0 ? 'e' : 'w'); if (from.y !== 0) dirs.add(from.y > 0 ? 's' : 'n'); }
+  if (to)   { if (to.x !== 0)   dirs.add(to.x > 0 ? 'e' : 'w');   if (to.y !== 0)   dirs.add(to.y > 0 ? 's' : 'n'); }
+
+  const has = d => dirs.has(d);
+
+  // Straight
+  if (has('e') && has('w') && !has('n') && !has('s')) return 'path_h';
+  if (has('n') && has('s') && !has('e') && !has('w')) return 'path_v';
+  // Corners
+  if (has('n') && has('e') && !has('s') && !has('w')) return 'path_cne';
+  if (has('n') && has('w') && !has('s') && !has('e')) return 'path_cnw';
+  if (has('s') && has('e') && !has('n') && !has('w')) return 'path_cse';
+  if (has('s') && has('w') && !has('n') && !has('e')) return 'path_csw';
+  // Tees
+  if (has('e') && has('w') && has('n') && !has('s')) return 'path_tn';
+  if (has('e') && has('w') && has('s') && !has('n')) return 'path_ts';
+  if (has('n') && has('s') && has('e') && !has('w')) return 'path_te';
+  if (has('n') && has('s') && has('w') && !has('e')) return 'path_tw';
+  // Cross
+  if (has('n') && has('s') && has('e') && has('w')) return 'path_cross';
+  // Endpoints
+  if (has('e') || has('w')) return 'path_h';
+  if (has('n') || has('s')) return 'path_v';
+  return 'path_cross';
+}
+
+// ================================================================
+// BSP DUNGEON
+// ================================================================
+function runBSP(W, H, minRoom, floorType) {
+  const map = {};
+  const rooms = [];
+
+  function tile(x, y, type, name='', extra={}) {
+    map[`${x},${y}`] = Object.assign({type, name}, extra);
+  }
+
+  // Fill everything with walls
+  for (let x = 0; x < W; x++) for (let y = 0; y < H; y++) tile(x, y, 'wall', 'Wall');
+
+  // BSP split
+  function split(x, y, w, h, depth) {
+    if (depth === 0 || (w < minRoom*2+3 && h < minRoom*2+3)) {
+      // Leaf — carve a room
+      const rw = minRoom + Math.floor(Math.random() * Math.max(1, w - minRoom - 2));
+      const rh = minRoom + Math.floor(Math.random() * Math.max(1, h - minRoom - 2));
+      const rx = x + 1 + Math.floor(Math.random() * Math.max(1, w - rw - 1));
+      const ry = y + 1 + Math.floor(Math.random() * Math.max(1, h - rh - 1));
+      for (let cx = rx; cx < rx+rw; cx++) for (let cy = ry; cy < ry+rh; cy++) tile(cx, cy, floorType, 'Room');
+      rooms.push({cx: Math.floor(rx+rw/2), cy: Math.floor(ry+rh/2)});
+      return {cx: Math.floor(rx+rw/2), cy: Math.floor(ry+rh/2)};
+    }
+    let a, b;
+    const horiz = w < minRoom*2+3 ? true : h < minRoom*2+3 ? false : Math.random() < 0.5;
+    if (horiz) {
+      const split = Math.floor(minRoom + Math.random() * (h - minRoom*2));
+      a = split(x, y, w, split, depth-1);
+      b = split(x, y+split, w, h-split, depth-1);
+    } else {
+      const split = Math.floor(minRoom + Math.random() * (w - minRoom*2));
+      a = split(x, y, split, h, depth-1);
+      b = split(x+split, y, w-split, h, depth-1);
+    }
+    // Connect centers with corridor
+    let cx = a.cx, cy = a.cy;
+    while (cx !== b.cx) { tile(cx, cy, floorType, 'Corridor'); cx += Math.sign(b.cx - cx); }
+    while (cy !== b.cy) { tile(cx, cy, floorType, 'Corridor'); cy += Math.sign(b.cy - cy); }
+    tile(cx, cy, floorType, 'Corridor');
+    return {cx: Math.floor((a.cx+b.cx)/2), cy: Math.floor((a.cy+b.cy)/2)};
+  }
+
+  split(0, 0, W, H, 4);
+
+  // Place entrance door on south wall of southernmost room
+  const southRoom = rooms.reduce((a,b) => b.cy > a.cy ? b : a, rooms[0]);
+  tile(southRoom.cx, H-1, 'door', 'Entrance', {exit:{layer:'settlement',pos:null}});
+
+  return map;
+}
+
+// ================================================================
+// WAVE FUNCTION COLLAPSE (simplified overlap model)
+// ================================================================
+function runWFC(sourceId, W, H) {
+  const source = window.WORLD_DATA.settlements[sourceId];
+  if (!source || !source.map) return null;
+
+  // Extract 2x2 patterns from source map
+  const srcMap = source.map;
+  const srcKeys = Object.keys(srcMap);
+  const xs = srcKeys.map(k=>parseInt(k.split(',')[0]));
+  const ys = srcKeys.map(k=>parseInt(k.split(',')[1]));
+  const minX=Math.min(...xs), maxX=Math.max(...xs);
+  const minY=Math.min(...ys), maxY=Math.max(...ys);
+
+  function getType(x, y) {
+    const cell = srcMap[`${x},${y}`];
+    return cell ? cell.type : 'grass';
+  }
+
+  // Build pattern library: for each terrain type, what neighbours are valid
+  const neighbours = {}; // type -> {n: Set, s: Set, e: Set, w: Set}
+  for (let x = minX; x <= maxX; x++) for (let y = minY; y <= maxY; y++) {
+    const t = getType(x, y);
+    if (!neighbours[t]) neighbours[t] = {n:new Set(),s:new Set(),e:new Set(),w:new Set()};
+    neighbours[t].n.add(getType(x, y-1));
+    neighbours[t].s.add(getType(x, y+1));
+    neighbours[t].e.add(getType(x+1, y));
+    neighbours[t].w.add(getType(x-1, y));
+  }
+
+  const types = Object.keys(neighbours);
+
+  // WFC grid — each cell starts with all possibilities
+  const grid = {};
+  for (let x = 0; x < W; x++) for (let y = 0; y < H; y++) {
+    grid[`${x},${y}`] = new Set(types);
+  }
+
+  function entropy(x, y) { return grid[`${x},${y}`].size; }
+
+  function collapse(x, y) {
+    const opts = [...grid[`${x},${y}`]];
+    // Weight by frequency in source
+    const picked = opts[Math.floor(Math.random() * opts.length)];
+    grid[`${x},${y}`] = new Set([picked]);
+    return picked;
+  }
+
+  function propagate(x, y) {
+    const stack = [{x, y}];
+    const visited = new Set();
+    while (stack.length) {
+      const {x: cx, y: cy} = stack.pop();
+      const k = `${cx},${cy}`;
+      if (visited.has(k)) continue;
+      visited.add(k);
+      const cur = grid[k];
+      const adj = [{dx:0,dy:-1,dir:'n',opp:'s'},{dx:0,dy:1,dir:'s',opp:'n'},{dx:1,dy:0,dir:'e',opp:'w'},{dx:-1,dy:0,dir:'w',opp:'e'}];
+      for (const {dx, dy, dir, opp} of adj) {
+        const nx = cx+dx, ny = cy+dy;
+        const nk = `${nx},${ny}`;
+        if (!grid[nk]) continue;
+        const allowed = new Set();
+        for (const t of cur) if (neighbours[t]) for (const nt of neighbours[t][dir]) if (grid[nk].has(nt)) allowed.add(nt);
+        if (allowed.size < grid[nk].size) { grid[nk] = allowed; stack.push({x:nx, y:ny}); }
+      }
+    }
+  }
+
+  // Run WFC
+  let iterations = W * H * 3;
+  while (iterations-- > 0) {
+    // Find lowest entropy uncollapsed cell
+    let minE = Infinity, minCell = null;
+    for (let x = 0; x < W; x++) for (let y = 0; y < H; y++) {
+      const e = entropy(x, y);
+      if (e > 1 && e < minE) { minE = e; minCell = {x, y}; }
+    }
+    if (!minCell) break;
+    collapse(minCell.x, minCell.y);
+    propagate(minCell.x, minCell.y);
+  }
+
+  // Build result map
+  const result = {};
+  for (let x = 0; x < W; x++) for (let y = 0; y < H; y++) {
+    const opts = [...(grid[`${x},${y}`] || ['grass'])];
+    const type = opts[0] || 'grass';
+    // Copy name/object from a matching source cell if possible
+    const srcCell = Object.values(srcMap).find(c => c.type === type);
+    result[`${x},${y}`] = {type, name: srcCell?.name||''};
+    if (srcCell?.object) result[`${x},${y}`].object = srcCell.object;
+  }
+  return result;
+}
+
+// ================================================================
+// PROCEDURAL MODE WIRING
+// ================================================================
+function updateProcFields() {
+  const algo = document.getElementById('proc-algo').value;
+  document.getElementById('bsp-fields').style.display = algo === 'bsp' ? 'contents' : 'none';
+  document.getElementById('wfc-fields').style.display = algo === 'wfc' ? 'contents' : 'none';
+}
+
+function openAiModal_populateWFC() {
+  const sel = document.getElementById('wfc-source');
+  if (!sel) return;
+  sel.innerHTML = '';
+  for (const [id, s] of Object.entries(window.WORLD_DATA.settlements||{})) {
+    const o = document.createElement('option');
+    o.value = id; o.textContent = (s.name||id) + ` (${Object.keys(s.map||{}).length} cells)`;
+    if (id === settlementId) o.selected = true;
+    sel.appendChild(o);
+  }
+}
+
+document.getElementById('proc-run-btn').addEventListener('click', () => {
+  const algo = document.getElementById('proc-algo').value;
+  const W = parseInt(document.getElementById('proc-w').value) || 20;
+  const H = parseInt(document.getElementById('proc-h').value) || 16;
+  const procStatus = s => document.getElementById('proc-status').textContent = s;
+
+  let newMap = null;
+  if (algo === 'bsp') {
+    const minRoom = parseInt(document.getElementById('bsp-minroom').value) || 3;
+    const floorType = document.getElementById('bsp-floor').value;
+    procStatus('Running BSP...');
+    newMap = runBSP(W, H, minRoom, floorType);
+    procStatus(`Done — ${Object.keys(newMap).length} cells`);
+  } else {
+    const sourceId = document.getElementById('wfc-source').value;
+    if (!sourceId) { procStatus('Select a source settlement first.'); return; }
+    procStatus('Running WFC...');
+    newMap = runWFC(sourceId, W, H);
+    if (!newMap) { procStatus('WFC failed — source map empty?'); return; }
+    procStatus(`Done — ${Object.keys(newMap).length} cells`);
+  }
+
+  if (newMap) {
+    undoStack.push({type:'bulk', prev: Object.assign({}, definedMap)});
+    definedMap = newMap;
+    originalMap = Object.assign({}, newMap);
+    map = Object.assign({}, newMap);
+    computeBounds(); renderAll(); clearInspector(); updateExport();
+    document.getElementById('ai-modal').style.display = 'none';
+    statusMsg(`Procedural map generated (${Object.keys(newMap).length} cells). Review and save.`);
+  }
+});
+
+// Show/hide proc fields when mode changes
+const _origAiModeChange = document.getElementById('ai-mode').onchange;
+document.getElementById('ai-mode').addEventListener('change', e => {
+  const isProc = e.target.value === 'procedural';
+  document.getElementById('proc-fields').style.display = isProc ? 'block' : 'none';
+  document.getElementById('ai-generate-btn').style.display = isProc ? 'none' : '';
+  if (isProc) openAiModal_populateWFC();
+});
+
+// Path tool in handleMouse
 function buildSettlementList(){
   const sel=document.getElementById('settlement-select');sel.innerHTML='';
   if(!window.WORLD_DATA)return;
@@ -2591,6 +2928,7 @@ function handleMouse(e,isDown){
   const{x,y}=canvasToCell(px,py);
   if(!inBounds(x,y))return;
   if(currentTool==='pick'){if(isDown)selectCell(x,y);}
+  else if(currentTool==='path'){handlePathTool(x,y,isDown);}
   else if(currentTool==='fill'){if(isDown){floodFill(x,y);selectCell(x,y);}}
   else{
     if(currentLpTab==='building'&&isDown){placeBuilding(x,y);selectCell(x,y);}
