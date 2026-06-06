@@ -2762,8 +2762,9 @@ function runBSP(W, H, minRoom, floorType) {
     }
   });
 
-  // Place entrance door on south wall of southernmost room
+  // Place entrance door on south wall (highest Y = bottom of screen)
   const southRoom = rooms.reduce((a,b) => b.cy > a.cy ? b : a, rooms[0]);
+  console.log('[BSP] southRoom:', southRoom, 'H-1:', H-1, 'all room cys:', rooms.map(r=>r.cy));
   tile(southRoom.cx, H-1, 'door', 'Entrance', {exit:{layer:'settlement',pos:null}});
 
   return map;
