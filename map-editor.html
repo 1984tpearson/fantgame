@@ -2719,20 +2719,45 @@ function runBSP(W, H, minRoom, floorType) {
 
   bspSplit(0, 0, W, H, 4);
 
-  // Place objects in rooms
-  const dungeonObjs = ['bones','skeleton','chest','blood','dead_body','torch','barrels','logpile','gold_pile','dungeon_bars'];
-  const rng = () => Math.random();
-  for (const room of rooms) {
-    // Find all floor cells in this room area
-    for (const [k, cell] of Object.entries(map)) {
-      if (cell.type !== floorType || cell.name !== 'Room') continue;
-      const [cx, cy] = k.split(',').map(Number);
-      // ~25% chance of object per room cell
-      if (rng() < 0.25) {
-        cell.object = dungeonObjs[Math.floor(rng() * dungeonObjs.length)];
-      }
+  // Place objects — more valuable items in rooms furthest from entrance (south wall)
+  const significantObjs = ['chest','skeleton','dead_body','gold_pile','dungeon_bars'];
+  const valuableObjs    = ['chest','gold_pile'];
+  const ambientObjs     = ['boulder','rock','mossy_rock','mushroom','mushroom_lg'];
+
+  // Sort rooms by distance from south wall — furthest first
+  const sortedRooms = rooms.slice().sort((a, b) => a.cy - b.cy); // north rooms first = deepest
+  const roomCount = sortedRooms.length;
+
+  sortedRooms.forEach((room, idx) => {
+    const depth = idx / Math.max(1, roomCount - 1); // 0 = deepest, 1 = nearest entrance
+
+    // Find floor cells in this room
+    const roomCells = Object.entries(map)
+      .filter(([k, cell]) => cell.type === floorType && cell.name === 'Room')
+      .map(([k]) => k);
+    if (!roomCells.length) return;
+
+    const shuffle = arr => arr.slice().sort(() => Math.random() - 0.5);
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+    const shuffled = shuffle(roomCells);
+
+    // Deep rooms (depth < 0.3): valuable loot
+    // Mid rooms (0.3-0.7): mixed
+    // Near entrance (depth > 0.7): ambient only
+    let sigPool;
+    if (depth < 0.3)      sigPool = valuableObjs;
+    else if (depth < 0.7) sigPool = significantObjs;
+    else                  sigPool = ['bones','skeleton'];
+
+    const sigCount = depth < 0.5 ? (Math.random() < 0.6 ? 2 : 1) : 1;
+    for (let i = 0; i < sigCount && i < shuffled.length; i++) {
+      map[shuffled[i]].object = pick(sigPool);
     }
-  }
+    const ambCount = 1 + Math.floor(Math.random() * 3);
+    for (let i = sigCount; i < sigCount + ambCount && i < shuffled.length; i++) {
+      map[shuffled[i]].object = pick(ambientObjs);
+    }
+  });
 
   // Place entrance door on south wall of southernmost room
   const southRoom = rooms.reduce((a,b) => b.cy > a.cy ? b : a, rooms[0]);
