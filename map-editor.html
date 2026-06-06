@@ -2724,17 +2724,20 @@ function runBSP(W, H, minRoom, floorType) {
   const valuableObjs    = ['chest','gold_pile'];
   const ambientObjs     = ['boulder','rock','mossy_rock','mushroom','mushroom_lg'];
 
-  // Sort rooms by distance from south wall — furthest first
-  const sortedRooms = rooms.slice().sort((a, b) => a.cy - b.cy); // north rooms first = deepest
+  // Sort rooms by Y — lowest Y = furthest from south entrance = deepest
+  const sortedRooms = rooms.slice().sort((a, b) => a.cy - b.cy);
   const roomCount = sortedRooms.length;
 
   sortedRooms.forEach((room, idx) => {
-    const depth = idx / Math.max(1, roomCount - 1); // 0 = deepest, 1 = nearest entrance
+    const depth = idx / Math.max(1, roomCount - 1); // 0 = deepest north room, 1 = nearest entrance
 
-    // Find floor cells in this room
-    const roomCells = Object.entries(map)
-      .filter(([k, cell]) => cell.type === floorType && cell.name === 'Room')
-      .map(([k]) => k);
+    // Find floor cells near THIS room's centre (within room radius)
+    const roomCells = Object.keys(map).filter(k => {
+      const cell = map[k];
+      if (cell.type !== floorType || cell.name !== 'Room') return false;
+      const [cx, cy] = k.split(',').map(Number);
+      return Math.abs(cx - room.cx) <= 6 && Math.abs(cy - room.cy) <= 6;
+    });
     if (!roomCells.length) return;
 
     const shuffle = arr => arr.slice().sort(() => Math.random() - 0.5);
