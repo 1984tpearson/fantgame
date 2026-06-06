@@ -2719,6 +2719,21 @@ function runBSP(W, H, minRoom, floorType) {
 
   bspSplit(0, 0, W, H, 4);
 
+  // Place objects in rooms
+  const dungeonObjs = ['bones','skeleton','chest','blood','dead_body','torch','barrels','logpile','gold_pile','dungeon_bars'];
+  const rng = () => Math.random();
+  for (const room of rooms) {
+    // Find all floor cells in this room area
+    for (const [k, cell] of Object.entries(map)) {
+      if (cell.type !== floorType || cell.name !== 'Room') continue;
+      const [cx, cy] = k.split(',').map(Number);
+      // ~25% chance of object per room cell
+      if (rng() < 0.25) {
+        cell.object = dungeonObjs[Math.floor(rng() * dungeonObjs.length)];
+      }
+    }
+  }
+
   // Place entrance door on south wall of southernmost room
   const southRoom = rooms.reduce((a,b) => b.cy > a.cy ? b : a, rooms[0]);
   tile(southRoom.cx, H-1, 'door', 'Entrance', {exit:{layer:'settlement',pos:null}});
