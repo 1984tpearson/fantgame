@@ -2687,7 +2687,7 @@ function runBSP(W, H, minRoom, floorType) {
   for (let x = 0; x < W; x++) for (let y = 0; y < H; y++) tile(x, y, 'wall', 'Wall');
 
   // BSP split
-  function split(x, y, w, h, depth) {
+  function bspSplit(x, y, w, h, depth) {
     if (depth === 0 || (w < minRoom*2+3 && h < minRoom*2+3)) {
       // Leaf — carve a room
       const rw = minRoom + Math.floor(Math.random() * Math.max(1, w - minRoom - 2));
@@ -2701,13 +2701,13 @@ function runBSP(W, H, minRoom, floorType) {
     let a, b;
     const horiz = w < minRoom*2+3 ? true : h < minRoom*2+3 ? false : Math.random() < 0.5;
     if (horiz) {
-      const split = Math.floor(minRoom + Math.random() * (h - minRoom*2));
-      a = split(x, y, w, split, depth-1);
-      b = split(x, y+split, w, h-split, depth-1);
+      const sp = Math.floor(minRoom + Math.random() * (h - minRoom*2));
+      a = bspSplit(x, y, w, sp, depth-1);
+      b = bspSplit(x, y+sp, w, h-sp, depth-1);
     } else {
-      const split = Math.floor(minRoom + Math.random() * (w - minRoom*2));
-      a = split(x, y, split, h, depth-1);
-      b = split(x+split, y, w-split, h, depth-1);
+      const sp = Math.floor(minRoom + Math.random() * (w - minRoom*2));
+      a = bspSplit(x, y, sp, h, depth-1);
+      b = bspSplit(x+sp, y, w-sp, h, depth-1);
     }
     // Connect centers with corridor
     let cx = a.cx, cy = a.cy;
@@ -2717,7 +2717,7 @@ function runBSP(W, H, minRoom, floorType) {
     return {cx: Math.floor((a.cx+b.cx)/2), cy: Math.floor((a.cy+b.cy)/2)};
   }
 
-  split(0, 0, W, H, 4);
+  bspSplit(0, 0, W, H, 4);
 
   // Place entrance door on south wall of southernmost room
   const southRoom = rooms.reduce((a,b) => b.cy > a.cy ? b : a, rooms[0]);
