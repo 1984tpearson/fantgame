@@ -305,7 +305,7 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
   <div style="background:#0e1820;border:2px solid #4a8080;padding:20px;min-width:400px;max-width:520px;font-family:inherit;color:#80c8c8;">
     <h3 style="margin:0 0 14px;font-size:13px;letter-spacing:1px;color:#80e0e0;">⚡ AI GENERATE MAP</h3>
     <div style="display:grid;grid-template-columns:110px 1fr;gap:6px 10px;align-items:start;font-size:11px;">
-      <label style="padding-top:2px;">Model</label>
+      <label id="ai-gen-model-label" style="padding-top:2px;">Model</label>
       <select id="ai-gen-model" style="width:100%;font-size:10px;">
         <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (best spatial)</option>
         <option value="anthropic/claude-sonnet-4-5">Claude Sonnet 4.5</option>
@@ -321,9 +321,9 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
         <option value="wilderness">Wilderness / Found (cave, hut, ruin, sewer...)</option>
         <option value="procedural">Procedural (BSP / WFC)</option>
       </select>
-      <label style="padding-top:2px;">Type / Name</label>
+      <label id="ai-type-label" style="padding-top:2px;">Type / Name</label>
       <input id="ai-type" type="text" placeholder="e.g. inn, sewer, abandoned hut, market square" style="width:100%;">
-      <label style="padding-top:2px;">Size</label>
+      <label id="ai-size-label" style="padding-top:2px;">Size</label>
       <select id="ai-size" style="width:100%;font-size:10px;" onchange="updateAiSizeLabel()">
         <option value="s_small">Interior small — 5×4 (10m×8m)</option>
         <option value="s_med" selected>Interior medium — 10×8 (20m×16m)</option>
@@ -340,7 +340,7 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
           <span id="ai-custom-info" style="color:#3a6060;font-size:10px;"></span>
         </div>
       </div>
-      <label style="padding-top:2px;">Atmosphere</label>
+      <label id="ai-notes-label" style="padding-top:2px;">Atmosphere</label>
       <textarea id="ai-notes" rows="3" placeholder="e.g. rundown and dark, smells of fish and old rope. A hiding place for smugglers." style="width:100%;background:#080f14;border:1px solid #3a6060;color:#80c8c8;padding:4px;font-size:11px;resize:vertical;"></textarea>
       <label id="ai-settlement-label" style="padding-top:2px;">Settlement</label>
       <select id="ai-settlement" style="width:100%;font-size:10px;"></select>
@@ -2342,10 +2342,25 @@ document.getElementById('ai-cancel').addEventListener('click', () => {
 });
 
 document.getElementById('ai-mode').addEventListener('change', e => {
-  const isWild = e.target.value === 'wilderness';
-  document.getElementById('ai-settlement').style.display = isWild ? 'none' : '';
-  document.getElementById('ai-settlement-label').style.display = isWild ? 'none' : '';
-  updateAiSizeLabel();
+  const mode = e.target.value;
+  const isProc = mode === 'procedural';
+  const isWild = mode === 'wilderness';
+  // AI-specific fields
+  ['ai-gen-model','ai-gen-model-label','ai-type','ai-type-label','ai-size','ai-size-label',
+   'ai-notes','ai-notes-label','ai-settlement','ai-settlement-label',
+   'ai-custom-size','ai-generate-btn'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = isProc ? 'none' : '';
+  });
+  // Settlement field visibility within AI modes
+  if (!isProc) {
+    document.getElementById('ai-settlement').style.display = isWild ? 'none' : '';
+    document.getElementById('ai-settlement-label').style.display = isWild ? 'none' : '';
+  }
+  // Procedural fields
+  document.getElementById('proc-fields').style.display = isProc ? 'block' : 'none';
+  if (isProc) openAiModal_populateWFC();
+  if (!isProc) updateAiSizeLabel();
 });
 
 document.getElementById('ai-custom-w').addEventListener('input', updateAiSizeLabel);
@@ -2862,14 +2877,7 @@ document.getElementById('proc-run-btn').addEventListener('click', () => {
   }
 });
 
-// Show/hide proc fields when mode changes
-const _origAiModeChange = document.getElementById('ai-mode').onchange;
-document.getElementById('ai-mode').addEventListener('change', e => {
-  const isProc = e.target.value === 'procedural';
-  document.getElementById('proc-fields').style.display = isProc ? 'block' : 'none';
-  document.getElementById('ai-generate-btn').style.display = isProc ? 'none' : '';
-  if (isProc) openAiModal_populateWFC();
-});
+
 
 // Path tool in handleMouse
 function buildSettlementList(){
