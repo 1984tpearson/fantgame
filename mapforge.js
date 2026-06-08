@@ -2878,9 +2878,9 @@ function makeTerrain(type, seed, neighbours={}) {
       for(let i=0;i<3;i++){ const sx=Math.floor(rng()*W),sy=Math.floor(rng()*H); let cx2=sx,cy2=sy; for(let s=0;s<5;s++){ setPixel(grid,cx2,cy2,jitter([108,68,138,255],12,rng)); cx2=Math.max(0,Math.min(W-1,cx2+(Math.floor(rng()*3)-1))); cy2=Math.max(0,Math.min(H-1,cy2+(Math.floor(rng()*3)-1))); } }
     },
     rocky: ()=>{
-      const R1=[118,112,102,255],R2=[95,90,82,255],R3=[142,136,124,255];
-      for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const r=rng(); let c=r<0.4?jitter(R1,10,rng):r<0.7?jitter(R2,8,rng):jitter(R3,10,rng); setPixel(grid,x,y,c); }
-      for(let i=0;i<5;i++){ const rx=Math.floor(rng()*W),ry=Math.floor(rng()*H); setPixel(grid,rx,ry,jitter([158,152,140,255],8,rng)); if(rx+1<W) setPixel(grid,rx+1,ry,[72,68,62,255]); }
+      const R1=[32,28,25,255],R2=[22,19,17,255],R3=[42,38,34,255];
+      for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const r=rng(); let c=r<0.4?jitter(R1,6,rng):r<0.7?jitter(R2,5,rng):jitter(R3,6,rng); setPixel(grid,x,y,c); }
+      for(let i=0;i<5;i++){ const rx=Math.floor(rng()*W),ry=Math.floor(rng()*H); setPixel(grid,rx,ry,jitter([52,46,40,255],6,rng)); if(rx+1<W) setPixel(grid,rx+1,ry,[15,12,10,255]); }
     },
     cave: ()=>{
       const C1=[48,44,40,255],C2=[62,58,52,255],C3=[35,32,28,255];
