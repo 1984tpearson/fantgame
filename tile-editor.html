@@ -267,117 +267,204 @@ const TERRAINS = [
   {id:'corrupt',     label:'Corrupt'},
 ];
 
-// ── OBJECT LIST (from MapForge OTHER_CATEGORIES) ─────────────────────────────
+// ── OBJECT LIST (from MapForge OTHER_CATEGORIES) ─────────────────────────────────────────
 const OBJECTS = [
   // trees
-  {id:'oak_s',   label:'Oak (sm)',    w:20,h:20, cat:'trees'},
-  {id:'oak_l',   label:'Oak (lg)',    w:32,h:32, cat:'trees'},
-  {id:'pine_s',  label:'Pine (sm)',   w:20,h:20, cat:'trees'},
-  {id:'pine_l',  label:'Pine (lg)',   w:32,h:32, cat:'trees'},
-  {id:'palm',    label:'Palm',        w:24,h:24, cat:'trees'},
-  {id:'dead',    label:'Dead Tree',   w:24,h:24, cat:'trees'},
-  {id:'thicket', label:'Thicket',     w:24,h:24, cat:'trees'},
-  {id:'bush_sm', label:'Bush (sm)',   w:16,h:16, cat:'trees'},
-  {id:'bush_lg', label:'Bush (lg)',   w:24,h:24, cat:'trees'},
+  {id:'oak_s',      label:'Oak (sm)',         w:20,h:20, cat:'trees'},
+  {id:'oak_l',      label:'Oak (lg)',         w:32,h:32, cat:'trees'},
+  {id:'pine_s',     label:'Pine (sm)',        w:20,h:20, cat:'trees'},
+  {id:'pine_l',     label:'Pine (lg)',        w:32,h:32, cat:'trees'},
+  {id:'palm',       label:'Palm',             w:24,h:24, cat:'trees'},
+  {id:'dead',       label:'Dead Tree',        w:24,h:24, cat:'trees'},
+  {id:'thicket',    label:'Thicket',          w:24,h:24, cat:'trees'},
+  {id:'giant_roots',label:'Giant Roots',      w:20,h:20, cat:'trees'},
+  {id:'bush_sm',    label:'Bushes (sm)',      w:16,h:16, cat:'trees'},
+  {id:'bush_lg',    label:'Bushes (lg)',      w:24,h:24, cat:'trees'},
   // nature
-  {id:'rock_s',  label:'Rock',        w:12,h:10, cat:'nature'},
-  {id:'boulder', label:'Boulder',     w:20,h:18, cat:'nature'},
-  {id:'mossy',   label:'Mossy Rock',  w:18,h:16, cat:'nature'},
-  {id:'pond_s',  label:'Pond (sm)',   w:24,h:20, cat:'nature'},
-  {id:'mush_sm', label:'Mushroom',    w:10,h:10, cat:'nature'},
-  {id:'fallen_log',label:'Fallen Log',w:24,h:12, cat:'nature'},
-  {id:'flowers', label:'Flowers',     w:16,h:16, cat:'nature'},
-  {id:'fern',    label:'Fern',        w:14,h:14, cat:'nature'},
-  {id:'reeds',   label:'Reeds',       w:14,h:14, cat:'nature'},
-  {id:'cactus_p',label:'Cactus',      w:12,h:18, cat:'nature'},
+  {id:'rock_s',     label:'Rock',             w:12,h:10, cat:'nature'},
+  {id:'boulder',    label:'Boulder',          w:20,h:18, cat:'nature'},
+  {id:'mossy',      label:'Mossy Rock',       w:18,h:16, cat:'nature'},
+  {id:'pond_s',     label:'Pond (sm)',        w:24,h:20, cat:'nature'},
+  {id:'pond_l',     label:'Pond (lg)',        w:40,h:32, cat:'nature'},
+  {id:'mush_sm',    label:'Mushroom (sm)',    w:10,h:10, cat:'nature'},
+  {id:'mush_lg',    label:'Mushroom (lg)',    w:16,h:16, cat:'nature'},
+  {id:'fallen_log', label:'Fallen Log',       w:24,h:12, cat:'nature'},
+  {id:'flowers',    label:'Flower Patch',     w:16,h:16, cat:'nature'},
+  {id:'fern',       label:'Fern',             w:14,h:14, cat:'nature'},
+  {id:'reeds',      label:'Reeds',            w:12,h:16, cat:'nature'},
+  {id:'lily',       label:'Lily Pad',         w:14,h:14, cat:'nature'},
+  {id:'vine',       label:'Vine',             w:16,h:16, cat:'nature'},
+  {id:'cactus_p',   label:'Cactus',           w:12,h:18, cat:'nature'},
+  {id:'crop_wheat', label:'Wheat',            w:20,h:20, cat:'nature'},
+  {id:'crop_corn',  label:'Corn',             w:20,h:20, cat:'nature'},
+  {id:'crop_veg',   label:'Vegetables',       w:20,h:20, cat:'nature'},
   // extras
-  {id:'well',    label:'Well',        w:16,h:16, cat:'extras'},
-  {id:'campfire',label:'Campfire',    w:16,h:16, cat:'extras'},
-  {id:'haystack',label:'Haystack',    w:18,h:14, cat:'extras'},
-  {id:'anvil',   label:'Anvil',       w:16,h:14, cat:'extras'},
-  {id:'logpile', label:'Log Pile',    w:20,h:14, cat:'extras'},
-  {id:'barrels', label:'Barrels',     w:18,h:16, cat:'extras'},
-  {id:'trough',  label:'Trough',      w:18,h:10, cat:'extras'},
-  {id:'chest',   label:'Chest',       w:14,h:12, cat:'extras'},
-  {id:'signpost',label:'Signpost',    w:14,h:18, cat:'extras'},
-  {id:'torch',   label:'Torch',       w:10,h:10, cat:'extras'},
-  {id:'altar',   label:'Altar',       w:20,h:20, cat:'extras'},
-  {id:'magic_circle',label:'Magic Circle',w:20,h:20,cat:'extras'},
-  {id:'skeleton',label:'Skeleton',    w:12,h:18, cat:'extras'},
-  {id:'dead_body',label:'Dead Body',  w:16,h:20, cat:'extras'},
-  {id:'blood_spatter',label:'Blood Spatter',w:16,h:16,cat:'extras'},
-  {id:'bones_pile',label:'Bones Pile',w:16,h:14,cat:'extras'},
-  {id:'gold_pile',label:'Gold Pile',  w:16,h:12,cat:'extras'},
-  {id:'cart',    label:'Cart',        w:22,h:18, cat:'extras'},
-  {id:'boat',    label:'Boat',        w:28,h:14, cat:'extras'},
+  {id:'well',        label:'Well',            w:16,h:16, cat:'extras'},
+  {id:'haystack',    label:'Haystack',        w:18,h:14, cat:'extras'},
+  {id:'graveyard',   label:'Graveyard',       w:40,h:40, cat:'extras'},
+  {id:'campfire',    label:'Campfire',        w:16,h:16, cat:'extras'},
+  {id:'stall',       label:'Market Stall',    w:24,h:20, cat:'extras'},
+  {id:'fence',       label:'Stockade Fence',  w:20,h:12, cat:'extras'},
+  {id:'signpost',    label:'Signpost',        w:14,h:18, cat:'extras'},
+  {id:'anvil',       label:'Forge & Anvil',   w:16,h:14, cat:'extras'},
+  {id:'logpile',     label:'Log Pile',        w:20,h:14, cat:'extras'},
+  {id:'barrels',     label:'Barrel Cluster',  w:18,h:16, cat:'extras'},
+  {id:'noticeboard', label:'Notice Board',    w:16,h:16, cat:'extras'},
+  {id:'trough',      label:'Trough',          w:18,h:10, cat:'extras'},
+  {id:'coop',        label:'Chicken Coop',    w:20,h:18, cat:'extras'},
+  {id:'chest',       label:'Chest',           w:14,h:12, cat:'extras'},
+  {id:'campsite',    label:'Campsite',        w:24,h:20, cat:'extras'},
+  {id:'altar',       label:'Altar',           w:20,h:20, cat:'extras'},
+  {id:'stocks',      label:'Stocks',          w:20,h:12, cat:'extras'},
+  {id:'torch',       label:'Torch',           w:8, h:16, cat:'extras'},
+  {id:'dungeon_bars',label:'Dungeon Bars',    w:16,h:20, cat:'extras'},
+  {id:'catapult',    label:'Catapult',        w:24,h:20, cat:'extras'},
+  {id:'boat',        label:'Boat',            w:28,h:16, cat:'extras'},
+  {id:'bridge',      label:'Bridge',          w:20,h:20, cat:'extras'},
+  {id:'magic_circle',label:'Magic Circle',    w:20,h:20, cat:'extras'},
+  {id:'shrine',      label:'Shrine',          w:16,h:16, cat:'extras'},
+  {id:'gold_pile',   label:'Gold Pile',       w:16,h:12, cat:'extras'},
+  {id:'cart',        label:'Cart',            w:22,h:18, cat:'extras'},
+  {id:'skeleton',    label:'Skeleton',        w:10,h:18, cat:'extras'},
+  {id:'dead_body',   label:'Dead Body',       w:12,h:20, cat:'extras'},
+  {id:'dirt_hole',   label:'Dirt Hole',       w:16,h:14, cat:'extras'},
+  {id:'blood_spatter',label:'Blood Spatter',  w:16,h:16, cat:'extras'},
+  {id:'bones_pile',  label:'Bones Pile',      w:16,h:14, cat:'extras'},
+  {id:'tent',        label:'Tent',            w:24,h:20, cat:'extras'},
+  {id:'trapdoor',    label:'Trapdoor',        w:14,h:14, cat:'extras'},
+  {id:'gallows',     label:'Gallows',         w:20,h:20, cat:'extras'},
+  {id:'dungeon_ent', label:'Dungeon Entrance',w:16,h:16, cat:'extras'},
   // furniture
-  {id:'bed_s',   label:'Bed (single)',w:14,h:24, cat:'furniture'},
-  {id:'bed_d',   label:'Bed (double)',w:20,h:24, cat:'furniture'},
-  {id:'table_r', label:'Table (round)',w:16,h:16,cat:'furniture'},
-  {id:'table_l', label:'Table (long)',w:24,h:16,cat:'furniture'},
-  {id:'chair',   label:'Chair',       w:12,h:14, cat:'furniture'},
-  {id:'throne',  label:'Throne',      w:18,h:20, cat:'furniture'},
-  {id:'bookshelf',label:'Bookshelf',  w:20,h:16, cat:'furniture'},
-  {id:'cauldron',label:'Cauldron',    w:14,h:14, cat:'furniture'},
-  {id:'fireplace',label:'Fireplace',  w:20,h:16, cat:'furniture'},
-  {id:'weaponrack',label:'Weapon Rack',w:20,h:20,cat:'furniture'},
-  {id:'desk',    label:'Desk',        w:20,h:14, cat:'furniture'},
+  {id:'bed_s',       label:'Bed (single)',    w:14,h:24, cat:'furniture'},
+  {id:'bed_d',       label:'Bed (double)',    w:20,h:24, cat:'furniture'},
+  {id:'table_r',     label:'Table (round)',   w:16,h:16, cat:'furniture'},
+  {id:'table_l',     label:'Table (long)',    w:24,h:16, cat:'furniture'},
+  {id:'chair',       label:'Chair',           w:12,h:14, cat:'furniture'},
+  {id:'throne',      label:'Throne',          w:18,h:20, cat:'furniture'},
+  {id:'bookshelf',   label:'Bookshelf',       w:20,h:16, cat:'furniture'},
+  {id:'drawers',     label:'Chest of Drawers',w:18,h:14, cat:'furniture'},
+  {id:'cauldron',    label:'Cauldron',        w:14,h:14, cat:'furniture'},
+  {id:'fireplace',   label:'Fireplace',       w:20,h:16, cat:'furniture'},
+  {id:'weaponrack',  label:'Weapon Rack',     w:20,h:20, cat:'furniture'},
+  {id:'desk',        label:'Desk',            w:20,h:14, cat:'furniture'},
+  {id:'stool',       label:'Stool',           w:10,h:10, cat:'furniture'},
+  {id:'wardrobe',    label:'Wardrobe',        w:18,h:12, cat:'furniture'},
+  {id:'stairs',      label:'Stairs',          w:16,h:20, cat:'furniture'},
+  {id:'basin',       label:'Stone Basin',     w:16,h:12, cat:'furniture'},
+  // floors & paths
+  {id:'path_dirt',    label:'Path (dirt)',    w:20,h:20, cat:'floors'},
+  {id:'path_cobble',  label:'Path (cobble)',  w:20,h:20, cat:'floors'},
+  {id:'path_stone',   label:'Path (stone)',   w:20,h:20, cat:'floors'},
+  {id:'path_planks',  label:'Path (planks)',  w:20,h:20, cat:'floors'},
+  {id:'path_gravel',  label:'Path (gravel)',  w:20,h:20, cat:'floors'},
+  {id:'path_mud',     label:'Path (mud)',     w:20,h:20, cat:'floors'},
+  {id:'floor_h',      label:'Floor (horiz)',  w:20,h:20, cat:'floors'},
+  {id:'floor_v',      label:'Floor (vert)',   w:20,h:20, cat:'floors'},
+  {id:'floor_hb',     label:'Floor (herring)',w:20,h:20, cat:'floors'},
+  {id:'floor_diag',   label:'Floor (diag)',   w:20,h:20, cat:'floors'},
+  {id:'floor_stone',  label:'Floor (stone)',  w:20,h:20, cat:'floors'},
+  {id:'cracked_earth',label:'Cracked Earth',  w:20,h:20, cat:'floors'},
 ];
-
 // ── OBJECT GENERATOR MAP ─────────────────────────────────────────────────────
 function generateObject(id, seed=42) {
   if (!MF) return null;
   const s = seed;
   switch(id) {
-    case 'oak_s':   return MF.makeTopDownTree(20,20,'oak',s);
-    case 'oak_l':   return MF.makeTopDownTree(32,32,'oak',s);
-    case 'pine_s':  return MF.makeTopDownTree(20,20,'pine',s);
-    case 'pine_l':  return MF.makeTopDownTree(32,32,'pine',s);
-    case 'palm':    return MF.makeTopDownTree(24,24,'palm',s);
-    case 'dead':    return MF.makeTopDownTree(24,24,'dead',s);
-    case 'thicket': return MF.makeThicket(s);
-    case 'bush_sm': return MF.makeBushField('sm',s);
-    case 'bush_lg': return MF.makeBushField('lg',s);
-    case 'rock_s':  return MF.makeRock(12,10,'small',s);
-    case 'boulder': return MF.makeRock(20,18,'boulder',s);
-    case 'mossy':   return MF.makeRock(18,16,'mossy',s);
-    case 'pond_s':  return MF.makePond(24,20,s);
-    case 'mush_sm': return MF.makeMushroom('sm',s);
-    case 'fallen_log': return MF.makeFallenLog(s);
-    case 'flowers': return MF.makeFlowerPatch(s);
-    case 'fern':    return MF.makePlant('fern',s);
-    case 'reeds':   return MF.makePlant('reeds',s);
-    case 'cactus_p':return MF.makePlant('cactus',s);
-    case 'well':    return MF.makeWell(16,16,s);
-    case 'campfire':return MF.makeCampfire(s);
-    case 'haystack':return MF.makeHaystack(18,14,s);
-    case 'anvil':   return MF.makeAnvil(s);
-    case 'logpile': return MF.makeLogPile(s);
-    case 'barrels': return MF.makeBarrelCluster(s);
-    case 'trough':  return MF.makeTrough(s);
-    case 'chest':   return MF.makeChest(s);
-    case 'signpost':return MF.makeSignpost(s);
-    case 'torch':   return MF.makeTorch(s);
-    case 'altar':   return MF.makeAltar(s);
+    // trees
+    case 'oak_s':        return MF.makeTopDownTree(20,20,'oak',s);
+    case 'oak_l':        return MF.makeTopDownTree(32,32,'oak',s);
+    case 'pine_s':       return MF.makeTopDownTree(20,20,'pine',s);
+    case 'pine_l':       return MF.makeTopDownTree(32,32,'pine',s);
+    case 'palm':         return MF.makeTopDownTree(24,24,'palm',s);
+    case 'dead':         return MF.makeTopDownTree(24,24,'dead',s);
+    case 'thicket':      return MF.makeThicket(s);
+    case 'giant_roots':  return MF.makeGiantRoots(s);
+    case 'bush_sm':      return MF.makeBushField('sm',s);
+    case 'bush_lg':      return MF.makeBushField('lg',s);
+    // nature
+    case 'rock_s':       return MF.makeRock(12,10,'small',s);
+    case 'boulder':      return MF.makeRock(20,18,'boulder',s);
+    case 'mossy':        return MF.makeRock(18,16,'mossy',s);
+    case 'pond_s':       return MF.makePond(24,20,s);
+    case 'pond_l':       return MF.makePond(40,32,s);
+    case 'mush_sm':      return MF.makeMushroom('sm',s);
+    case 'mush_lg':      return MF.makeMushroom('lg',s);
+    case 'fallen_log':   return MF.makeFallenLog(s);
+    case 'flowers':      return MF.makeFlowerPatch(s);
+    case 'fern':         return MF.makePlant('fern',s);
+    case 'reeds':        return MF.makePlant('reeds',s);
+    case 'lily':         return MF.makePlant('lily',s);
+    case 'vine':         return MF.makePlant('vine',s);
+    case 'cactus_p':     return MF.makePlant('cactus',s);
+    case 'crop_wheat':   return MF.makeCropRow('wheat','mature',s);
+    case 'crop_corn':    return MF.makeCropRow('corn','mature',s);
+    case 'crop_veg':     return MF.makeCropRow('vegetables','mature',s);
+    // extras
+    case 'well':         return MF.makeWell(16,16,s);
+    case 'haystack':     return MF.makeHaystack(18,14,s);
+    case 'graveyard':    return MF.makeGraveyard(40,40,s);
+    case 'campfire':     return MF.makeCampfire(s);
+    case 'stall':        return MF.makeMarketStall(s);
+    case 'fence':        return MF.makeStockadeFence(s);
+    case 'signpost':     return MF.makeSignpost(s);
+    case 'anvil':        return MF.makeAnvil(s);
+    case 'logpile':      return MF.makeLogPile(s);
+    case 'barrels':      return MF.makeBarrelCluster(s);
+    case 'noticeboard':  return MF.makeNoticeboard(s);
+    case 'trough':       return MF.makeTrough(s);
+    case 'coop':         return MF.makeChickenCoop(s);
+    case 'chest':        return MF.makeChest(s);
+    case 'campsite':     return MF.makeCampsite(s);
+    case 'altar':        return MF.makeAltar(s);
+    case 'stocks':       return MF.makeStocks(s);
+    case 'torch':        return MF.makeTorch(s);
+    case 'dungeon_bars': return MF.makeDungeonBars(s);
+    case 'catapult':     return MF.makeCatapult(s);
+    case 'boat':         return MF.makeBoat(s);
+    case 'bridge':       return MF.makeBridge(s);
     case 'magic_circle': return MF.makeMagicCircle(s);
-    case 'skeleton':return MF.makeSkeleton(s);
-    case 'dead_body': return MF.makeDeadBody(s);
-    case 'blood_spatter': return MF.makeBloodSpatter(s);
-    case 'bones_pile': return MF.makeBonesPile(s);
-    case 'gold_pile': return MF.makeGoldPile(s);
-    case 'cart':    return MF.makeCart(s);
-    case 'boat':    return MF.makeBoat(s);
-    case 'bed_s':   return MF.makeBed('single',s);
-    case 'bed_d':   return MF.makeBed('double',s);
-    case 'table_r': return MF.makeTable('round',s);
-    case 'table_l': return MF.makeTable('long',s);
-    case 'chair':   return MF.makeChair('chair',s);
-    case 'throne':  return MF.makeChair('throne',s);
-    case 'bookshelf': return MF.makeBookshelf(s);
-    case 'cauldron':return MF.makeCauldron(s);
-    case 'fireplace': return MF.makeFireplace(s);
-    case 'weaponrack': return MF.makeWeaponRack(s);
-    case 'desk':    return MF.makeDesk(s);
+    case 'shrine':       return MF.makeShrine(s);
+    case 'gold_pile':    return MF.makeGoldPile(s);
+    case 'cart':         return MF.makeCart(s);
+    case 'skeleton':     return MF.makeSkeleton(s);
+    case 'dead_body':    return MF.makeDeadBody(s);
+    case 'dirt_hole':    return MF.makeDirtHole(s);
+    case 'blood_spatter':return MF.makeBloodSpatter(s);
+    case 'bones_pile':   return MF.makeBonesPile(s);
+    case 'tent':         return MF.makeTent(s);
+    case 'trapdoor':     return MF.makeTrapdoor(s);
+    case 'gallows':      return MF.makeGallows(s);
+    case 'dungeon_ent':  return MF.makeDungeonEntrance(s);
+    // furniture
+    case 'bed_s':        return MF.makeBed('single',s);
+    case 'bed_d':        return MF.makeBed('double',s);
+    case 'table_r':      return MF.makeTable('round',s);
+    case 'table_l':      return MF.makeTable('long',s);
+    case 'chair':        return MF.makeChair('chair',s);
+    case 'throne':       return MF.makeChair('throne',s);
+    case 'bookshelf':    return MF.makeBookshelf(s);
+    case 'drawers':      return MF.makeDrawers(s);
+    case 'cauldron':     return MF.makeCauldron(s);
+    case 'fireplace':    return MF.makeFireplace(s);
+    case 'weaponrack':   return MF.makeWeaponRack(s);
+    case 'desk':         return MF.makeDesk(s);
+    case 'stool':        return MF.makeStool(s);
+    case 'wardrobe':     return MF.makeWardrobe(s);
+    case 'stairs':       return MF.makeStairs(s);
+    case 'basin':        return MF.makeBasin(s);
+    // floors & paths
+    case 'path_dirt':    return MF.makePath('h','dirt',s);
+    case 'path_cobble':  return MF.makePath('h','cobble',s);
+    case 'path_stone':   return MF.makePath('h','stone',s);
+    case 'path_planks':  return MF.makePath('h','planks',s);
+    case 'path_gravel':  return MF.makePath('h','gravel',s);
+    case 'path_mud':     return MF.makePath('h','mud',s);
+    case 'floor_h':      return MF.makeFloorboard('h',s);
+    case 'floor_v':      return MF.makeFloorboard('v',s);
+    case 'floor_hb':     return MF.makeFloorboard('herringbone',s);
+    case 'floor_diag':   return MF.makeFloorboard('diagonal',s);
+    case 'floor_stone':  return MF.makeFloorboard('stone',s);
+    case 'cracked_earth':return MF.makeCrackedEarth(s);
     default: return null;
   }
 }
