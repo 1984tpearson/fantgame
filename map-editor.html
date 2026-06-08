@@ -2692,8 +2692,14 @@ function runBSP(W, H, minRoom, floorType) {
   const map = {};
   const rooms = [];
 
+  const plankTypes = new Set(['floor_h','floor_v','floor_hbone','floor_diag','floor_parq','floor_stone']);
+  let _roomStyle = 0; // increments per room for consistent plank grain
+
   function tile(x, y, type, name='', extra={}) {
-    map[`${x},${y}`] = Object.assign({type, name}, extra);
+    const cell = Object.assign({type, name}, extra);
+    // For plank floors, store terrainStyle so all cells in this room use same grain
+    if (plankTypes.has(type) && !extra.terrainStyle) cell.terrainStyle = _roomStyle;
+    map[`${x},${y}`] = cell;
   }
 
   // Fill everything with walls
@@ -2708,6 +2714,7 @@ function runBSP(W, H, minRoom, floorType) {
       const rx = x + 1 + Math.floor(Math.random() * Math.max(1, w - rw - 1));
       const ry = y + 1 + Math.floor(Math.random() * Math.max(1, h - rh - 1));
       for (let cx = rx; cx < rx+rw; cx++) for (let cy = ry; cy < ry+rh; cy++) tile(cx, cy, floorType, 'Room');
+      _roomStyle = (_roomStyle + 1) % 6; // next room gets different style slot
       rooms.push({cx: Math.floor(rx+rw/2), cy: Math.floor(ry+rh/2)});
       return {cx: Math.floor(rx+rw/2), cy: Math.floor(ry+rh/2)};
     }
