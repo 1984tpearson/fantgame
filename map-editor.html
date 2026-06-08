@@ -358,8 +358,11 @@ button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-co
           <label>Min room</label><input id="bsp-minroom" type="number" value="3" min="2" max="10" style="width:60px;">
           <label>Corridor floor</label>
           <select id="bsp-floor" style="width:100%;font-size:10px;">
-          <option value="interior">Cave floor (default)</option>
+          <option value="interior">Cave floor</option>
           <option value="floor_stone">Stone tile (uniform)</option>
+          <option value="floor_h">Planks H</option>
+          <option value="floor_v">Planks V</option>
+          <option value="floor_parq">Parquet</option>
           <option value="dirt">Dirt</option>
           <option value="mud">Mud</option>
         </select>
@@ -2603,10 +2606,10 @@ function handlePathTool(x, y, isDown) {
   pushUndo(_pathStart.x, _pathStart.y);
   for (const cell of path) {
     const k = `${cell.x},${cell.y}`;
-    const existing = definedMap[k] || {};
-    definedMap[k] = Object.assign({}, existing, {object: cell.obj});
-    if (!definedMap[k].type) definedMap[k].type = 'street';
-    map[k] = definedMap[k];
+    const existing = definedMap[k] ? Object.assign({}, definedMap[k]) : (map[k] ? Object.assign({}, map[k]) : {type: inferBg(cell.x, cell.y).type || 'grass', name:''});
+    existing.object = cell.obj;
+    definedMap[k] = existing;
+    map[k] = existing;
   }
   _pathStart = null;
   computeBounds(); renderAll(); updateExport();
@@ -2641,34 +2644,44 @@ function _buildOrthogonalPath(x1, y1, x2, y2) {
 }
 
 function _pathVariant(prev, cur, next) {
-  // Determine which directions connect
-  const from = prev ? {x: Math.sign(cur.x - prev.x), y: Math.sign(cur.y - prev.y)} : null;
-  const to   = next ? {x: Math.sign(next.x - cur.x), y: Math.sign(next.y - cur.y)} : null;
-
+  // Build set of directions this cell connects TO its neighbours
+  // If prev is to the west (prev.x < cur.x), this cell connects westward
   const dirs = new Set();
-  if (from) { if (from.x !== 0) dirs.add(from.x > 0 ? 'e' : 'w'); if (from.y !== 0) dirs.add(from.y > 0 ? 's' : 'n'); }
-  if (to)   { if (to.x !== 0)   dirs.add(to.x > 0 ? 'e' : 'w');   if (to.y !== 0)   dirs.add(to.y > 0 ? 's' : 'n'); }
+  if (prev) {
+    if (prev.x < cur.x) dirs.add('w');
+    if (prev.x > cur.x) dirs.add('e');
+    if (prev.y < cur.y) dirs.add('n');
+    if (prev.y > cur.y) dirs.add('s');
+  }
+  if (next) {
+    if (next.x < cur.x) dirs.add('w');
+    if (next.x > cur.x) dirs.add('e');
+    if (next.y < cur.y) dirs.add('n');
+    if (next.y > cur.y) dirs.add('s');
+  }
 
-  const has = d => dirs.has(d);
+  const h = dirs.has('e') || dirs.has('w');
+  const v = dirs.has('n') || dirs.has('s');
+  const e = dirs.has('e'), w = dirs.has('w'), n = dirs.has('n'), s = dirs.has('s');
 
   // Straight
-  if (has('e') && has('w') && !has('n') && !has('s')) return 'path_h';
-  if (has('n') && has('s') && !has('e') && !has('w')) return 'path_v';
-  // Corners
-  if (has('n') && has('e') && !has('s') && !has('w')) return 'path_cne';
-  if (has('n') && has('w') && !has('s') && !has('e')) return 'path_cnw';
-  if (has('s') && has('e') && !has('n') && !has('w')) return 'path_cse';
-  if (has('s') && has('w') && !has('n') && !has('e')) return 'path_csw';
+  if (e && w && !n && !s) return 'path_h';
+  if (n && s && !e && !w) return 'path_v';
+  // Corners — named by the two directions they connect
+  if (n && e && !s && !w) return 'path_cne';
+  if (n && w && !s && !e) return 'path_cnw';
+  if (s && e && !n && !w) return 'path_cse';
+  if (s && w && !n && !e) return 'path_csw';
   // Tees
-  if (has('e') && has('w') && has('n') && !has('s')) return 'path_tn';
-  if (has('e') && has('w') && has('s') && !has('n')) return 'path_ts';
-  if (has('n') && has('s') && has('e') && !has('w')) return 'path_te';
-  if (has('n') && has('s') && has('w') && !has('e')) return 'path_tw';
+  if (e && w && s && !n) return 'path_ts';
+  if (e && w && n && !s) return 'path_tn';
+  if (n && s && e && !w) return 'path_te';
+  if (n && s && w && !e) return 'path_tw';
   // Cross
-  if (has('n') && has('s') && has('e') && has('w')) return 'path_cross';
-  // Endpoints
-  if (has('e') || has('w')) return 'path_h';
-  if (has('n') || has('s')) return 'path_v';
+  if (n && s && e && w) return 'path_cross';
+  // Endpoints — single direction
+  if (e || w) return 'path_h';
+  if (n || s) return 'path_v';
   return 'path_cross';
 }
 
