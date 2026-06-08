@@ -58,6 +58,36 @@ function tileAlong(u, v, faceCol, darkCol, rng) {
 }
 
 
+// ─── CONFIG OVERRIDE HELPERS ─────────────────────────────────────────────────
+// Returns a custom sprite grid if one exists in MapForgeConfig, else null.
+function _customSprite(key) {
+  const cfg = window.MapForgeConfig;
+  if (!cfg) return null;
+  const s = cfg.customSprites && cfg.customSprites[key];
+  if (!s) return null;
+  // s is stored as a flat array: [r,g,b,a, r,g,b,a, ...] with w/h metadata
+  // or as a 2D array of [r,g,b,a]|null rows
+  if (Array.isArray(s) && Array.isArray(s[0])) return s; // already 2D
+  if (s && s.pixels && s.w && s.h) {
+    // flat format: { w, h, pixels:[r,g,b,a,...] }
+    const grid = createPixelGrid(s.w, s.h);
+    for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) {
+      const i = (y * s.w + x) * 4;
+      const a = s.pixels[i+3];
+      if (a > 0) grid[y][x] = [s.pixels[i], s.pixels[i+1], s.pixels[i+2], a];
+    }
+    return grid;
+  }
+  return null;
+}
+
+// Returns palette override colours for a terrain, merged with defaults.
+function _pal(key, defaults) {
+  const cfg = window.MapForgeConfig;
+  if (!cfg || !cfg.paletteOverrides || !cfg.paletteOverrides[key]) return defaults;
+  return Object.assign({}, defaults, cfg.paletteOverrides[key]);
+}
+
 // ─── TILE PATTERN FUNCTIONS ───────────────────────────────────────────────────
 function tileFishScale(x, y, faceCol, darkCol, rng) {
   // overlapping semicircle fish-scale pattern
@@ -2765,12 +2795,27 @@ const TERRAIN_EDGE_COLS = {
 };
 
 function makeTerrain(type, seed, neighbours={}) {
+  // ── Custom sprite override (Mode 2) ──
+  const _cs = _customSprite(type);
+  if (_cs) return _cs;
+
+  // ── Check for custom terrain types registered in config ──
+  const cfg = window.MapForgeConfig;
+  if (cfg && cfg.customTerrains && cfg.customTerrains[type]) {
+    // Custom terrain with no sprite yet — return a solid colour placeholder
+    const ec = cfg.customTerrains[type].edgeCol || [128,128,128,255];
+    const rng2 = mulberry32(seed), grid2 = createPixelGrid(20,20);
+    for (let y=0;y<20;y++) for (let x=0;x<20;x++) grid2[y][x] = jitter(ec, 12, rng2);
+    return grid2;
+  }
+
   const W=20, H=20;
   const rng=mulberry32(seed), grid=createPixelGrid(W,H);
 
   const terrains = {
     grass: ()=>{
-      const G1=[58,88,38,255],G2=[72,108,48,255],G3=[44,70,28,255],G4=[85,115,55,255];
+      const _p=_pal('grass',{G1:[58,88,38,255],G2:[72,108,48,255],G3:[44,70,28,255],G4:[85,115,55,255]});
+      const {G1,G2,G3,G4}=_p;
       for(let y=0;y<H;y++) for(let x=0;x<W;x++){
         const r=rng(); let c=r<0.4?G1:r<0.7?G2:r<0.85?G3:G4; c=jitter(c,8,rng);
         if(rng()<0.05) c=lerp(c,[30,55,18,255],0.5);
@@ -2782,7 +2827,8 @@ function makeTerrain(type, seed, neighbours={}) {
       }
     },
     sand: ()=>{
-      const S1=[210,188,130,255],S2=[225,205,148,255],S3=[195,172,110,255];
+      const _p=_pal('sand',{S1:[210,188,130,255],S2:[225,205,148,255],S3:[195,172,110,255]});
+      const {S1,S2,S3}=_p;
       for(let y=0;y<H;y++) for(let x=0;x<W;x++){
         const r=rng(); let c=r<0.45?S1:r<0.75?S2:S3; c=jitter(c,12,rng);
         setPixel(grid,x,y,c);
@@ -2794,8 +2840,8 @@ function makeTerrain(type, seed, neighbours={}) {
       for(let i=0;i<3;i++) setPixel(grid,Math.floor(rng()*W),Math.floor(rng()*H),[165,152,112,255]);
     },
     swamp: ()=>{
-      const MG=[45,68,35,255],DG=[30,50,22,255],MR=[60,85,45,255];
-      const W1=[55,82,68,255],W2=[42,65,55,255];
+      const _p=_pal('swamp',{MG:[45,68,35,255],DG:[30,50,22,255],MR:[60,85,45,255],W1:[55,82,68,255],W2:[42,65,55,255]});
+      const {MG,DG,MR,W1,W2}=_p;
       for(let y=0;y<H;y++) for(let x=0;x<W;x++){
         const r=rng(); let c=r<0.25?jitter(W1,10,rng):r<0.45?jitter(W2,8,rng):r<0.65?jitter(MG,10,rng):r<0.82?jitter(DG,8,rng):jitter(MR,10,rng);
         setPixel(grid,x,y,c);
@@ -2804,7 +2850,8 @@ function makeTerrain(type, seed, neighbours={}) {
       for(let i=0;i<3;i++){ const rx=Math.floor(rng()*W),ry=Math.floor(rng()*H); setPixel(grid,rx,ry,[80,105,45,255]); if(ry>0) setPixel(grid,rx,ry-1,[95,120,50,255]); }
     },
     farmland: ()=>{
-      const D1=[118,82,42,255],D2=[138,100,55,255],D3=[95,65,30,255];
+      const _p=_pal('farmland',{D1:[118,82,42,255],D2:[138,100,55,255],D3:[95,65,30,255]});
+        const {D1,D2,D3}=_p;
       for(let y=0;y<H;y++){
         const rowT=Math.floor(y/2)%2;
         for(let x=0;x<W;x++){
@@ -2817,7 +2864,8 @@ function makeTerrain(type, seed, neighbours={}) {
       for(let y=0;y<H;y+=4) for(let x=1;x<W;x+=3) if(rng()<0.6) setPixel(grid,x,y,jitter([75,120,40,255],12,rng));
     },
     dirt: ()=>{
-      const D1=[120,88,50,255],D2=[140,105,62,255],D3=[98,68,35,255],D4=[105,78,42,255];
+      const _p=_pal('dirt',{D1:[120,88,50,255],D2:[140,105,62,255],D3:[98,68,35,255],D4:[105,78,42,255]});
+      const {D1,D2,D3,D4}=_p;
       for(let y=0;y<H;y++) for(let x=0;x<W;x++){
         const r=rng(); let c=r<0.35?D1:r<0.65?D2:r<0.85?D3:D4; c=jitter(c,14,rng);
         setPixel(grid,x,y,c);
@@ -2826,7 +2874,8 @@ function makeTerrain(type, seed, neighbours={}) {
       for(let i=0;i<5;i++) setPixel(grid,Math.floor(rng()*W),Math.floor(rng()*H),jitter([148,138,122,255],10,rng));
     },
     cobble: ()=>{
-      const S1=[130,125,118,255],S2=[108,102,95,255],S3=[155,150,142,255],SJ=[75,70,65,255];
+      const _p=_pal('cobble',{S1:[130,125,118,255],S2:[108,102,95,255],S3:[155,150,142,255],SJ:[75,70,65,255]});
+      const {S1,S2,S3,SJ}=_p;
       for(let y=0;y<H;y++) for(let x=0;x<W;x++) setPixel(grid,x,y,S2);
       const cw=4,ch=3;
       for(let row=0;row<Math.ceil(H/ch);row++){
@@ -2840,56 +2889,66 @@ function makeTerrain(type, seed, neighbours={}) {
       }
     },
     snow: ()=>{
-      const SN1=[230,238,242,255],SN2=[215,225,232,255],SN3=[198,208,218,255];
+      const _p=_pal('snow',{SN1:[230,238,242,255],SN2:[215,225,232,255],SN3:[198,208,218,255]});
+      const {SN1,SN2,SN3}=_p;
       for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const r=rng(); let c=r<0.5?SN1:r<0.8?SN2:SN3; c=jitter(c,6,rng); setPixel(grid,x,y,c); }
       for(let i=0;i<6;i++) setPixel(grid,Math.floor(rng()*W),Math.floor(rng()*H),[248,252,255,255]);
       for(let i=0;i<2;i++){ const dy2=2+Math.floor(rng()*(H-4)); for(let x=Math.floor(rng()*8);x<W-2;x++) if(rng()<0.6) setPixel(grid,x,dy2,SN3); }
     },
     water: ()=>{
-      const W1=[55,105,158,255],W2=[42,88,140,255],W3=[70,125,175,255],WH=[140,190,220,255];
+      const _p=_pal('water',{W1:[55,105,158,255],W2:[42,88,140,255],W3:[70,125,175,255],WH:[140,190,220,255]});
+      const {W1,W2,W3,WH}=_p;
       for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const r=rng(); let c=r<0.45?W1:r<0.75?W2:W3; c=jitter(c,10,rng); setPixel(grid,x,y,c); }
       for(let ry2=1;ry2<H;ry2+=4){ const startX=Math.floor(rng()*6); for(let x=startX;x<W-1;x+=2) if(rng()<0.7) setPixel(grid,x,ry2,lerp(W3,WH,0.4)); }
     },
     mud: ()=>{
-      const M1=[88,62,38,255],M2=[108,78,48,255],M3=[72,50,28,255],WP=[65,78,62,255];
+      const _p=_pal('mud',{M1:[88,62,38,255],M2:[108,78,48,255],M3:[72,50,28,255],WP:[65,78,62,255]});
+      const {M1,M2,M3,WP}=_p;
       for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const r=rng(); let c=r<0.4?M1:r<0.72?M2:M3; c=jitter(c,16,rng); setPixel(grid,x,y,c); }
       for(let i=0;i<2;i++){ const px=2+Math.floor(rng()*(W-6)),py=2+Math.floor(rng()*(H-6)); for(let dx=-1;dx<=2;dx++) for(let dy=0;dy<=2;dy++) if(rng()<0.7) setPixel(grid,px+dx,py+dy,jitter(WP,10,rng)); }
     },
     forest_floor: ()=>{
-      const L1=[45,62,28,255],L2=[58,78,35,255],L3=[35,50,20,255],LF=[88,62,30,255];
+      const _p=_pal('forest_floor',{L1:[45,62,28,255],L2:[58,78,35,255],L3:[35,50,20,255],LF:[88,62,30,255]});
+      const {L1,L2,L3,LF}=_p;
       for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const r=rng(); let c=r<0.4?L1:r<0.7?L2:r<0.88?L3:jitter(LF,12,rng); c=jitter(c,10,rng); setPixel(grid,x,y,c); }
       for(let i=0;i<6;i++){ const lx=Math.floor(rng()*W),ly=Math.floor(rng()*H); setPixel(grid,lx,ly,jitter([105,78,35,255],12,rng)); if(rng()<0.5&&lx+1<W) setPixel(grid,lx+1,ly,jitter([118,88,40,255],10,rng)); }
     },
     lava: ()=>{
-      const L1=[188,68,22,255],L2=[215,108,28,255],L3=[148,38,12,255],LG=[38,32,28,255];
+      const _p=_pal('lava',{L1:[188,68,22,255],L2:[215,108,28,255],L3:[148,38,12,255],LG:[38,32,28,255]});
+      const {L1,L2,L3,LG}=_p;
       for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const r=rng(); let c=r<0.35?jitter(LG,8,rng):r<0.55?jitter(L3,10,rng):r<0.75?jitter(L1,12,rng):jitter(L2,14,rng); setPixel(grid,x,y,c); }
       for(let i=0;i<3;i++){ const sy=Math.floor(rng()*H); for(let x=0;x<W;x++){ const ly=Math.max(0,Math.min(H-1,sy+Math.round((rng()-0.5)*3))); setPixel(grid,x,ly,jitter([238,158,38,255],10,rng)); } }
       for(let i=0;i<4;i++){ const cx2=Math.floor(rng()*W),cy2=Math.floor(rng()*H); setPixel(grid,cx2,cy2,[255,218,55,255]); if(rng()<0.5&&cx2+1<W) setPixel(grid,cx2+1,cy2,[238,178,38,255]); }
     },
     ice: ()=>{
-      const I1=[188,215,228,255],I2=[165,198,218,255],I3=[215,232,242,255];
+      const _p=_pal('ice',{I1:[188,215,228,255],I2:[165,198,218,255],I3:[215,232,242,255]});
+      const {I1,I2,I3}=_p;
       for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const r=rng(); let c=r<0.4?jitter(I1,8,rng):r<0.7?jitter(I2,8,rng):jitter(I3,6,rng); setPixel(grid,x,y,c); }
       for(let i=0;i<3;i++){ const sx=Math.floor(rng()*W),sy=Math.floor(rng()*H); let cx2=sx,cy2=sy; for(let s=0;s<6;s++){ setPixel(grid,cx2,cy2,jitter([145,175,198,255],6,rng)); cx2=Math.max(0,Math.min(W-1,cx2+Math.round((rng()-0.5)*3))); cy2=Math.max(0,Math.min(H-1,cy2+Math.round((rng()-0.5)*3))); } }
       for(let i=0;i<5;i++) setPixel(grid,Math.floor(rng()*W),Math.floor(rng()*H),[245,252,255,255]);
     },
     corrupt: ()=>{
-      const C1=[38,25,48,255],C2=[55,35,68,255],C3=[28,18,35,255],CV=[88,55,108,255];
+      const _p=_pal('corrupt',{C1:[38,25,48,255],C2:[55,35,68,255],C3:[28,18,35,255],CV:[88,55,108,255]});
+      const {C1,C2,C3,CV}=_p;
       for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const r=rng(); let c=r<0.4?jitter(C1,10,rng):r<0.7?jitter(C2,10,rng):jitter(C3,8,rng); if(rng()<0.06) c=jitter(CV,10,rng); setPixel(grid,x,y,c); }
       for(let i=0;i<3;i++){ const sx=Math.floor(rng()*W),sy=Math.floor(rng()*H); let cx2=sx,cy2=sy; for(let s=0;s<5;s++){ setPixel(grid,cx2,cy2,jitter([108,68,138,255],12,rng)); cx2=Math.max(0,Math.min(W-1,cx2+(Math.floor(rng()*3)-1))); cy2=Math.max(0,Math.min(H-1,cy2+(Math.floor(rng()*3)-1))); } }
     },
     rocky: ()=>{
-      const R1=[32,28,25,255],R2=[22,19,17,255],R3=[42,38,34,255];
+      const _p=_pal('rocky',{R1:[32,28,25,255],R2:[22,19,17,255],R3:[42,38,34,255]});
+      const {R1,R2,R3}=_p;
       for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const r=rng(); let c=r<0.4?jitter(R1,6,rng):r<0.7?jitter(R2,5,rng):jitter(R3,6,rng); setPixel(grid,x,y,c); }
       for(let i=0;i<5;i++){ const rx=Math.floor(rng()*W),ry=Math.floor(rng()*H); setPixel(grid,rx,ry,jitter([52,46,40,255],6,rng)); if(rx+1<W) setPixel(grid,rx+1,ry,[15,12,10,255]); }
     },
     cave: ()=>{
-      const C1=[48,44,40,255],C2=[62,58,52,255],C3=[35,32,28,255];
+      const _p=_pal('cave',{C1:[48,44,40,255],C2:[62,58,52,255],C3:[35,32,28,255]});
+      const {C1,C2,C3}=_p;
       for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const r=rng(); setPixel(grid,x,y,jitter(r<0.4?C1:r<0.7?C2:C3,10,rng)); }
       for(let i=0;i<3;i++){ const wx=Math.floor(rng()*W),wy=Math.floor(rng()*H); setPixel(grid,wx,wy,jitter([52,65,78,255],10,rng)); }
       for(let x=0;x<W;x+=3) if(rng()<0.5) setPixel(grid,x,0,jitter([28,25,22,255],6,rng));
     },
     shallow_water: ()=>{
-      const S1=[88,148,118,255],S2=[72,128,98,255],S3=[105,162,132,255];
+      const _p=_pal('shallow_water',{S1:[88,148,118,255],S2:[72,128,98,255],S3:[105,162,132,255]});
+      const {S1,S2,S3}=_p;
       for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const r=rng(); let c=r<0.4?jitter(S1,10,rng):r<0.7?jitter(S2,8,rng):jitter(S3,10,rng); if((x+y)%5===0) c=lerp(c,[178,218,198,255],0.25); setPixel(grid,x,y,c); }
       for(let i=0;i<4;i++) setPixel(grid,Math.floor(rng()*W),Math.floor(rng()*H),jitter([95,88,75,255],10,rng));
     },
@@ -4043,8 +4102,21 @@ function makeSpritesheetURL(grids, cols, scale=1) {
   return c.toDataURL("image/png");
 }
 
+// ─── OBJECT CUSTOM SPRITE WRAPPER ───────────────────────────────────────────
+// Call this from the map editor / engine when rendering any named object.
+// If a custom sprite exists in MapForgeConfig for that id, it returns it;
+// otherwise calls the provided generator function.
+function makeObject(id, generatorFn) {
+  const cs = _customSprite(id);
+  if (cs) return cs;
+  return generatorFn();
+}
+
 // ─── PUBLIC API ──────────────────────────────────────────────────────────────
 global.MapForge = {
+  // Config helpers (used by tile-editor.html)
+  customSprite: _customSprite,
+  makeObject,
   // Primitives
   mulberry32, lerp, jitter, hex,
   createPixelGrid, setPixel, getPixel,

@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tile Editor — Fantgame</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0a0804; color: #c4b590; font-family: Georgia, serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; font-size: 12px; }
+
+/* ── TOP BAR ── */
+#topbar { background: #110e06; border-bottom: 1px solid #3a2a10; padding: 5px 10px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
+#topbar h1 { font-size: 13px; color: #e8c870; letter-spacing: 2px; white-space: nowrap; }
+.sep { width: 1px; height: 18px; background: #2a1e10; margin: 0 2px; }
+input[type=text], input[type=number] { background: #0f0c06; border: 1px solid #3a2a10; color: #c4b590; padding: 3px 6px; font-size: 11px; border-radius: 3px; font-family: Georgia, serif; }
+button { background: #1a1208; border: 1px solid #3a2a10; color: #a08050; padding: 3px 8px; font-size: 11px; border-radius: 3px; cursor: pointer; font-family: Georgia, serif; white-space: nowrap; }
+button:hover { background: #2a1e08; border-color: #6a4820; }
+button.active { background: #3a2808; border-color: #e8c870; color: #e8c870; }
+button.save-btn { background: linear-gradient(180deg,#3a6018,#204010); border-color: #5a8028; color: #90c050; }
+button.danger { border-color: #8a2010; color: #d06040; }
+select { background: #0f0c06; border: 1px solid #3a2a10; color: #c4b590; padding: 3px 6px; font-size: 11px; border-radius: 3px; }
+#status { font-size: 10px; color: #5a7840; margin-left: auto; }
+
+/* ── MAIN LAYOUT ── */
+#main { display: flex; flex: 1; overflow: hidden; }
+
+/* ── LEFT PANEL: tile browser ── */
+#left { width: 180px; min-width: 180px; background: #0d0a06; border-right: 1px solid #2a1e10; display: flex; flex-direction: column; overflow: hidden; }
+#left-tabs { display: flex; border-bottom: 1px solid #2a1e10; flex-shrink: 0; }
+#left-tabs button { flex: 1; border-radius: 0; border: none; border-right: 1px solid #2a1e10; font-size: 10px; padding: 5px 2px; }
+#left-tabs button:last-child { border-right: none; }
+#left-tabs button.active { background: #2a1a08; color: #e8c870; }
+#tile-list { flex: 1; overflow-y: auto; padding: 4px; }
+.tile-item { display: flex; align-items: center; gap: 5px; padding: 3px 5px; border-radius: 3px; cursor: pointer; border: 1px solid transparent; user-select: none; }
+.tile-item:hover { background: #1a1208; }
+.tile-item.sel { background: #2a1a08; border-color: #e8c870; color: #e8c870; }
+.tile-item canvas { image-rendering: pixelated; flex-shrink: 0; }
+.tile-label { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile-item .mode-badge { font-size: 9px; margin-left: auto; padding: 1px 3px; border-radius: 2px; flex-shrink: 0; }
+.mode-badge.custom { background: #2a4820; color: #70a040; border: 1px solid #3a6020; }
+.mode-badge.palette { background: #28201a; color: #a07050; border: 1px solid #4a3020; }
+
+/* ── CENTRE: pixel editor ── */
+#centre { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+#editor-header { background: #0f0c06; border-bottom: 1px solid #2a1e10; padding: 5px 10px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; flex-wrap: wrap; }
+#tile-name-display { font-size: 13px; color: #e8c870; min-width: 80px; }
+#mode-toggle { display: flex; gap: 4px; }
+#canvas-area { flex: 1; overflow: auto; background: #080602; display: flex; align-items: center; justify-content: center; position: relative; }
+#pixel-canvas { image-rendering: pixelated; cursor: crosshair; display: block; }
+#canvas-overlay { position: absolute; pointer-events: none; image-rendering: pixelated; }
+
+/* ── RIGHT PANEL: tools + colours ── */
+#right { width: 190px; min-width: 190px; background: #0d0a06; border-left: 1px solid #2a1e10; display: flex; flex-direction: column; overflow-y: auto; gap: 0; }
+.rpanel { border-bottom: 1px solid #2a1e10; padding: 7px 8px; }
+.rlabel { font-size: 9px; letter-spacing: 2px; color: #5a4820; margin-bottom: 6px; text-transform: uppercase; }
+
+/* Tools */
+#tools { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+#tools button { font-size: 16px; padding: 6px 0; text-align: center; }
+
+/* Colour palette swatches */
+#palette-swatches { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
+.pal-swatch { width: 20px; height: 20px; border-radius: 2px; cursor: pointer; border: 2px solid transparent; flex-shrink: 0; }
+.pal-swatch.sel { border-color: #e8c870; }
+.pal-swatch.transparent { background: repeating-conic-gradient(#333 0% 25%, #555 0% 50%) 0 0 / 8px 8px; }
+
+/* Current colour display */
+#cur-colour-wrap { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+#cur-colour-swatch { width: 28px; height: 28px; border-radius: 3px; border: 1px solid #3a2a10; flex-shrink: 0; }
+#cur-colour-hex { font-size: 11px; font-family: monospace; color: #c4b590; width: 70px; }
+#colour-picker { width: 28px; height: 28px; padding: 0; border: 1px solid #3a2a10; background: none; cursor: pointer; border-radius: 3px; }
+
+/* Palette variable editor (Mode 1) */
+#pal-vars { display: flex; flex-direction: column; gap: 4px; }
+.palvar-row { display: flex; align-items: center; gap: 5px; }
+.palvar-row label { font-size: 10px; color: #6a5030; min-width: 30px; }
+.palvar-swatch { width: 18px; height: 18px; border-radius: 2px; cursor: pointer; border: 1px solid #3a2a10; flex-shrink: 0; }
+.palvar-hex { font-size: 10px; font-family: monospace; flex: 1; }
+
+/* Size inputs */
+.size-row { display: flex; gap: 5px; align-items: center; margin-bottom: 5px; }
+.size-row label { font-size: 10px; color: #6a5030; min-width: 12px; }
+.size-row input { width: 42px; }
+
+/* New tile form */
+#new-tile-form { display: flex; flex-direction: column; gap: 5px; }
+#new-tile-form input, #new-tile-form select { width: 100%; }
+
+/* Preview */
+#preview-wrap { padding: 6px 8px; border-bottom: 1px solid #2a1e10; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+#preview-canvas { image-rendering: pixelated; border: 1px solid #2a1e10; }
+.preview-label { font-size: 9px; color: #5a4820; }
+
+/* Zoom */
+#zoom-row { display: flex; gap: 4px; align-items: center; }
+</style>
+</head>
+<body>
+
+<!-- ── TOP BAR ── -->
+<div id="topbar">
+  <h1>TILE EDITOR</h1>
+  <div class="sep"></div>
+  <input type="text" id="gh-token" placeholder="GitHub token" style="width:140px;">
+  <button class="save-btn" onclick="saveToGitHub()">💾 Save Config</button>
+  <div class="sep"></div>
+  <button onclick="revertTile()" class="danger">↩ Revert</button>
+  <span id="status">Ready</span>
+</div>
+
+<!-- ── MAIN ── -->
+<div id="main">
+
+  <!-- ── LEFT: tile browser ── -->
+  <div id="left">
+    <div id="left-tabs">
+      <button class="active" onclick="switchTab('terrain',this)">Terrain</button>
+      <button onclick="switchTab('objects',this)">Objects</button>
+    </div>
+    <div id="tile-list"></div>
+  </div>
+
+  <!-- ── CENTRE: editor ── -->
+  <div id="centre">
+    <div id="editor-header">
+      <span id="tile-name-display">—</span>
+      <div id="mode-toggle">
+        <button id="btn-mode1" onclick="setMode(1)" title="Mode 1: Edit palette colours only (works with generator)">🎨 Palette</button>
+        <button id="btn-mode2" onclick="setMode(2)" title="Mode 2: Draw pixels freely (overrides generator)">✏️ Draw</button>
+      </div>
+      <div class="sep"></div>
+      <div id="zoom-row">
+        <span style="font-size:10px;color:#5a4820;">Zoom:</span>
+        <button onclick="setZoom(4)">4×</button>
+        <button onclick="setZoom(8)" class="active" id="zoom8">8×</button>
+        <button onclick="setZoom(16)">16×</button>
+        <button onclick="setZoom(24)">24×</button>
+      </div>
+    </div>
+    <div id="canvas-area">
+      <canvas id="pixel-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- ── RIGHT: tools + colours ── -->
+  <div id="right">
+
+    <!-- Preview -->
+    <div id="preview-wrap">
+      <div class="preview-label">PREVIEW (1×)</div>
+      <canvas id="preview-canvas" width="20" height="20"></canvas>
+    </div>
+
+    <!-- Tools (Mode 2 only) -->
+    <div class="rpanel" id="tools-panel">
+      <div class="rlabel">Tools</div>
+      <div id="tools">
+        <button id="tool-draw"   onclick="setTool('draw')"   class="active" title="Draw (D)">✏️</button>
+        <button id="tool-erase"  onclick="setTool('erase')"  title="Erase (E)">🧹</button>
+        <button id="tool-pick"   onclick="setTool('pick')"   title="Pick colour (I)">💉</button>
+        <button id="tool-fill"   onclick="setTool('fill')"   title="Flood fill (F)">🪣</button>
+        <button id="tool-line"   onclick="setTool('line')"   title="Line (L)">╱</button>
+        <button id="tool-rect"   onclick="setTool('rect')"   title="Rectangle (R)">▭</button>
+      </div>
+    </div>
+
+    <!-- Active colour -->
+    <div class="rpanel">
+      <div class="rlabel">Colour</div>
+      <div id="cur-colour-wrap">
+        <div id="cur-colour-swatch"></div>
+        <input type="text" id="cur-colour-hex" value="#3a5826" onchange="hexToActive(this.value)">
+        <input type="color" id="colour-picker" value="#3a5826" oninput="pickerToActive(this.value)">
+      </div>
+      <div style="margin-bottom:5px;display:flex;gap:5px;">
+        <button onclick="setTransparent()" title="Set transparent/eraser colour" style="font-size:10px;">⬜ Transparent</button>
+        <button onclick="addToPalette()" style="font-size:10px;">+ Add</button>
+      </div>
+      <div id="palette-swatches"></div>
+    </div>
+
+    <!-- Mode 1: palette vars -->
+    <div class="rpanel" id="pal1-panel" style="display:none;">
+      <div class="rlabel">Palette Vars</div>
+      <div id="pal-vars"></div>
+      <button style="margin-top:6px;width:100%;" onclick="applyPaletteOverride()">Apply & Preview</button>
+    </div>
+
+    <!-- Mode 2: canvas size -->
+    <div class="rpanel" id="size-panel">
+      <div class="rlabel">Canvas Size</div>
+      <div class="size-row">
+        <label>W</label><input type="number" id="sz-w" value="20" min="4" max="64">
+        <label>H</label><input type="number" id="sz-h" value="20" min="4" max="64">
+        <button onclick="resizeCanvas()">↺</button>
+      </div>
+    </div>
+
+    <!-- New tile -->
+    <div class="rpanel">
+      <div class="rlabel">New Tile / Object</div>
+      <div id="new-tile-form">
+        <input type="text" id="new-id" placeholder="id (e.g. ash_ground)">
+        <input type="text" id="new-label" placeholder="Label">
+        <select id="new-type">
+          <option value="terrain">Terrain</option>
+          <option value="object">Object</option>
+        </select>
+        <select id="new-cat" style="display:none;">
+          <option value="nature">Nature</option>
+          <option value="extras">Extras</option>
+          <option value="furniture">Furniture</option>
+        </select>
+        <button onclick="createNew()" style="width:100%;">+ Create</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="mapforge-config.js"></script>
+<script src="mapforge.js"></script>
+<script>
+'use strict';
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let MF = null;
+let currentTile = null;   // { id, label, type:'terrain'|'object', w, h }
+let currentMode = 2;      // 1=palette, 2=draw
+let currentTool = 'draw';
+let zoom = 8;
+let pixels = null;        // 2D array [y][x] = [r,g,b,a] | null
+let tileW = 20, tileH = 20;
+let activeTab = 'terrain';
+let drawing = false;
+let lineStart = null;
+let rectStart = null;
+let snapPreview = null;   // for line/rect tool preview
+
+// Active draw colour: [r,g,b,a] or null (transparent)
+let activeColour = [58,88,38,255];
+
+// Colour palette (per-session)
+let userPalette = [
+  [58,88,38,255],[72,108,48,255],[120,88,50,255],[210,188,130,255],
+  [108,102,95,255],[55,105,158,255],[88,62,38,255],[230,238,242,255],
+  [188,68,22,255],[38,25,48,255],[48,44,40,255],[215,208,195,255],
+  null // transparent slot
+];
+
+// ── TERRAIN LIST ─────────────────────────────────────────────────────────────
+const TERRAINS = [
+  {id:'grass',       label:'Grass'},
+  {id:'sand',        label:'Sand'},
+  {id:'dirt',        label:'Dirt'},
+  {id:'cobble',      label:'Cobble'},
+  {id:'mud',         label:'Mud'},
+  {id:'water',       label:'Water'},
+  {id:'shallow_water',label:'Shallow Water'},
+  {id:'swamp',       label:'Swamp'},
+  {id:'farmland',    label:'Farmland'},
+  {id:'forest_floor',label:'Forest Floor'},
+  {id:'snow',        label:'Snow'},
+  {id:'ice',         label:'Ice'},
+  {id:'lava',        label:'Lava'},
+  {id:'rocky',       label:'Rocky'},
+  {id:'cave',        label:'Cave'},
+  {id:'corrupt',     label:'Corrupt'},
+];
+
+// ── OBJECT LIST (from MapForge OTHER_CATEGORIES) ─────────────────────────────
+const OBJECTS = [
+  // trees
+  {id:'oak_s',   label:'Oak (sm)',    w:20,h:20, cat:'trees'},
+  {id:'oak_l',   label:'Oak (lg)',    w:32,h:32, cat:'trees'},
+  {id:'pine_s',  label:'Pine (sm)',   w:20,h:20, cat:'trees'},
+  {id:'pine_l',  label:'Pine (lg)',   w:32,h:32, cat:'trees'},
+  {id:'palm',    label:'Palm',        w:24,h:24, cat:'trees'},
+  {id:'dead',    label:'Dead Tree',   w:24,h:24, cat:'trees'},
+  {id:'thicket', label:'Thicket',     w:24,h:24, cat:'trees'},
+  {id:'bush_sm', label:'Bush (sm)',   w:16,h:16, cat:'trees'},
+  {id:'bush_lg', label:'Bush (lg)',   w:24,h:24, cat:'trees'},
+  // nature
+  {id:'rock_s',  label:'Rock',        w:12,h:10, cat:'nature'},
+  {id:'boulder', label:'Boulder',     w:20,h:18, cat:'nature'},
+  {id:'mossy',   label:'Mossy Rock',  w:18,h:16, cat:'nature'},
+  {id:'pond_s',  label:'Pond (sm)',   w:24,h:20, cat:'nature'},
+  {id:'mush_sm', label:'Mushroom',    w:10,h:10, cat:'nature'},
+  {id:'fallen_log',label:'Fallen Log',w:24,h:12, cat:'nature'},
+  {id:'flowers', label:'Flowers',     w:16,h:16, cat:'nature'},
+  {id:'fern',    label:'Fern',        w:14,h:14, cat:'nature'},
+  {id:'reeds',   label:'Reeds',       w:14,h:14, cat:'nature'},
+  {id:'cactus_p',label:'Cactus',      w:12,h:18, cat:'nature'},
+  // extras
+  {id:'well',    label:'Well',        w:16,h:16, cat:'extras'},
+  {id:'campfire',label:'Campfire',    w:16,h:16, cat:'extras'},
+  {id:'haystack',label:'Haystack',    w:18,h:14, cat:'extras'},
+  {id:'anvil',   label:'Anvil',       w:16,h:14, cat:'extras'},
+  {id:'logpile', label:'Log Pile',    w:20,h:14, cat:'extras'},
+  {id:'barrels', label:'Barrels',     w:18,h:16, cat:'extras'},
+  {id:'trough',  label:'Trough',      w:18,h:10, cat:'extras'},
+  {id:'chest',   label:'Chest',       w:14,h:12, cat:'extras'},
+  {id:'signpost',label:'Signpost',    w:14,h:18, cat:'extras'},
+  {id:'torch',   label:'Torch',       w:10,h:10, cat:'extras'},
+  {id:'altar',   label:'Altar',       w:20,h:20, cat:'extras'},
+  {id:'magic_circle',label:'Magic Circle',w:20,h:20,cat:'extras'},
+  {id:'skeleton',label:'Skeleton',    w:12,h:18, cat:'extras'},
+  {id:'dead_body',label:'Dead Body',  w:16,h:20, cat:'extras'},
+  {id:'blood_spatter',label:'Blood Spatter',w:16,h:16,cat:'extras'},
+  {id:'bones_pile',label:'Bones Pile',w:16,h:14,cat:'extras'},
+  {id:'gold_pile',label:'Gold Pile',  w:16,h:12,cat:'extras'},
+  {id:'cart',    label:'Cart',        w:22,h:18, cat:'extras'},
+  {id:'boat',    label:'Boat',        w:28,h:14, cat:'extras'},
+  // furniture
+  {id:'bed_s',   label:'Bed (single)',w:14,h:24, cat:'furniture'},
+  {id:'bed_d',   label:'Bed (double)',w:20,h:24, cat:'furniture'},
+  {id:'table_r', label:'Table (round)',w:16,h:16,cat:'furniture'},
+  {id:'table_l', label:'Table (long)',w:24,h:16,cat:'furniture'},
+  {id:'chair',   label:'Chair',       w:12,h:14, cat:'furniture'},
+  {id:'throne',  label:'Throne',      w:18,h:20, cat:'furniture'},
+  {id:'bookshelf',label:'Bookshelf',  w:20,h:16, cat:'furniture'},
+  {id:'cauldron',label:'Cauldron',    w:14,h:14, cat:'furniture'},
+  {id:'fireplace',label:'Fireplace',  w:20,h:16, cat:'furniture'},
+  {id:'weaponrack',label:'Weapon Rack',w:20,h:20,cat:'furniture'},
+  {id:'desk',    label:'Desk',        w:20,h:14, cat:'furniture'},
+];
+
+// ── OBJECT GENERATOR MAP ─────────────────────────────────────────────────────
+function generateObject(id, seed=42) {
+  if (!MF) return null;
+  const s = seed;
+  switch(id) {
+    case 'oak_s':   return MF.makeTopDownTree(20,20,'oak',s);
+    case 'oak_l':   return MF.makeTopDownTree(32,32,'oak',s);
+    case 'pine_s':  return MF.makeTopDownTree(20,20,'pine',s);
+    case 'pine_l':  return MF.makeTopDownTree(32,32,'pine',s);
+    case 'palm':    return MF.makeTopDownTree(24,24,'palm',s);
+    case 'dead':    return MF.makeTopDownTree(24,24,'dead',s);
+    case 'thicket': return MF.makeThicket(s);
+    case 'bush_sm': return MF.makeBushField('sm',s);
+    case 'bush_lg': return MF.makeBushField('lg',s);
+    case 'rock_s':  return MF.makeRock(12,10,'small',s);
+    case 'boulder': return MF.makeRock(20,18,'boulder',s);
+    case 'mossy':   return MF.makeRock(18,16,'mossy',s);
+    case 'pond_s':  return MF.makePond(24,20,s);
+    case 'mush_sm': return MF.makeMushroom('sm',s);
+    case 'fallen_log': return MF.makeFallenLog(s);
+    case 'flowers': return MF.makeFlowerPatch(s);
+    case 'fern':    return MF.makePlant('fern',s);
+    case 'reeds':   return MF.makePlant('reeds',s);
+    case 'cactus_p':return MF.makePlant('cactus',s);
+    case 'well':    return MF.makeWell(16,16,s);
+    case 'campfire':return MF.makeCampfire(s);
+    case 'haystack':return MF.makeHaystack(18,14,s);
+    case 'anvil':   return MF.makeAnvil(s);
+    case 'logpile': return MF.makeLogPile(s);
+    case 'barrels': return MF.makeBarrelCluster(s);
+    case 'trough':  return MF.makeTrough(s);
+    case 'chest':   return MF.makeChest(s);
+    case 'signpost':return MF.makeSignpost(s);
+    case 'torch':   return MF.makeTorch(s);
+    case 'altar':   return MF.makeAltar(s);
+    case 'magic_circle': return MF.makeMagicCircle(s);
+    case 'skeleton':return MF.makeSkeleton(s);
+    case 'dead_body': return MF.makeDeadBody(s);
+    case 'blood_spatter': return MF.makeBloodSpatter(s);
+    case 'bones_pile': return MF.makeBonesPile(s);
+    case 'gold_pile': return MF.makeGoldPile(s);
+    case 'cart':    return MF.makeCart(s);
+    case 'boat':    return MF.makeBoat(s);
+    case 'bed_s':   return MF.makeBed('single',s);
+    case 'bed_d':   return MF.makeBed('double',s);
+    case 'table_r': return MF.makeTable('round',s);
+    case 'table_l': return MF.makeTable('long',s);
+    case 'chair':   return MF.makeChair('chair',s);
+    case 'throne':  return MF.makeChair('throne',s);
+    case 'bookshelf': return MF.makeBookshelf(s);
+    case 'cauldron':return MF.makeCauldron(s);
+    case 'fireplace': return MF.makeFireplace(s);
+    case 'weaponrack': return MF.makeWeaponRack(s);
+    case 'desk':    return MF.makeDesk(s);
+    default: return null;
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  MF = window.MapForge;
+  const saved = localStorage.getItem('tile_editor_gh_token');
+  if (saved) document.getElementById('gh-token').value = saved;
+  document.getElementById('gh-token').addEventListener('change', e => {
+    localStorage.setItem('tile_editor_gh_token', e.target.value);
+  });
+  buildTileList();
+  buildPaletteSwatches();
+  document.getElementById('new-type').addEventListener('change', e => {
+    document.getElementById('new-cat').style.display = e.target.value === 'object' ? '' : 'none';
+  });
+  updateColourUI();
+});
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll('#left-tabs button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildTileList();
+}
+
+// ── TILE LIST ─────────────────────────────────────────────────────────────────
+function buildTileList() {
+  const el = document.getElementById('tile-list');
+  el.innerHTML = '';
+  const cfg = window.MapForgeConfig;
+
+  const items = activeTab === 'terrain'
+    ? [...TERRAINS, ...Object.entries(cfg.customTerrains||{}).map(([id,v])=>({id,label:v.label||id,custom:true}))]
+    : [...OBJECTS,  ...Object.entries(cfg.customObjects||{}).map(([id,v])=>({id,label:v.label||id,w:v.w||20,h:v.h||20,cat:v.category||'extras',custom:true}))];
+
+  items.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'tile-item' + (currentTile && currentTile.id === t.id ? ' sel' : '');
+
+    // thumbnail canvas
+    const c = document.createElement('canvas');
+    c.width = 20; c.height = 20;
+    c.style.width = '20px'; c.style.height = '20px';
+    c.style.imageRendering = 'pixelated';
+    try {
+      let grid;
+      if (activeTab === 'terrain') grid = MF.makeTerrain(t.id, 42);
+      else grid = generateObject(t.id, 42);
+      if (grid) MF.renderGridToCanvas(grid, c, 1);
+    } catch(e) {}
+    div.appendChild(c);
+
+    const lbl = document.createElement('span');
+    lbl.className = 'tile-label';
+    lbl.textContent = t.label;
+    div.appendChild(lbl);
+
+    // mode badge
+    const hasCustom = cfg.customSprites && cfg.customSprites[t.id];
+    const hasPalette = cfg.paletteOverrides && cfg.paletteOverrides[t.id];
+    if (hasCustom || hasPalette) {
+      const b = document.createElement('span');
+      b.className = 'mode-badge ' + (hasCustom ? 'custom' : 'palette');
+      b.textContent = hasCustom ? '✏' : '🎨';
+      div.appendChild(b);
+    }
+
+    div.onclick = () => selectTile({...t, type: activeTab === 'terrain' ? 'terrain' : 'object'});
+    el.appendChild(div);
+  });
+}
+
+// ── SELECT TILE ───────────────────────────────────────────────────────────────
+function selectTile(t) {
+  currentTile = t;
+  tileW = t.w || 20;
+  tileH = t.h || 20;
+  document.getElementById('sz-w').value = tileW;
+  document.getElementById('sz-h').value = tileH;
+  document.getElementById('tile-name-display').textContent = t.label;
+
+  // Load existing custom sprite if present
+  const cfg = window.MapForgeConfig;
+  const cs = cfg.customSprites && cfg.customSprites[t.id];
+  if (cs) {
+    pixels = loadCustomSprite(cs, tileW, tileH);
+    setMode(2);
+  } else {
+    // Load from generator for starting point
+    loadFromGenerator();
+    setMode(currentMode);
+  }
+
+  buildTileList();
+  buildPaletteVars();
+  renderEditor();
+  renderPreview();
+}
+
+function loadFromGenerator() {
+  let grid = null;
+  try {
+    if (currentTile.type === 'terrain') grid = MF.makeTerrain(currentTile.id, 42);
+    else grid = generateObject(currentTile.id, 42);
+  } catch(e) {}
+  if (grid) {
+    tileH = grid.length;
+    tileW = grid[0] ? grid[0].length : tileW;
+    pixels = grid;
+  } else {
+    pixels = MF.createPixelGrid(tileW, tileH);
+  }
+}
+
+function loadCustomSprite(cs, w, h) {
+  if (Array.isArray(cs) && Array.isArray(cs[0])) return cs;
+  if (cs && cs.pixels) {
+    const grid = MF.createPixelGrid(cs.w, cs.h);
+    for (let y = 0; y < cs.h; y++) for (let x = 0; x < cs.w; x++) {
+      const i = (y * cs.w + x) * 4;
+      if (cs.pixels[i+3] > 0) grid[y][x] = [cs.pixels[i],cs.pixels[i+1],cs.pixels[i+2],cs.pixels[i+3]];
+    }
+    return grid;
+  }
+  return MF.createPixelGrid(w, h);
+}
+
+// ── MODE ─────────────────────────────────────────────────────────────────────
+function setMode(m) {
+  currentMode = m;
+  document.getElementById('btn-mode1').classList.toggle('active', m===1);
+  document.getElementById('btn-mode2').classList.toggle('active', m===2);
+  document.getElementById('tools-panel').style.display = m===2 ? '' : 'none';
+  document.getElementById('size-panel').style.display  = m===2 ? '' : 'none';
+  document.getElementById('pal1-panel').style.display  = m===1 ? '' : 'none';
+  if (m===1) buildPaletteVars();
+}
+
+// ── PALETTE VARS (Mode 1) ─────────────────────────────────────────────────────
+const TERRAIN_PAL_DEFAULTS = {
+  grass:        {G1:[58,88,38,255],G2:[72,108,48,255],G3:[44,70,28,255],G4:[85,115,55,255]},
+  sand:         {S1:[210,188,130,255],S2:[225,205,148,255],S3:[195,172,110,255]},
+  dirt:         {D1:[120,88,50,255],D2:[140,105,62,255],D3:[98,68,35,255],D4:[105,78,42,255]},
+  cobble:       {S1:[130,125,118,255],S2:[108,102,95,255],S3:[155,150,142,255],SJ:[75,70,65,255]},
+  mud:          {M1:[88,62,38,255],M2:[108,78,48,255],M3:[72,50,28,255],WP:[65,78,62,255]},
+  water:        {W1:[55,105,158,255],W2:[42,88,140,255],W3:[70,125,175,255],WH:[140,190,220,255]},
+  shallow_water:{S1:[88,148,118,255],S2:[72,128,98,255],S3:[105,162,132,255]},
+  swamp:        {MG:[45,68,35,255],DG:[30,50,22,255],MR:[60,85,45,255],W1:[55,82,68,255],W2:[42,65,55,255]},
+  farmland:     {D1:[118,82,42,255],D2:[138,100,55,255],D3:[95,65,30,255]},
+  forest_floor: {L1:[45,62,28,255],L2:[58,78,35,255],L3:[35,50,20,255],LF:[88,62,30,255]},
+  snow:         {SN1:[230,238,242,255],SN2:[215,225,232,255],SN3:[198,208,218,255]},
+  ice:          {I1:[188,215,228,255],I2:[165,198,218,255],I3:[215,232,242,255]},
+  lava:         {L1:[188,68,22,255],L2:[215,108,28,255],L3:[148,38,12,255],LG:[38,32,28,255]},
+  rocky:        {R1:[32,28,25,255],R2:[22,19,17,255],R3:[42,38,34,255]},
+  cave:         {C1:[48,44,40,255],C2:[62,58,52,255],C3:[35,32,28,255]},
+  corrupt:      {C1:[38,25,48,255],C2:[55,35,68,255],C3:[28,18,35,255],CV:[88,55,108,255]},
+};
+
+function buildPaletteVars() {
+  if (!currentTile || currentTile.type !== 'terrain') return;
+  const defaults = TERRAIN_PAL_DEFAULTS[currentTile.id];
+  if (!defaults) { document.getElementById('pal-vars').innerHTML = '<span style="font-size:10px;color:#5a4820;">No palette vars for this tile</span>'; return; }
+  const cfg = window.MapForgeConfig;
+  const overrides = (cfg.paletteOverrides && cfg.paletteOverrides[currentTile.id]) || {};
+  const current = Object.assign({}, defaults, overrides);
+
+  const el = document.getElementById('pal-vars');
+  el.innerHTML = '';
+  Object.entries(current).forEach(([key, col]) => {
+    const row = document.createElement('div');
+    row.className = 'palvar-row';
+    const lbl = document.createElement('label');
+    lbl.textContent = key;
+    const sw = document.createElement('div');
+    sw.className = 'palvar-swatch';
+    sw.style.background = colToCSS(col);
+    sw.dataset.key = key;
+    sw.onclick = () => { activeColour = [...col]; updateColourUI(); sw.classList.add('editing'); };
+    const hex = document.createElement('span');
+    hex.className = 'palvar-hex';
+    hex.textContent = colToHex(col);
+    hex.dataset.key = key;
+    const applyBtn = document.createElement('button');
+    applyBtn.textContent = '←';
+    applyBtn.style.fontSize = '9px';
+    applyBtn.style.padding = '1px 4px';
+    applyBtn.title = 'Apply active colour to this var';
+    applyBtn.onclick = () => {
+      current[key] = [...activeColour];
+      sw.style.background = colToCSS(activeColour);
+      hex.textContent = colToHex(activeColour);
+    };
+    row.append(lbl, sw, hex, applyBtn);
+    el.appendChild(row);
+  });
+  el._currentVars = current;
+}
+
+function applyPaletteOverride() {
+  if (!currentTile) return;
+  const el = document.getElementById('pal-vars');
+  if (!el._currentVars) return;
+  const cfg = window.MapForgeConfig;
+  cfg.paletteOverrides = cfg.paletteOverrides || {};
+  cfg.paletteOverrides[currentTile.id] = el._currentVars;
+  // Re-generate preview with new palette
+  loadFromGenerator();
+  renderEditor();
+  renderPreview();
+  status('Palette preview updated (not yet saved)');
+}
+
+// ── TOOL ─────────────────────────────────────────────────────────────────────
+function setTool(t) {
+  currentTool = t;
+  document.querySelectorAll('#tools button').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('tool-' + t);
+  if (btn) btn.classList.add('active');
+}
+
+// ── ZOOM ─────────────────────────────────────────────────────────────────────
+function setZoom(z) {
+  zoom = z;
+  document.querySelectorAll('#zoom-row button').forEach(b => b.classList.remove('active'));
+  renderEditor();
+}
+
+// ── CANVAS RENDERING ─────────────────────────────────────────────────────────
+function renderEditor() {
+  if (!pixels) return;
+  const h = pixels.length, w = pixels[0] ? pixels[0].length : 0;
+  if (!w || !h) return;
+  const canvas = document.getElementById('pixel-canvas');
+  canvas.width = w * zoom;
+  canvas.height = h * zoom;
+  const ctx = canvas.getContext('2d');
+  // Checkerboard background for transparency
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const light = (x + y) % 2 === 0;
+    ctx.fillStyle = light ? '#333' : '#555';
+    ctx.fillRect(x*zoom, y*zoom, zoom, zoom);
+    const col = pixels[y][x];
+    if (col) {
+      ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${(col[3]||255)/255})`;
+      ctx.fillRect(x*zoom, y*zoom, zoom, zoom);
+    }
+  }
+  // Grid lines if zoom >= 6
+  if (zoom >= 6) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = 0.5;
+    for (let x = 0; x <= w; x++) { ctx.beginPath(); ctx.moveTo(x*zoom,0); ctx.lineTo(x*zoom,h*zoom); ctx.stroke(); }
+    for (let y = 0; y <= h; y++) { ctx.beginPath(); ctx.moveTo(0,y*zoom); ctx.lineTo(w*zoom,y*zoom); ctx.stroke(); }
+  }
+}
+
+function renderPreview() {
+  if (!pixels) return;
+  const h = pixels.length, w = pixels[0] ? pixels[0].length : 0;
+  const pc = document.getElementById('preview-canvas');
+  pc.width = w; pc.height = h;
+  pc.style.width = Math.min(w*2, 60) + 'px';
+  pc.style.height = Math.min(h*2, 60) + 'px';
+  MF.renderGridToCanvas(pixels, pc, 1);
+}
+
+// ── MOUSE DRAWING ─────────────────────────────────────────────────────────────
+function canvasXY(e) {
+  const canvas = document.getElementById('pixel-canvas');
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const px = Math.floor((e.clientX - rect.left) * scaleX / zoom);
+  const py = Math.floor((e.clientY - rect.top)  * scaleY / zoom);
+  return [px, py];
+}
+
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+function putPixel(x, y, col) {
+  const h = pixels.length, w = pixels[0].length;
+  if (x < 0 || y < 0 || x >= w || y >= h) return;
+  pixels[y][x] = col ? [...col] : null;
+}
+
+function floodFill(sx, sy, newCol) {
+  const h = pixels.length, w = pixels[0].length;
+  const target = pixels[sy][sx];
+  const sameCol = (a, b) => {
+    if (a === b) return true;
+    if (!a && !b) return true;
+    if (!a || !b) return false;
+    return a[0]===b[0] && a[1]===b[1] && a[2]===b[2] && a[3]===b[3];
+  };
+  if (sameCol(target, newCol)) return;
+  const stack = [[sx, sy]];
+  while (stack.length) {
+    const [x, y] = stack.pop();
+    if (x<0||y<0||x>=w||y>=h) continue;
+    if (!sameCol(pixels[y][x], target)) continue;
+    pixels[y][x] = newCol ? [...newCol] : null;
+    stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+  }
+}
+
+function drawLine(x0,y0,x1,y1,col) {
+  const dx=Math.abs(x1-x0), dy=Math.abs(y1-y0);
+  const sx=x0<x1?1:-1, sy=y0<y1?1:-1;
+  let err=dx-dy, x=x0, y=y0;
+  while(true) {
+    putPixel(x,y,col);
+    if(x===x1&&y===y1) break;
+    const e2=2*err;
+    if(e2>-dy){err-=dy;x+=sx;}
+    if(e2<dx){err+=dx;y+=sy;}
+  }
+}
+
+function drawRect(x0,y0,x1,y1,col) {
+  const minX=Math.min(x0,x1),maxX=Math.max(x0,x1);
+  const minY=Math.min(y0,y1),maxY=Math.max(y0,y1);
+  for(let x=minX;x<=maxX;x++){putPixel(x,minY,col);putPixel(x,maxY,col);}
+  for(let y=minY;y<=maxY;y++){putPixel(minX,y,col);putPixel(maxX,y,col);}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('pixel-canvas');
+
+  canvas.addEventListener('mousedown', e => {
+    if (!pixels || currentMode !== 2) return;
+    e.preventDefault();
+    const [x, y] = canvasXY(e);
+    drawing = true;
+    if (currentTool === 'pick') {
+      const h=pixels.length,w=pixels[0].length;
+      if(x>=0&&y>=0&&x<w&&y<h&&pixels[y][x]) { activeColour=[...pixels[y][x]]; updateColourUI(); }
+      drawing = false;
+    } else if (currentTool === 'fill') {
+      floodFill(x, y, activeColour);
+      renderEditor(); renderPreview();
+      drawing = false;
+    } else if (currentTool === 'line' || currentTool === 'rect') {
+      lineStart = [x, y];
+      rectStart = [x, y];
+    } else {
+      putPixel(x, y, currentTool === 'erase' ? null : activeColour);
+      renderEditor(); renderPreview();
+    }
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    if (!drawing || !pixels || currentMode !== 2) return;
+    const [x, y] = canvasXY(e);
+    if (currentTool === 'draw' || currentTool === 'erase') {
+      putPixel(x, y, currentTool === 'erase' ? null : activeColour);
+      renderEditor(); renderPreview();
+    }
+  });
+
+  canvas.addEventListener('mouseup', e => {
+    if (!drawing || !pixels || currentMode !== 2) return;
+    const [x, y] = canvasXY(e);
+    if (currentTool === 'line' && lineStart) {
+      drawLine(lineStart[0], lineStart[1], x, y, activeColour);
+      lineStart = null;
+    } else if (currentTool === 'rect' && rectStart) {
+      drawRect(rectStart[0], rectStart[1], x, y, activeColour);
+      rectStart = null;
+    }
+    drawing = false;
+    renderEditor(); renderPreview();
+  });
+
+  canvas.addEventListener('mouseleave', () => { drawing = false; lineStart = null; rectStart = null; });
+});
+
+// ── COLOUR HELPERS ────────────────────────────────────────────────────────────
+function colToCSS(col) {
+  if (!col) return 'transparent';
+  return `rgba(${col[0]},${col[1]},${col[2]},${(col[3]||255)/255})`;
+}
+function colToHex(col) {
+  if (!col) return '#000000';
+  const h = v => v.toString(16).padStart(2,'0');
+  return '#' + h(col[0]) + h(col[1]) + h(col[2]);
+}
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return [r,g,b,255];
+}
+
+function updateColourUI() {
+  const css = colToCSS(activeColour);
+  const el = document.getElementById('cur-colour-swatch');
+  if (el) el.style.background = activeColour ? css : 'repeating-conic-gradient(#333 0% 25%, #555 0% 50%) 0 0 / 8px 8px';
+  const hexEl = document.getElementById('cur-colour-hex');
+  if (hexEl) hexEl.value = activeColour ? colToHex(activeColour) : 'transparent';
+  const picker = document.getElementById('colour-picker');
+  if (picker && activeColour) picker.value = colToHex(activeColour);
+  buildPaletteSwatches();
+}
+
+function hexToActive(hex) {
+  if (!hex || hex === 'transparent') { activeColour = null; updateColourUI(); return; }
+  if (!hex.startsWith('#')) hex = '#' + hex;
+  if (hex.length >= 7) { activeColour = hexToRgb(hex); updateColourUI(); }
+}
+
+function pickerToActive(hex) {
+  activeColour = hexToRgb(hex);
+  document.getElementById('cur-colour-hex').value = hex;
+  document.getElementById('cur-colour-swatch').style.background = hex;
+}
+
+function setTransparent() { activeColour = null; updateColourUI(); }
+
+function buildPaletteSwatches() {
+  const el = document.getElementById('palette-swatches');
+  if (!el) return;
+  el.innerHTML = '';
+  userPalette.forEach((col, i) => {
+    const sw = document.createElement('div');
+    sw.className = 'pal-swatch' + (!col ? ' transparent' : '');
+    if (col) sw.style.background = colToCSS(col);
+    const same = (!col && !activeColour) || (col && activeColour && col[0]===activeColour[0]&&col[1]===activeColour[1]&&col[2]===activeColour[2]);
+    if (same) sw.classList.add('sel');
+    sw.onclick = () => { activeColour = col ? [...col] : null; updateColourUI(); };
+    el.appendChild(sw);
+  });
+}
+
+function addToPalette() {
+  if (!userPalette.find(c => c && activeColour && c[0]===activeColour[0]&&c[1]===activeColour[1]&&c[2]===activeColour[2])) {
+    userPalette.unshift(activeColour ? [...activeColour] : null);
+    if (userPalette.length > 32) userPalette.pop();
+    buildPaletteSwatches();
+  }
+}
+
+// ── CANVAS RESIZE ─────────────────────────────────────────────────────────────
+function resizeCanvas() {
+  const nw = parseInt(document.getElementById('sz-w').value);
+  const nh = parseInt(document.getElementById('sz-h').value);
+  if (!nw || !nh || nw<1 || nh<1) return;
+  const newGrid = MF.createPixelGrid(nw, nh);
+  if (pixels) {
+    const oh = pixels.length, ow = pixels[0] ? pixels[0].length : 0;
+    for (let y = 0; y < Math.min(oh,nh); y++)
+      for (let x = 0; x < Math.min(ow,nw); x++)
+        newGrid[y][x] = pixels[y][x];
+  }
+  pixels = newGrid; tileW = nw; tileH = nh;
+  renderEditor(); renderPreview();
+}
+
+// ── NEW TILE ──────────────────────────────────────────────────────────────────
+function createNew() {
+  const id = document.getElementById('new-id').value.trim().replace(/\s+/g,'_').toLowerCase();
+  const label = document.getElementById('new-label').value.trim() || id;
+  const type = document.getElementById('new-type').value;
+  const cat = document.getElementById('new-cat').value;
+  if (!id) { status('Enter an id'); return; }
+
+  const cfg = window.MapForgeConfig;
+  if (type === 'terrain') {
+    cfg.customTerrains = cfg.customTerrains || {};
+    cfg.customTerrains[id] = { label, edgeCol: [128,128,128,255] };
+  } else {
+    cfg.customObjects = cfg.customObjects || {};
+    cfg.customObjects[id] = { label, w: tileW, h: tileH, category: cat };
+  }
+  // Select it immediately
+  pixels = MF.createPixelGrid(tileW, tileH);
+  currentTile = { id, label, type, w: tileW, h: tileH };
+  document.getElementById('tile-name-display').textContent = label;
+  setMode(2);
+  buildTileList();
+  renderEditor(); renderPreview();
+  status('Created "' + id + '" — draw it and save');
+}
+
+// ── REVERT ────────────────────────────────────────────────────────────────────
+function revertTile() {
+  if (!currentTile) return;
+  const cfg = window.MapForgeConfig;
+  if (cfg.customSprites) delete cfg.customSprites[currentTile.id];
+  if (cfg.paletteOverrides) delete cfg.paletteOverrides[currentTile.id];
+  loadFromGenerator();
+  renderEditor(); renderPreview(); buildTileList();
+  status('Reverted to generator');
+}
+
+// ── STATUS ────────────────────────────────────────────────────────────────────
+function status(msg) { document.getElementById('status').textContent = msg; }
+
+// ── KEYBOARD SHORTCUTS ────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input,select,textarea')) return;
+  const map = { d:'draw', e:'erase', i:'pick', f:'fill', l:'line', r:'rect' };
+  if (map[e.key]) setTool(map[e.key]);
+  if ((e.ctrlKey||e.metaKey) && e.key==='s') { e.preventDefault(); saveToGitHub(); }
+});
+
+// ── SERIALISE PIXELS ─────────────────────────────────────────────────────────
+function serialiseSprite() {
+  const h = pixels.length, w = pixels[0] ? pixels[0].length : 0;
+  const flat = new Array(w * h * 4).fill(0);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const col = pixels[y][x];
+    const i = (y * w + x) * 4;
+    if (col) { flat[i]=col[0]; flat[i+1]=col[1]; flat[i+2]=col[2]; flat[i+3]=col[3]||255; }
+  }
+  return { w, h, pixels: flat };
+}
+
+// ── SAVE TO GITHUB ───────────────────────────────────────────────────────────
+async function saveToGitHub() {
+  const token = document.getElementById('gh-token').value.trim();
+  if (!token) { status('Enter GitHub token first'); return; }
+  if (!currentTile) { status('Select a tile first'); return; }
+
+  // Stage the current tile into MapForgeConfig
+  const cfg = window.MapForgeConfig;
+  if (currentMode === 2) {
+    cfg.customSprites = cfg.customSprites || {};
+    cfg.customSprites[currentTile.id] = serialiseSprite();
+    // Remove palette override if we have a custom sprite
+    if (cfg.paletteOverrides) delete cfg.paletteOverrides[currentTile.id];
+  }
+  // (Mode 1 overrides already staged by applyPaletteOverride)
+
+  status('Saving...');
+  try {
+    const content = buildConfigFile(cfg);
+    await githubSave(token, 'mapforge-config.js', content, 'Update tile config from tile-editor');
+    status('Saved ✓');
+    buildTileList();
+  } catch(err) {
+    status('Error: ' + err.message);
+  }
+}
+
+function buildConfigFile(cfg) {
+  // Serialise the whole MapForgeConfig back to a JS file
+  const json = JSON.stringify({
+    customSprites:    cfg.customSprites    || {},
+    paletteOverrides: cfg.paletteOverrides || {},
+    customTerrains:   cfg.customTerrains   || {},
+    customObjects:    cfg.customObjects    || {},
+  }, null, 2);
+  return `// ═══════════════════════════════════════════════════════════════
+// mapforge-config.js — Tile/Object appearance overrides
+// Auto-generated by tile-editor.html — do not edit manually
+// ═══════════════════════════════════════════════════════════════
+
+window.MapForgeConfig = window.MapForgeConfig || {};
+(function(cfg) {
+  const d = ${json};
+  cfg.customSprites    = Object.assign(cfg.customSprites    || {}, d.customSprites);
+  cfg.paletteOverrides = Object.assign(cfg.paletteOverrides || {}, d.paletteOverrides);
+  cfg.customTerrains   = Object.assign(cfg.customTerrains   || {}, d.customTerrains);
+  cfg.customObjects    = Object.assign(cfg.customObjects    || {}, d.customObjects);
+})(window.MapForgeConfig);
+`;
+}
+
+async function githubSave(token, filepath, content, message) {
+  const repo = '1984tpearson/fantgame';
+  const apiURL = `https://api.github.com/repos/${repo}/contents/${filepath}`;
+  // Get current SHA
+  const getRes = await fetch(apiURL, { headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github.v3+json' }});
+  let sha = null;
+  if (getRes.ok) { const d = await getRes.json(); sha = d.sha; }
+  // Put updated file
+  const body = { message, content: btoa(unescape(encodeURIComponent(content))), ...(sha ? {sha} : {}) };
+  const putRes = await fetch(apiURL, {
+    method: 'PUT',
+    headers: { Authorization: 'token ' + token, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!putRes.ok) { const e = await putRes.json(); throw new Error(e.message || putRes.statusText); }
+}
+
+</script>
+</body>
+</html>
