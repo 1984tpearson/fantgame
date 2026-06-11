@@ -1702,12 +1702,15 @@ const _BUILDING_STYLE = {
 };
 function _getObjectCanvas(objId, seed, style, linen) {
   // Generate and cache a single object sprite canvas
-  const key = 'obj_' + objId + '_' + seed + '_s' + (style??'x') + '_l' + (linen??'x');
+  // Custom sprite override (Mode 2 from tile-editor) takes priority
+  const customGrid = MapForge.customSprite && MapForge.customSprite(objId);
+  const key = (customGrid ? 'cs_' : '') + 'obj_' + objId + '_' + seed + '_s' + (style??'x') + '_l' + (linen??'x');
   if (_objCache.has(key)) return _objCache.get(key);
   const MF = MapForge;
-  let grid = null;
+  let grid = customGrid || null;
   try {
-    if      (objId==='well')         grid = MF.makeWell(16,16,seed);
+    if (grid) { /* use custom sprite, skip generator */ }
+    else if (objId==='well')         grid = MF.makeWell(16,16,seed);
     else if (objId==='haystack')     grid = MF.makeHaystack(18,14,seed);
     else if (objId==='campfire')     grid = MF.makeCampfire(seed);
     else if (objId==='signpost')     grid = MF.makeSignpost(seed);

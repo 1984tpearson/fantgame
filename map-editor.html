@@ -920,11 +920,16 @@ function getObjSpriteCanvas(objId, seed, style, linen) {
   const def = OBJECT_DEFS[objId]; if(!def||!def.fn)return null;
   const styleVal = (def.styles && style!=null) ? style : null;
   const linenVal = (def.linen && linen!=null) ? linen : null;
-  const key=objId+'_'+seed+'_s'+(styleVal??'x')+'_l'+(linenVal??'x'); if(objCache.has(key))return objCache.get(key);
-  let g; try{g=def.fn(seed,styleVal,linenVal);}catch(e){return null;}
+  // Custom sprite overrides generator (Mode 2 from tile-editor)
+  const customGrid = MF.customSprite && MF.customSprite(objId);
+  const cacheKey = (customGrid ? 'cs_' : '') + objId+'_'+seed+'_s'+(styleVal??'x')+'_l'+(linenVal??'x');
+  if(objCache.has(cacheKey))return objCache.get(cacheKey);
+  let g; 
+  if(customGrid) { g = customGrid; }
+  else { try{g=def.fn(seed,styleVal,linenVal);}catch(e){return null;} }
   if(!g)return null;
   const c=document.createElement('canvas'); MF.renderGridToCanvas(g,c,1);
-  objCache.set(key,c); return c;
+  objCache.set(cacheKey,c); return c;
 }
 
 // Generate building canvas from stored cell metadata (used for editor rendering)
