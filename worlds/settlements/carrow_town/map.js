@@ -42,6 +42,7 @@
   t(1,6,'grass','', {object:"signpost",objVariant:0});
   t(6,6,'grass','', {object:"logpile",objVariant:0});
   t(10,6,'grass','', {object:"path_v",objVariant:0});
+  t(3,7,'grass','The Wet Leg', {interiorType:"Tavern",doors:["south"]});
   t(7,7,'building','The Salted Squirrel', {interiorType:"inn",bldgType:"standard",bldgW:2,bldgH:2,bldgPxW:40,bldgPxH:40,roofStyle:"blueslate",roofShape:"ridge",bldgPattern:"default",bldgYard:"bottom"});
   t(8,7,'grass','', {object:"_part",anchor:"7,7"});
   t(9,7,'grass','', {object:"bush_lg",objVariant:0});
