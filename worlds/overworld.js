@@ -2,7 +2,7 @@
 // Edit in map-editor.html (Overworld mode) and save via Save to GitHub
 (function(){
   window.WORLD_META = window.WORLD_META || {};
-  window.WORLD_START = window.WORLD_START || {x:346, y:558};
+  window.WORLD_START = window.WORLD_START || {x:378, y:541};
   function t(x,y,type,name,extra={}){ window.WORLD_META[`${x},${y}`] = Object.assign({type,name},extra); }
 
   // MAP CELLS
