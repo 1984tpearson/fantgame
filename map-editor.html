@@ -835,7 +835,22 @@ function loadLayer() {
   if (editorMode === 'settlement') {
     const s = window.WORLD_DATA && window.WORLD_DATA.settlements[settlementId];
     if (!s) { statusMsg('Unknown settlement'); return; }
-    for (const [k,v] of Object.entries(s.map)) { definedMap[k]=Object.assign({},v); originalMap[k]=Object.assign({},v); }
+    // Flip Y back: engine stores Y=0 at north, editor displays Y=0 at south
+    const rawEntries = Object.entries(s.map);
+    const rawYs = rawEntries.map(([k]) => parseKey(k)[1]).filter(v => !isNaN(v));
+    const maxY = rawYs.length ? Math.max(...rawYs) : 0;
+    for (const [k,v] of rawEntries) {
+      const [rx, ry] = parseKey(k);
+      const ek = rx + ',' + (maxY - ry);
+      const ev = Object.assign({}, v);
+      // Fix anchor references too
+      if (ev.anchor) {
+        const [ax, ay] = parseKey(ev.anchor);
+        ev.anchor = ax + ',' + (maxY - ay);
+      }
+      definedMap[ek] = ev;
+      originalMap[ek] = Object.assign({}, ev);
+    }
     console.log('[Editor] Settlement', settlementId, 'keys:', Object.keys(definedMap).length);
   } else if (editorMode === 'overworld') {
     for (const [k,v] of Object.entries(window.WORLD_DATA.meta||{})) { definedMap[k]=Object.assign({},v); originalMap[k]=Object.assign({},v); }
@@ -1246,7 +1261,8 @@ function eraseAnchorGroup(ax,ay){
 }
 
 function placeBuilding(ax,ay){
-  const{type,w,h,footprint,shape,pattern,styleId,yard,interiorType,name}=bldgConfig;
+  const{type,w,h,footprint,shape,pattern,styleId,yard,interiorType}=bldgConfig;
+  const name=bldgConfig._nameExplicit?bldgConfig.name:'';
   // Cell dimensions: w/h are pixel dimensions (20px=1 cell)
   const cellW=Math.ceil(w/20), cellH=Math.ceil(h/20);
   // Check all target cells in bounds
@@ -1473,8 +1489,24 @@ document.querySelectorAll('.trot-btn').forEach(btn=>{
 const GITHUB_OWNER = '1984tpearson';
 const GITHUB_REPO  = 'fantgame';
 
+function _getMapMaxY() {
+  // Editor stores Y=0 at south (bottom). Engine expects Y=0 at north (top).
+  // maxY is cached per save operation via _saveMaxY.
+  if (typeof _saveMaxY === 'number') return _saveMaxY;
+  const ys = Object.keys(definedMap).map(k => parseKey(k)[1]).filter(v => !isNaN(v));
+  return ys.length ? Math.max(...ys) : 0;
+}
+let _saveMaxY = null;
+function _flipY(y) {
+  return _getMapMaxY() - y;
+}
+function _flipAnchor(anchor) {
+  const [ax, ay] = anchor.split(',').map(Number);
+  return ax + ',' + (_getMapMaxY() - ay);
+}
 function cellToJS(k, meta) {
-  const [x,y] = parseKey(k);
+  const [x, rawY] = parseKey(k);
+  const y = _flipY(rawY);
   const ex = {};
   // Terrain style
   if (meta.terrainStyle != null) ex.terrainStyle = meta.terrainStyle;
@@ -1486,7 +1518,7 @@ function cellToJS(k, meta) {
   if (meta.exit)          ex.exit          = meta.exit;
   if (meta.enterMode && meta.enterMode !== 'auto') ex.enterMode = meta.enterMode;
   if (meta.object)        ex.object        = meta.object;
-  if (meta.object === '_part' && meta.anchor) ex.anchor = meta.anchor;
+  if (meta.object === '_part' && meta.anchor) ex.anchor = _flipAnchor(meta.anchor);
   if (meta.bldgType)      ex.bldgType      = meta.bldgType;
   if (meta.bldgW)         ex.bldgW         = meta.bldgW;
   if (meta.bldgH)         ex.bldgH         = meta.bldgH;
@@ -1598,12 +1630,15 @@ function getSettlementFileContent() {
     ? `// ${interiorId.toUpperCase()} — interior map`
     : `// ${name.toUpperCase()} — settlement map`;
 
+  // Cache maxY for this save operation so _flipY is consistent
+  _saveMaxY = Math.max(...Object.keys(definedMap).map(k => parseKey(k)[1]).filter(v => !isNaN(v)), 0);
   const cellLines = Object.entries(definedMap)
     .sort(([a],[b]) => {
       const [ax,ay] = parseKey(a), [bx,by] = parseKey(b);
       return ay !== by ? ay - by : ax - bx;
     })
     .map(([k,m]) => cellToJS(k, m));
+  _saveMaxY = null; // reset after use
 
   if (editorMode === 'interior') {
     const iid = interiorId;
@@ -2029,7 +2064,7 @@ document.querySelectorAll('#lp-tabs button').forEach(btn=>{
 document.getElementById('bldg-w').addEventListener('change',e=>{bldgConfig.w=parseInt(e.target.value);buildBldgPalette();});
 document.getElementById('bldg-h').addEventListener('change',e=>{bldgConfig.h=parseInt(e.target.value);buildBldgPalette();});
 document.getElementById('bldg-interior').addEventListener('input',e=>{bldgConfig.interiorType=e.target.value;});
-document.getElementById('bldg-name').addEventListener('input',e=>{bldgConfig.name=e.target.value;});
+document.getElementById('bldg-name').addEventListener('input',e=>{bldgConfig.name=e.target.value;bldgConfig._nameExplicit=e.target.value.length>0;});
 document.getElementById('btn-place-bldg').addEventListener('click',()=>{
   if(!selectedCell){statusMsg('Pick a cell first (I key)');return;}
   placeBuilding(selectedCell.x,selectedCell.y);
