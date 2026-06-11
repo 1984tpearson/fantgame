@@ -1201,10 +1201,10 @@ function redrawAnchorGroup(ax,ay){
   const meta=definedMap[`${ax},${ay}`]; if(!meta)return;
   const cellW=meta.bldgW||1, cellH=meta.bldgH||1;
   for(let dx=0;dx<cellW;dx++) for(let dy=0;dy<cellH;dy++){
-    const{px,py}=cellToCanvas(ax+dx,ay+dy);
+    const{px,py}=cellToCanvas(ax+dx,ay-dy);
     ctx.fillStyle='#050402';ctx.fillRect(px,py,tileSize,tileSize);
-    const cm=definedMap[`${ax+dx},${ay+dy}`]||inferBg(ax+dx,ay+dy);
-    if(cm)_drawCellTerrain(ax+dx,ay+dy,cm);
+    const cm=definedMap[`${ax+dx},${ay-dy}`]||inferBg(ax+dx,ay-dy);
+    if(cm)_drawCellTerrain(ax+dx,ay-dy,cm);
   }
   const{px,py}=cellToCanvas(ax,ay);
   const seed=(((ax&0xffff)<<16)|(ay&0xffff))>>>0;
@@ -1253,7 +1253,7 @@ function eraseAnchorGroup(ax,ay){
   const meta=definedMap[`${ax},${ay}`];if(!meta)return;
   const cw=meta.bldgW||1,ch=meta.bldgH||1;
   for(let dx=0;dx<cw;dx++) for(let dy=0;dy<ch;dy++){
-    const x=ax+dx,y=ay+dy,k=`${x},${y}`;
+    const x=ax+dx,y=ay-dy,k=`${x},${y}`;
     pushUndo(x,y);delete definedMap[k];map[k]=inferBg(x,y);
   }
   redrawAnchorGroup(ax,ay);
@@ -1269,9 +1269,9 @@ function placeBuilding(ax,ay){
   for(let dx=0;dx<cellW;dx++) for(let dy=0;dy<cellH;dy++) if(!inBounds(ax+dx,ay+dy))return;
   // Erase existing buildings at these cells
   for(let dx=0;dx<cellW;dx++) for(let dy=0;dy<cellH;dy++){
-    const k=`${ax+dx},${ay+dy}`;const ex=definedMap[k];
+    const k=`${ax+dx},${ay-dy}`;const ex=definedMap[k];
     if(ex&&ex.object==='_part'&&ex.anchor)eraseAnchorGroup(...parseKey(ex.anchor));
-    else if(ex&&ex.bldgW)eraseAnchorGroup(ax+dx,ay+dy);
+    else if(ex&&ex.bldgW)eraseAnchorGroup(ax+dx,ay-dy);
   }
   // Write anchor with full config so engine can regenerate the roof
   const seed=(((ax&0xffff)<<16)|(ay&0xffff))>>>0;
@@ -1283,12 +1283,12 @@ function placeBuilding(ax,ay){
     bldgFootprint:footprint, bldgYard:yard,
   };
   pushUndo(ax,ay); definedMap[`${ax},${ay}`]=anchorMeta; map[`${ax},${ay}`]=Object.assign({},anchorMeta);
-  // Write span cells
+  // Write span cells (dy goes negative = southward in editor display space)
   for(let dx=0;dx<cellW;dx++) for(let dy=0;dy<cellH;dy++){
     if(dx===0&&dy===0)continue;
-    const k=`${ax+dx},${ay+dy}`;
+    const k=`${ax+dx},${ay-dy}`;
     const partMeta={type:'grass',object:'_part',anchor:`${ax},${ay}`};
-    pushUndo(ax+dx,ay+dy); definedMap[k]=partMeta; map[k]=Object.assign({},partMeta);
+    pushUndo(ax+dx,ay-dy); definedMap[k]=partMeta; map[k]=Object.assign({},partMeta);
   }
   redrawAnchorGroup(ax,ay);
   updateExport();
